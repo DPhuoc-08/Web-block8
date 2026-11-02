@@ -1,6 +1,7 @@
 // Code-first: model trong file này là nguồn của schema.
-// Block7 dùng project Supabase RIÊNG (không chung với block5/block6), nên được `prisma db push` lên database này.
-// Khác block6: loại món và chuyên môn đầu bếp thành TAG nhiều-nhiều (bảng tags dùng chung cho cả hai).
+// Block8 dùng CHÍNH database của block7 (plan block8 mục 12.1): 7 bảng của block7 giữ nguyên, chỉ THÊM 5 bảng xác thực
+// ở cuối file. Từ nay chỉ chạy `prisma db push` từ block8 — schema block7 không có 5 bảng mới nên Prisma sẽ đòi xoá chúng.
+// Từ block7: loại món và chuyên môn đầu bếp là TAG nhiều-nhiều (bảng tags dùng chung cho cả hai).
 
 generator client {
   provider = "prisma-client"
@@ -109,4 +110,103 @@ model ChefTag {
   @@id([chefId, tagId])
   @@index([tagId])
   @@map("chef_tags")
+}
+
+// ===================== Xác thực tài khoản (block8) =====================
+
+// Role do server gán, mặc định viewer; role trong form đăng ký bị bỏ qua. Block8 chưa dùng role để chặn thao tác
+// (mọi tài khoản active dùng được cụm CRUD); editor, admin để sẵn cho phân quyền của block9.
+enum Role {
+  viewer
+  editor
+  admin
+}
+
+// pending: đã đăng ký, chưa nhập đúng OTP → chưa được đăng nhập. active: dùng được ứng dụng.
+enum UserStatus {
+  pending
+  active
+}
+
+// Mục đích của mã: mã kích hoạt chỉ có nghĩa với việc kích hoạt (không dùng được ở nơi khác).
+enum ChallengePurpose {
+  activation
+}
+
+model User {
+  id              Int        @id @default(autoincrement())
+  // Email đã chuẩn hoá (cắt khoảng trắng, chữ thường) — duy nhất, dùng để so sánh ở mọi chức năng.
+  email           String     @unique
+  // Email đúng như người dùng gõ khi đăng ký — chỉ để hiển thị.
+  emailInput      String
+  // Chuỗi Argon2id (gồm thuật toán, tham số, salt, giá trị băm). Không bao giờ lưu password.
+  passwordHash    String
+  role            Role       @default(viewer)
+  status          UserStatus @default(pending)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime   @default(now())
+
+  activation     ActivationChallenge?
+  passwordResets PasswordReset[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+// Một dòng cho mỗi tài khoản pending. Gửi lại mã → ghi đè otpHash, expiresAt, usedAt; GIỮ attempts, lockedUntil
+// (gửi lại không mở thêm lượt đoán). Xoá user → xoá dòng này.
+model ActivationChallenge {
+  userId      Int              @id
+  purpose     ChallengePurpose @default(activation)
+  // HMAC-SHA256(OTP_PEPPER, mã 6 số): không lưu mã; lộ bảng mà không có pepper thì không dò được mã.
+  otpHash     String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  attempts    Int              @default(0)
+  lockedUntil DateTime?
+  lastSentAt  DateTime
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activation_challenges")
+}
+
+// Link đặt lại mật khẩu: token gốc chỉ nằm trong email, DB lưu SHA-256 của token. Hạn 15 phút, dùng một lần.
+model PasswordReset {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// Session ở server (store của express-session). Cookie của trình duyệt chỉ mang sid; dữ liệu nằm ở đây nên
+// khởi động lại server không mất phiên. userId rỗng = phiên ẩn danh (giữ CSRF token của form đăng nhập / đăng ký).
+// Cột userId riêng (không chỉ nằm trong data) để huỷ MỌI phiên của một user khi đặt lại mật khẩu.
+model Session {
+  sid       String   @id
+  userId    Int?
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// Bộ đếm cho giới hạn tần suất và chống brute force, khoá dạng "login-fail:email:<email>", "login:ip:<ip>"...
+// Nằm ở DB (không ở cookie / bộ nhớ tiến trình): xoá cookie, mở tab ẩn danh hay khởi động lại server không đặt lại.
+model RateLimit {
+  key         String    @id
+  count       Int       @default(0)
+  windowStart DateTime
+  lockedUntil DateTime?
+
+  @@map("rate_limits")
 }

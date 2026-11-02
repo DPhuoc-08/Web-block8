@@ -144,3 +144,19 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 **Đã kiểm tra:** `node scripts/check-ssr.mjs` → **48/48 ĐẠT**; số món của 11 bộ điều kiện thực đơn khớp SQL (1.200; "bún" 59; "100%" 1; "_" 1; Món nước 0–60.000đ còn bán 97; tạm hết 180; giá 0: 4; nguyên liệu "tôm" 149; đầu bếp "Mai" 122; toàn văn 62; gần đúng 6); admin "lẩu" 61 món, đầu bếp "lẩu" 6, nguyên liệu "kg" 187. Sau khi dọn: 1200 / 60 / 250 / 16.
 
 **Mốc:** nền SSR theo block7 (thực đơn + 3 trang quản trị) chạy đủ chức năng block7 trừ Tải thêm / Cuộn vô hạn (đã chốt bỏ).
+
+## Bước 7 — Thêm 5 bảng xác thực vào DB block7
+**Đã làm:**
+- `prisma/schema.prisma`: enum `Role` (viewer, editor, admin), `UserStatus` (pending, active), `ChallengePurpose` (activation); model `User` (`users`), `ActivationChallenge` (`activation_challenges`), `PasswordReset` (`password_resets`), `Session` (`sessions`), `RateLimit` (`rate_limits`). Sửa comment đầu file: block8 dùng chung DB block7, từ nay chỉ `db push` từ block8.
+- `prisma/sql/block8-auth-tables.sql`: SQL sinh bằng `prisma migrate diff --from-config-datasource --to-schema` **trước** khi push, để nhóm xem.
+- `prisma db push` lên DB block7.
+
+**Quyết định và lý do:**
+- **Chỉ thêm**: SQL gồm 3 `CREATE TYPE`, 5 `CREATE TABLE`, 5 `CREATE INDEX`, 3 khoá ngoại tới `users` (Cascade). Không có `DROP`, không câu nào chạm 7 bảng của block7 — đã `grep` kiểm tra trước khi push.
+- `Role` có sẵn `editor` dù block8 chỉ dùng `viewer` (mặc định) — block9 (RBAC) cần, khai sẵn để block9 không phải đổi enum trên DB dùng chung.
+- `ActivationChallenge.userId` là khoá chính (= một dòng mỗi tài khoản pending, plan 3.1). `Session.userId` là cột riêng (có index) để xoá mọi phiên của một user khi đặt lại mật khẩu.
+
+**Đã kiểm tra:**
+- Host trước khi push: `aws-0-ap-southeast-1.pooler.supabase.com` (DB block7). `prisma validate` hợp lệ.
+- Sau push: 12 bảng; 7 bảng cũ giữ nguyên số dòng (1200 / 60 / 250 / 16 / 2106 / 106 / 5357); 5 bảng mới rỗng.
+- API block7 (`Week5/block7/api`, cổng 3001) vẫn trả `/api/dishes`, `/api/chefs` bình thường; repo block7 không có thay đổi.
