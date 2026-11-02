@@ -1,0 +1,17 @@
+<%- include("_start") %>
+<%# Quên mật khẩu (Figma vòng 2, màn 4). Sau khi gửi: khối "Kiểm tra email của bạn" (cùng trang cho email có / không có). -%>
+<form class="auth-form" method="post" action="/forgot" novalidate data-once<% if (code) { %> data-error-code="<%= code %>"<% } %>>
+  <input type="hidden" name="_csrf" value="<%= csrf() %>">
+  <div class="auth-head">
+    <h1>Quên mật khẩu</h1>
+    <p>Nhập email đã đăng ký. Chúng tôi sẽ gửi link để bạn đặt mật khẩu mới.</p>
+  </div>
+  <%- include("_banner") %>
+  <div class="auth-fields">
+    <%- include("_field", { name: "email", label: "Email", type: "email", value: values.email, autocomplete: "email", placeholder: "ban@example.com", error: errors.email }) %>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block" data-busy-label="Đang gửi…">Gửi link đặt lại</button>
+  <hr class="auth-divider">
+  <p class="auth-foot">Nhớ ra rồi? <a href="/login">Đăng nhập</a></p>
+</form>
+<%- include("_end") %>

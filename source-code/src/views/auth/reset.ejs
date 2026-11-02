@@ -1,0 +1,19 @@
+<%- include("_start") %>
+<%# Đặt mật khẩu mới (Figma vòng 2, màn 5). Token nằm trong ô ẩn; trang có Referrer-Policy: no-referrer. -%>
+<form class="auth-form" method="post" action="/reset" novalidate data-once<% if (code) { %> data-error-code="<%= code %>"<% } %>>
+  <input type="hidden" name="_csrf" value="<%= csrf() %>">
+  <input type="hidden" name="token" value="<%= token %>">
+  <div class="auth-head">
+    <h1>Đặt mật khẩu mới</h1>
+    <p>Sau khi đổi, mọi phiên đăng nhập cũ của tài khoản sẽ bị đăng xuất.</p>
+  </div>
+  <%- include("_banner") %>
+  <div class="auth-fields">
+    <%- include("_field", { name: "password", label: "Mật khẩu mới", type: "password", autocomplete: "new-password", placeholder: "Tạo mật khẩu mới", error: errors.password, toggle: true, hint: "8–64 ký tự. Một câu dễ nhớ cũng được." }) %>
+    <%- include("_field", { name: "passwordConfirm", label: "Nhập lại mật khẩu mới", type: "password", autocomplete: "new-password", placeholder: "Nhập lại mật khẩu mới", error: errors.passwordConfirm, toggle: true }) %>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block" data-busy-label="Đang lưu…">Lưu mật khẩu mới</button>
+  <hr class="auth-divider">
+  <p class="auth-foot"><a href="/login">Về đăng nhập</a></p>
+</form>
+<%- include("_end") %>

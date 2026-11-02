@@ -11,6 +11,7 @@ import { startCleanup } from "./auth/cleanup.js";
 import { requireLogin } from "./auth/require-login.js";
 import loginRouter from "./routes/auth/login.js";
 import registerRouter from "./routes/auth/register.js";
+import passwordResetRouter from "./routes/auth/password-reset.js";
 import menuRouter from "./routes/menu.js";
 import adminDishesRouter from "./routes/admin/dishes.js";
 import adminChefsRouter from "./routes/admin/chefs.js";
@@ -103,6 +104,7 @@ app.get("/", (req, res) => res.redirect("/dishes"));
 app.use(menuRouter);
 app.use(loginRouter);
 app.use(registerRouter);
+app.use(passwordResetRouter);
 // Khu quản trị = cụm CRUD: MỌI route dưới /admin (cả GET lẫn ghi) phải đăng nhập — chặn ở server (plan 5.7, 12.2).
 app.use("/admin", requireLogin);
 app.get("/admin", (req, res) => res.redirect("/admin/dishes"));

@@ -292,3 +292,21 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 
 **Đã kiểm tra — `check-auth.mjs C D`: 37/37 ĐẠT** (C 12, D 25):
 2 lần sai chưa có CAPTCHA (bộ đếm 2); lần 3 → form có CAPTCHA; mở lại `/login` vẫn có CAPTCHA; đủ ngưỡng + bỏ trường CAPTCHA + mật khẩu **đúng** → `CAPTCHA_REQUIRED`, không đăng nhập, bộ đếm giữ 3; CAPTCHA đúng + mật khẩu sai → bộ đếm 4; client mới (không cookie) → vẫn `CAPTCHA_REQUIRED`; lần sai 10 → 429 + `Retry-After`, `lockedUntil` +5 phút; đang khoá + mật khẩu đúng + CAPTCHA đúng → 429, không có phiên; hết khoá, cửa sổ còn → vẫn cần CAPTCHA; đúng + CAPTCHA → 303, xoá bộ đếm email, còn bộ đếm IP; email không tồn tại: 3 lần sai rồi `CAPTCHA_REQUIRED`; 31 lần gửi từ một IP → lần 31 nhận 429.
+
+## Bước 15 — Quên mật khẩu, đặt lại mật khẩu
+**Đã làm:** `src/routes/auth/password-reset.js` (`GET/POST /forgot`, `GET/POST /reset`), view `auth/forgot.ejs`, `auth/reset.ejs`; "đã gửi" và "link không dùng được" dùng khối kết quả `auth/result.ejs`. `check-auth.mjs` phần E (quên / đặt lại) và F (hồi quy nhanh).
+
+**Luồng:**
+- `POST /forgot`: giới hạn 10 / giờ theo IP → kiểm định dạng email → giới hạn 3 / giờ theo email (cả email không có) → **trả `303 /forgot?msg=forgot-sent` ngay**; việc tìm user, vô hiệu token cũ + tạo token mới (một transaction), gửi thư chạy **sau** khi trả lời (`setImmediate`). Link dựng từ `APP_ORIGIN`.
+- `GET /reset?token=`: `Referrer-Policy: no-referrer`, giới hạn 20 / 15 phút theo IP; token hợp lệ → form (token trong ô ẩn), **không ghi DB**; không hợp lệ → một trang chung "Link không dùng được".
+- `POST /reset`: token còn hợp lệ → kiểm mật khẩu mới → một transaction: `updateMany` token (`usedAt` rỗng, chưa hết hạn) → `count = 1` thì đổi `passwordHash`, vô hiệu token khác, **xoá mọi phiên của user** → thư "Mật khẩu đã được đổi" → `303 /login?msg=password-reset`. Không tự đăng nhập, không đổi `status`.
+
+**Quyết định và lý do:**
+- **Ghi DB + gửi thư sau khi trả lời**: nếu làm trước, email có tài khoản tốn thêm vài vòng mạng tới Supabase → thời gian phản hồi lộ email nào đã đăng ký (đề: nội dung, status **và thời gian** không được phân biệt). Lỗi nền chỉ ghi `[forgot] … mã lỗi`.
+- Token hết hạn / đã dùng / sai / bịa → cùng một trang (không cho biết token từng tồn tại).
+- Xoá phiên bằng cột `sessions.userId` (bước 7) trong cùng transaction với đổi mật khẩu.
+
+**Lỗi phát hiện trong lúc làm (của script):** lần chạy đầu E 19/20 — ca "4 yêu cầu cùng email" nhận 429 ngay từ lần 1 vì cả phần E đã gửi 11 yêu cầu từ một IP (giới hạn 10 / giờ theo IP hoạt động đúng). Sửa: xoá bộ đếm IP trước ca đó.
+
+**Đã kiểm tra — `check-auth.mjs` toàn bộ: 92/92 ĐẠT** (A 25, B 6, C 12, D 25, E 20, F 4). Phần E:
+email có / không có → cùng 303, cùng trang, thời gian gần nhau (chênh < 400ms); thư chứa `APP_ORIGIN/reset?token=…`, DB chỉ có SHA-256, hạn 15 phút; `GET /reset` hợp lệ → form, `usedAt` rỗng, `Referrer-Policy: no-referrer`; mật khẩu mới không khớp → `VALIDATION_FAILED`, token chưa dùng; đăng nhập ở tab 1, đặt lại ở tab 2 → 303 `/login`, không tự đăng nhập, **sid của tab 1 bị từ chối**, user còn 0 phiên, có thư báo đã đổi; mật khẩu cũ bị từ chối, mới đăng nhập được; dùng lại token → "Link không dùng được", mật khẩu không đổi; token cũ sau yêu cầu mới → từ chối; token hết hạn → từ chối (GET và POST); token bịa → cùng trang; **2 request cùng token song song → một 303 + một từ chối**; reset token dùng làm mã kích hoạt / mật khẩu / cookie sid → đều bị từ chối; đặt lại cho tài khoản pending → vẫn pending; 4 yêu cầu `/forgot` cùng email (có / không có tài khoản) → lần 4 nhận 429; log không chứa reset token.
