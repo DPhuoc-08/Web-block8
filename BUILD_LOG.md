@@ -128,3 +128,19 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - **Ghi: 16/16 ĐẠT** — form trống, trùng tên khác hoa thường → 400; thêm đầu bếp + tag mới → 2 chuyên môn; sửa → 303 về `?page=2`; xoá đầu bếp còn 2 món không chọn người nhận → 409 không xoá; chọn chính mình → 400; chọn Bếp B → 2 món sang Bếp B + Bếp A bị xoá, 303 về `?q=Test`; nguyên liệu đơn vị trống lưu `null`; xoá nguyên liệu đang dùng → 409; xoá nguyên liệu chưa dùng → 303 về `?page=13`; xoá lần hai → 404.
 - Dọn dữ liệu thử: DB còn 1200/60/250/16, 2 món mượn để thử chuyển đã trả về đầu bếp cũ.
 - Ảnh: xác nhận xoá đầu bếp còn 22 món ở 375px (danh sách món, mỗi món có link đổi đầu bếp riêng).
+
+## Bước 6 — Script hồi quy SSR, mốc "nền SSR theo block7"
+**Đã làm:**
+- `scripts/check-ssr.mjs` (`npm run check:ssr`, chọn phần: `node scripts/check-ssr.mjs A C`): A thực đơn, B admin món, C admin đầu bếp / nguyên liệu. In ĐẠT / CHƯA ĐẠT, mã thoát 1 khi có ca chưa đạt.
+- `scripts/lib/client.mjs`: "trình duyệt" tối giản cho script — giữ cookie, không tự theo redirect, tự gửi kèm ô `_csrf` của trang vừa mở (dùng từ bước 9). `scripts/lib/auth.mjs`: client đã đăng nhập (bước 10 điền phần đăng nhập).
+
+**Quyết định và lý do:**
+- **Node `.mjs` thay cho `check-ssr.sh` (curl) của plan**: các bước sau cần cookie jar, đọc `_csrf` trong HTML, so với DB; viết bằng `fetch` + Prisma gọn và dễ đọc hơn chuỗi lệnh curl + grep. Cách kiểm vẫn là request HTTP thật tới server đang chạy.
+- **Đối chiếu bằng câu SQL viết tay** (ILIKE, `strpos`, `EXISTS`, `to_tsvector`, `similarity`), không dùng lại code của app → nếu logic truy vấn của app sai, script bắt được.
+- Bản ghi thử có tiền tố "[TEST B8]", xoá ở cuối; script in lại số dòng để thấy DB block7 trở về như cũ.
+
+**Lỗi phát hiện trong lúc làm (của script, không phải của app):** lần chạy đầu 46/48 — phần B tạo nguyên liệu "[TEST B8] Lá é" qua ô thêm nhanh và chỉ dọn ở cuối, phần C tạo lại đúng tên đó nên app chặn trùng tên (đúng hành vi). Sửa: phần C dùng tên khác. Chạy lại 48/48.
+
+**Đã kiểm tra:** `node scripts/check-ssr.mjs` → **48/48 ĐẠT**; số món của 11 bộ điều kiện thực đơn khớp SQL (1.200; "bún" 59; "100%" 1; "_" 1; Món nước 0–60.000đ còn bán 97; tạm hết 180; giá 0: 4; nguyên liệu "tôm" 149; đầu bếp "Mai" 122; toàn văn 62; gần đúng 6); admin "lẩu" 61 món, đầu bếp "lẩu" 6, nguyên liệu "kg" 187. Sau khi dọn: 1200 / 60 / 250 / 16.
+
+**Mốc:** nền SSR theo block7 (thực đơn + 3 trang quản trị) chạy đủ chức năng block7 trừ Tải thêm / Cuộn vô hạn (đã chốt bỏ).
