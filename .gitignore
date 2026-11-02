@@ -1,0 +1,31 @@
+# Thư viện cài bằng `npm install` (tạo lại từ package-lock.json)
+node_modules/
+
+# Prisma Client sinh ra từ schema, tạo lại bằng `npx prisma generate` (tự chạy sau `npm install`)
+generated/
+
+# Biến môi trường: source-code/.env chứa chuỗi kết nối database, SESSION_SECRET, OTP_PEPPER,
+# Gmail App Password, khoá bí mật reCAPTCHA — không bao giờ commit. Chỉ commit file mẫu.
+# .env.test (key thử của Google cho script kiểm tra) cũng nằm trong mẫu .env.* này.
+.env
+.env.*
+!.env.example
+
+# Hộp thư thử nghiệm của transport `file`: mỗi thư chứa mã OTP / link đặt lại mật khẩu thật.
+.mail-outbox/
+
+# Cookie jar và file tạm của script kiểm tra (chứa sid đăng nhập)
+*.cookies
+tmp/
+
+# Log
+*.log
+npm-debug.log*
+
+# Hệ điều hành / editor
+.DS_Store
+.vscode/
+.idea/
+
+# File nén để nộp/chia sẻ, không đưa lên repo
+*.zip
