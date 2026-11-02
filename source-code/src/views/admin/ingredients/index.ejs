@@ -1,0 +1,42 @@
+<%- include("../../partials/header", { title }) %>
+<%# Danh sách quản trị nguyên liệu (/admin/ingredients?q=&mode=&page=) — chuyển từ AdminIngredientListPage.jsx của block7. -%>
+<%- include("../../partials/admin-nav", { current: "ingredients" }) %>
+<div class="toolbar">
+  <h1 id="ket-qua" tabindex="-1" class="list-anchor">Nguyên liệu</h1>
+  <a class="btn btn-primary" href="<%= newHref %>">+ Thêm nguyên liệu</a>
+</div>
+<%- include("../../partials/admin-search", { base: "/admin/ingredients", label: "Tìm nguyên liệu", total: result ? result.total : null }) %>
+<%- include("../../partials/admin-list-state", { base: "/admin/ingredients", noun: "nguyên liệu" }) %>
+<% if (result && result.items.length) { -%>
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Tên</th><th>Đơn vị</th><th>Dùng trong</th>
+<% if (scored) { %>        <th>Điểm</th>
+<% } -%>
+        <th><span class="sr-only">Thao tác</span></th>
+      </tr>
+    </thead>
+    <tbody>
+<% for (const i of result.items) { -%>
+      <tr<% if (i.id === savedId) { %> class="just-saved"<% } %>>
+        <td class="num" data-label="Mã"><%= i.id %></td>
+        <td class="title" data-label="Tên"><a href="<%= editHref(i.id) %>"><%= i.name %></a></td>
+        <td data-label="Đơn vị"><%= i.unit ?? "—" %></td>
+        <td data-label="Dùng trong"><%= i.dishCount %> món</td>
+<% if (scored) { %>        <td class="num" data-label="Điểm"><%= i.score.toFixed(3) %></td>
+<% } -%>
+        <td class="actions">
+          <a class="btn btn-sm" href="<%= editHref(i.id) %>">Sửa</a>
+          <a class="btn btn-sm danger-text" href="<%= deleteHref(i.id) %>">Xoá</a>
+        </td>
+      </tr>
+<% } -%>
+    </tbody>
+  </table>
+</div>
+<p class="muted page-summary">Nguyên liệu <%= (result.page - 1) * result.pageSize + 1 %>–<%= (result.page - 1) * result.pageSize + result.items.length %> trong <%= result.total %> nguyên liệu</p>
+<%- include("../../partials/pagination", { page: result.page, totalPages, pages, pageHref: (n) => pageHref(n) + "#ket-qua", label: "Phân trang nguyên liệu" }) %>
+<% } -%>
+<%- include("../../partials/footer") %>

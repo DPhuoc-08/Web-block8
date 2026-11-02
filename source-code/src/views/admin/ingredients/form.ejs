@@ -1,0 +1,30 @@
+<%- include("../../partials/header", { title }) %>
+<%# Form thêm / sửa nguyên liệu — chuyển từ IngredientFormPage.jsx của block7. -%>
+<% const err = (k) => errors[k] ? " invalid" : ""; -%>
+<a class="back" href="<%= back %>">← Danh sách nguyên liệu</a>
+<div class="panel form-panel">
+  <h1><%= id ? "Sửa nguyên liệu" : "Thêm nguyên liệu" %></h1>
+<% if (id) { %>  <p class="muted no-margin">Nguyên liệu #<%= id %></p>
+<% } if (Object.keys(errors).length) { %>  <p class="alert" role="alert" data-focus-first-error>Dữ liệu chưa hợp lệ, vui lòng sửa các trường bên dưới.</p>
+<% } -%>
+  <form class="form" method="post" action="<%= id ? `/admin/ingredients/${id}?_method=PATCH` : "/admin/ingredients" %>" novalidate data-once data-unsaved-guard>
+    <input type="hidden" name="back" value="<%= back %>">
+    <label class="field<%= err("name") %>">
+      <span>Tên nguyên liệu</span>
+      <input name="name" value="<%= values.name %>">
+<% if (errors.name) { %>      <span class="error"><%= errors.name %></span>
+<% } -%>
+    </label>
+    <label class="field<%= err("unit") %>">
+      <span>Đơn vị</span>
+      <input name="unit" value="<%= values.unit %>" placeholder="Ví dụ: kg, bó, lít">
+<% if (errors.unit) { %>      <span class="error"><%= errors.unit %></span>
+<% } -%>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" data-busy-label="Đang lưu…"><%= id ? "Lưu" : "Thêm" %></button>
+      <a class="btn" href="<%= back %>">Huỷ</a>
+    </div>
+  </form>
+</div>
+<%- include("../../partials/footer") %>

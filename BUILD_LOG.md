@@ -109,3 +109,22 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Dọn dữ liệu thử: DB còn đúng 1.200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag, không còn bản ghi "[TEST B8]". (Sequence id đã nhảy qua 1201–1202; seed ở bước 8 `RESTART IDENTITY` đặt lại.)
 - **Thao tác ô gợi ý trong Chrome thật** (script điều khiển Chrome qua DevTools Protocol): 10/10 ĐẠT — gõ "tom" ra "Tôm…" (bỏ dấu); Enter tick đúng checkbox; "+ Thêm nguyên liệu mới" ghi vào `newIngredients` + chip; Backspace bỏ chip cuối; Enter không gửi form; tick tag "Lẩu" → đầu bếp đúng chuyên môn lên đầu, dòng đếm cập nhật; chọn đầu bếp ghi `chefId`; "+ Thêm đầu bếp mới" → `chefId=new`, `newChef` = tên đã gõ.
 - Ảnh: danh sách 1280px (thông báo + dòng #25 được tô), form sửa 1280px (chip đầu bếp, 4 chip nguyên liệu, ảnh xem trước), danh sách 375px (bảng thành thẻ), form lỗi 375px (focus ô Giá, lỗi từng ô, ô "Tag mới" giữ giá trị + lỗi trùng).
+
+## Bước 5 — Quản trị đầu bếp, nguyên liệu bằng SSR
+**Đã làm:**
+- `src/routes/admin/list.js`: phần chung của danh sách đầu bếp / nguyên liệu (đọc URL, `parseAdminListQuery` của block7, URL gọn, `findPage` / `findFuzzyPage` của `db.js`, số trang, `?saved=`, link kèm `?back=`).
+- `src/routes/admin/chefs.js`: danh sách (Cơ bản: tên hoặc chuyên môn; Gần đúng: tên), form (tên + chuyên môn dạng nút viên + tag mới tạo khi lưu), xoá: không còn món → xoá thẳng; còn món → chọn người nhận, `updateMany` chuyển món + `delete` trong **một transaction**; không chọn → `409`; chọn chính mình / người không có → `400`.
+- `src/routes/admin/ingredients.js`: danh sách (Cơ bản: tên hoặc đơn vị; Gần đúng: tên), form (tên, đơn vị), xoá: đang được món dùng → `409` (kèm danh sách món), không dùng → xoá.
+- View `admin/chefs/*`, `admin/ingredients/*`; partial `admin-list-state` (điều kiện sai / không có kết quả / trang vượt phạm vi).
+
+**Quyết định và lý do:**
+- **Xoá bị chặn trả `409`** như block5 (block7 API trả `200 + IN_USE` vì hợp đồng JSON). Trang hiện lại danh sách món liên quan và câu giải thích.
+- **Form đầu bếp có "Tag mới"** giống form món (12.2.a): chuyên môn chưa có thì gõ tên, tạo cùng đầu bếp trong một transaction.
+- Kiểm tra trùng tên dùng `nameTaken` của block7 (không phân biệt hoa thường), `@unique` của DB là lớp chặn cuối (`P2002` → 400).
+
+**Đã kiểm tra:**
+- **So với API block7: 13/13 ca trùng** id, số món, điểm, `total` (đầu bếp: trang 1–3, "Lẩu" theo chuyên môn, "Nguyễn", gần đúng "Nguyễn Văn Ann", `q=%`; nguyên liệu: trang 1, trang 13 (10 dòng), "tôm", "kg" trang 2, gần đúng "Nước mắn", `q=_`).
+- Đọc: form / sửa / xác nhận xoá → 200; id sai → 404; `?mode=fuzzy` thiếu từ khoá, `?page=0` → 400.
+- **Ghi: 16/16 ĐẠT** — form trống, trùng tên khác hoa thường → 400; thêm đầu bếp + tag mới → 2 chuyên môn; sửa → 303 về `?page=2`; xoá đầu bếp còn 2 món không chọn người nhận → 409 không xoá; chọn chính mình → 400; chọn Bếp B → 2 món sang Bếp B + Bếp A bị xoá, 303 về `?q=Test`; nguyên liệu đơn vị trống lưu `null`; xoá nguyên liệu đang dùng → 409; xoá nguyên liệu chưa dùng → 303 về `?page=13`; xoá lần hai → 404.
+- Dọn dữ liệu thử: DB còn 1200/60/250/16, 2 món mượn để thử chuyển đã trả về đầu bếp cũ.
+- Ảnh: xác nhận xoá đầu bếp còn 22 món ở 375px (danh sách món, mỗi món có link đổi đầu bếp riêng).

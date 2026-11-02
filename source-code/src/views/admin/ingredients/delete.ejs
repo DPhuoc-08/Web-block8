@@ -1,0 +1,24 @@
+<%- include("../../partials/header", { title }) %>
+<%# Xoá nguyên liệu — chuyển từ IngredientDeletePage.jsx của block7. Đang được món dùng thì không có nút xoá (gửi thẳng → 409). -%>
+<a class="back" href="<%= back %>">← Danh sách nguyên liệu</a>
+<div class="panel confirm">
+  <h1>Xoá nguyên liệu “<%= ingredient.name %>”?</h1>
+<% if (error) { %>  <p class="alert" role="alert"><%= error %></p>
+<% } -%>
+<% if (dishes.length === 0) { -%>
+  <p class="muted">Không món nào dùng nguyên liệu này. Thao tác này không khôi phục được.</p>
+  <form method="post" action="/admin/ingredients/<%= ingredient.id %>?_method=DELETE" class="form-actions" data-once>
+    <input type="hidden" name="back" value="<%= back %>">
+    <button type="submit" class="btn btn-danger" data-busy-label="Đang xoá…">Xoá</button>
+    <a class="btn" href="<%= back %>">Huỷ</a>
+  </form>
+<% } else { -%>
+  <p>Không thể xoá: nguyên liệu đang được dùng trong <strong><%= dishes.length %> món</strong>. Bỏ nguyên liệu khỏi các món này (trong form sửa món) rồi quay lại xoá.</p>
+  <ul class="related-list">
+<% for (const d of dishes) { %>    <li><span><%= d.name %></span> <a href="/admin/dishes/<%= d.id %>/edit">Sửa món</a></li>
+<% } -%>
+  </ul>
+  <a class="btn" href="<%= back %>">Quay lại</a>
+<% } -%>
+</div>
+<%- include("../../partials/footer") %>

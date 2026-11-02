@@ -4,6 +4,8 @@ import methodOverride from "method-override";
 import { fileURLToPath } from "node:url";
 import menuRouter from "./routes/menu.js";
 import adminDishesRouter from "./routes/admin/dishes.js";
+import adminChefsRouter from "./routes/admin/chefs.js";
+import adminIngredientsRouter from "./routes/admin/ingredients.js";
 import { formatPrice, formatMenuPrice, tagNames } from "./format.js";
 import { artFor, artShape } from "./dish-art.js";
 
@@ -65,6 +67,8 @@ app.use(menuRouter);
 // Khu quản trị. Bước 10 gắn requireLogin trước các router này (plan block8 mục 5.7).
 app.get("/admin", (req, res) => res.redirect("/admin/dishes"));
 app.use("/admin/dishes", adminDishesRouter);
+app.use("/admin/chefs", adminChefsRouter);
+app.use("/admin/ingredients", adminIngredientsRouter);
 
 // Không route nào khớp → 404.
 app.use((req, res) => {

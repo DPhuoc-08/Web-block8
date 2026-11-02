@@ -1,0 +1,21 @@
+<%#
+  Các trạng thái không phải "có dòng" của danh sách quản trị: điều kiện sai (400), không có kết quả, trang vượt phạm vi.
+  Tham số: base, noun, invalid, errors, result, state, totalPages, pageHref. In ra gì đó → biến `shown` = true.
+-%>
+<% if (invalid) { -%>
+<div class="panel empty" role="alert">
+  <strong>Điều kiện tìm không hợp lệ</strong>
+  <ul class="invalid-list">
+<% for (const m of new Set(Object.values(errors))) { %>    <li><%= m %></li>
+<% } -%>
+  </ul>
+  <a class="btn" href="<%= base %>">Về trang 1</a>
+</div>
+<% } else if (result.total === 0) { -%>
+<div class="panel empty"><%= state.q ? `Không có ${noun} nào khớp từ khoá.` : `Chưa có ${noun} nào.` %></div>
+<% } else if (result.items.length === 0) { -%>
+<div class="panel empty">
+  <strong>Trang <%= result.page %> không có <%= noun %> nào.</strong>
+  <a href="<%= pageHref(totalPages) %>">Về trang cuối (<%= totalPages %>)</a>
+</div>
+<% } -%>

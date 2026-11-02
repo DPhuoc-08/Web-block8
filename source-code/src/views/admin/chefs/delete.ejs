@@ -1,0 +1,46 @@
+<%- include("../../partials/header", { title }) %>
+<%#
+  Xoá đầu bếp — chuyển từ ChefDeletePage.jsx của block7. Không phụ trách món: xoá thẳng.
+  Còn món: phải chọn người nhận; server chuyển toàn bộ món + xoá trong một transaction.
+-%>
+<a class="back" href="<%= back %>">← Danh sách đầu bếp</a>
+<div class="panel confirm">
+  <h1>Xoá đầu bếp “<%= chef.name %>”?</h1>
+<% if (error) { %>  <p class="alert" role="alert" data-focus-first-error><%= error %></p>
+<% } -%>
+<% if (dishes.length === 0) { -%>
+  <p class="muted">Đầu bếp không phụ trách món nào. Thao tác này không khôi phục được.</p>
+  <form method="post" action="/admin/chefs/<%= chef.id %>?_method=DELETE" class="form-actions" data-once>
+    <input type="hidden" name="back" value="<%= back %>">
+    <button type="submit" class="btn btn-danger" data-busy-label="Đang xoá…">Xoá</button>
+    <a class="btn" href="<%= back %>">Huỷ</a>
+  </form>
+<% } else { -%>
+  <p>Đầu bếp đang phụ trách <strong><%= dishes.length %> món</strong>. Món thuộc về nhà hàng nên không bị xoá theo: cần chuyển các món sang đầu bếp khác trước.</p>
+  <ul class="related-list">
+<% for (const d of dishes) { %>    <li><span><%= d.name %></span> <a href="/admin/dishes/<%= d.id %>/edit">Đổi đầu bếp riêng món này</a></li>
+<% } -%>
+  </ul>
+<% if (others.length === 0) { -%>
+  <p class="muted">Chưa có đầu bếp nào khác để nhận món. <a href="/admin/chefs/new">Thêm đầu bếp mới</a> trước.</p>
+  <a class="btn" href="<%= back %>">Quay lại</a>
+<% } else { -%>
+  <form class="form" method="post" action="/admin/chefs/<%= chef.id %>?_method=DELETE" novalidate data-once>
+    <input type="hidden" name="back" value="<%= back %>">
+    <label class="field<%= error && transferTo !== "" ? " invalid" : "" %>">
+      <span>Chuyển toàn bộ <%= dishes.length %> món sang</span>
+      <select name="transferTo">
+        <option value="">— Chọn đầu bếp nhận món —</option>
+<% for (const c of others) { %>        <option value="<%= c.id %>"<% if (String(c.id) === transferTo) { %> selected<% } %>><%= c.name %></option>
+<% } -%>
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-danger" data-busy-label="Đang xử lý…">Chuyển món và xoá đầu bếp</button>
+      <a class="btn" href="<%= back %>">Huỷ</a>
+    </div>
+  </form>
+<% } -%>
+<% } -%>
+</div>
+<%- include("../../partials/footer") %>

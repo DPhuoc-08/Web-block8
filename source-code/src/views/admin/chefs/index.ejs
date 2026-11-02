@@ -1,0 +1,42 @@
+<%- include("../../partials/header", { title }) %>
+<%# Danh sách quản trị đầu bếp (/admin/chefs?q=&mode=&page=) — chuyển từ AdminChefListPage.jsx của block7. -%>
+<%- include("../../partials/admin-nav", { current: "chefs" }) %>
+<div class="toolbar">
+  <h1 id="ket-qua" tabindex="-1" class="list-anchor">Đầu bếp</h1>
+  <a class="btn btn-primary" href="<%= newHref %>">+ Thêm đầu bếp</a>
+</div>
+<%- include("../../partials/admin-search", { base: "/admin/chefs", label: "Tìm đầu bếp", total: result ? result.total : null }) %>
+<%- include("../../partials/admin-list-state", { base: "/admin/chefs", noun: "đầu bếp" }) %>
+<% if (result && result.items.length) { -%>
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Tên</th><th>Chuyên môn</th><th>Phụ trách</th>
+<% if (scored) { %>        <th>Điểm</th>
+<% } -%>
+        <th><span class="sr-only">Thao tác</span></th>
+      </tr>
+    </thead>
+    <tbody>
+<% for (const c of result.items) { -%>
+      <tr<% if (c.id === savedId) { %> class="just-saved"<% } %>>
+        <td class="num" data-label="Mã"><%= c.id %></td>
+        <td class="title" data-label="Tên"><a href="<%= editHref(c.id) %>"><%= c.name %></a></td>
+        <td data-label="Chuyên môn"><%= tagNames(c.tags) %></td>
+        <td data-label="Phụ trách"><%= c.dishCount %> món</td>
+<% if (scored) { %>        <td class="num" data-label="Điểm"><%= c.score.toFixed(3) %></td>
+<% } -%>
+        <td class="actions">
+          <a class="btn btn-sm" href="<%= editHref(c.id) %>">Sửa</a>
+          <a class="btn btn-sm danger-text" href="<%= deleteHref(c.id) %>">Xoá</a>
+        </td>
+      </tr>
+<% } -%>
+    </tbody>
+  </table>
+</div>
+<p class="muted page-summary">Đầu bếp <%= (result.page - 1) * result.pageSize + 1 %>–<%= (result.page - 1) * result.pageSize + result.items.length %> trong <%= result.total %> đầu bếp</p>
+<%- include("../../partials/pagination", { page: result.page, totalPages, pages, pageHref: (n) => pageHref(n) + "#ket-qua", label: "Phân trang đầu bếp" }) %>
+<% } -%>
+<%- include("../../partials/footer") %>
