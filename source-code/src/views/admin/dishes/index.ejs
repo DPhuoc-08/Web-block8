@@ -1,0 +1,75 @@
+<%- include("../../partials/header", { title }) %>
+<%#
+  Danh sách quản trị món (/admin/dishes?q=&mode=&page=) — chuyển từ AdminDishListPage.jsx của block7.
+  Mỗi lần mở trang server chỉ đọc 20 món của trang đang xem; q, mode, page nằm trên URL (Reload / Back / copy link).
+  Link Sửa / Xoá chỉ MỞ trang (form, xác nhận); không link nào tự ghi dữ liệu.
+-%>
+<%- include("../../partials/admin-nav", { current: "dishes" }) %>
+<div class="toolbar">
+  <h1 id="ket-qua" tabindex="-1" class="list-anchor">Món ăn</h1>
+  <a class="btn btn-primary" href="<%= newHref %>">+ Thêm món</a>
+</div>
+
+<%- include("../../partials/admin-search", { base: "/admin/dishes", label: "Tìm món", total: result ? result.total : null }) %>
+
+<% if (invalid) { -%>
+<div class="panel empty" role="alert">
+  <strong>Điều kiện tìm không hợp lệ</strong>
+  <ul class="invalid-list">
+<% for (const m of new Set(Object.values(errors))) { %>    <li><%= m %></li>
+<% } -%>
+  </ul>
+  <a class="btn" href="/admin/dishes">Về trang 1</a>
+</div>
+<% } else if (result.total === 0) { -%>
+<div class="panel empty"><%= state.q ? "Không có món nào khớp từ khoá." : "Chưa có món nào." %></div>
+<% } else if (result.items.length === 0) { -%>
+<%# Trang vượt phạm vi (sửa tay URL, hoặc vừa xoá món cuối của trang cuối). -%>
+<div class="panel empty">
+  <strong>Trang <%= result.page %> không có món nào.</strong>
+  <a href="<%= pageHref(totalPages) %>">Về trang cuối (<%= totalPages %>)</a>
+</div>
+<% } else { -%>
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Ảnh</th>
+        <th>Tên</th>
+        <th>Giá</th>
+        <th>Tag</th>
+        <th>Đầu bếp</th>
+        <th>Tình trạng</th>
+<% if (scored) { %>        <th>Điểm</th>
+<% } -%>
+        <th><span class="sr-only">Thao tác</span></th>
+      </tr>
+    </thead>
+    <tbody>
+<% for (const d of result.items) { -%>
+<%# data-label: nhãn cột hiện trên điện thoại khi bảng chuyển thành thẻ. -%>
+      <tr<% if (d.id === savedId) { %> class="just-saved"<% } %>>
+        <td class="num" data-label="Mã"><%= d.id %></td>
+        <td class="thumb" data-label="Ảnh"><%- include("../../partials/dish-image", { src: d.imageUrl, alt: "", cls: "table-thumb", tags: d.tags, label: false, lazy: true }) %></td>
+        <td class="title" data-label="Tên"><a href="<%= editHref(d.id) %>"><%= d.name %></a></td>
+        <td data-label="Giá"><%= formatPrice(d.price) %></td>
+        <td data-label="Tag"><%= tagNames(d.tags) %></td>
+        <td data-label="Đầu bếp"><%= d.chef.name %></td>
+        <td data-label="Tình trạng"><span class="badge <%= d.available ? "on" : "off" %>"><%= d.available ? "Đang phục vụ" : "Tạm hết" %></span></td>
+<% if (scored) { %>        <td class="num" data-label="Điểm"><%= d.score.toFixed(3) %></td>
+<% } -%>
+        <td class="actions">
+          <a class="btn btn-sm" href="<%= editHref(d.id) %>">Sửa</a>
+          <a class="btn btn-sm danger-text" href="<%= deleteHref(d.id) %>">Xoá</a>
+        </td>
+      </tr>
+<% } -%>
+    </tbody>
+  </table>
+</div>
+<p class="muted page-summary">Món <%= (result.page - 1) * result.pageSize + 1 %>–<%= (result.page - 1) * result.pageSize + result.items.length %> trong <%= result.total %> món</p>
+<%- include("../../partials/pagination", { page: result.page, totalPages, pages, pageHref: (n) => pageHref(n) + "#ket-qua", label: "Phân trang món ăn" }) %>
+<% } -%>
+
+<%- include("../../partials/footer") %>

@@ -7,8 +7,8 @@ import { fuzzyPage } from "../search/fuzzy.js";
 
 // Bảng dish_tags / chef_tags chỉ có cặp id; template cần mảng tag gọn: tags: [{ id, name }].
 // Sắp theo id tag: id nhỏ là loại món (seed tạo trước), rồi đặc điểm, vùng miền → "Món nước · Miền Bắc".
-const TAG_SELECT = { select: { tag: { select: { id: true, name: true } } }, orderBy: { tagId: "asc" } };
-const flatTags = (links) => links.map((link) => link.tag);
+export const TAG_SELECT = { select: { tag: { select: { id: true, name: true } } }, orderBy: { tagId: "asc" } };
+export const flatTags = (links) => links.map((link) => link.tag);
 
 // Dạng danh sách: thẻ món cần tag và tên đầu bếp, không cần nguyên liệu.
 const listInclude = { chef: { select: { id: true, name: true } }, tags: TAG_SELECT };

@@ -85,3 +85,27 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Chrome headless: thực đơn 1280px (khớp ảnh `block7/evidence/screens/so-trang-1.png`, trừ công tắc cách hiển thị đã bỏ), 820px (2 cột, kết quả "bò" giá giảm, nhãn Tạm hết), 375px (dòng món ảnh 96px, thanh danh mục cuộn ngang, phân trang "Trang 1/100"), điều kiện sai 1280px (lỗi cạnh ô + khung "Điều kiện tìm không hợp lệ"), lọc tag "Miền Bắc" 820px (phần tag ẩn tự mở vì tag đang chọn nằm trong đó), chi tiết món không ảnh 375px (hình minh hoạ, "← Thực đơn" về `/dishes?q=miến`).
 - Tắt JavaScript (HTML bỏ thẻ `<script>`): nhóm nâng cao hiện kèm ghi chú, nút "Bộ lọc nâng cao" ẩn, form vẫn gửi bình thường.
 - Lần mở đầu sau khi server khởi động ~5,4s (mở kết nối tới Supabase Singapore), các lần sau ~0,35s.
+
+## Bước 4 — Quản trị món bằng SSR
+**Đã làm:**
+- `src/routes/admin/dishes.js`: danh sách `/admin/dishes?q=&mode=&page=` (Cơ bản tìm tên + tag, Toàn văn, Gần đúng; 20 món/trang, `id` tăng dần; toàn văn / gần đúng xếp điểm + cột Điểm), form thêm (`GET /new`, `POST /`), sửa (`GET /:id/edit`, `PATCH /:id`), xác nhận xoá (`GET /:id/delete`, `DELETE /:id`). Ghi xong `303` (PRG).
+- `src/forms.js`: đổi giá trị form HTML (chuỗi) sang body có kiểu mà validator block7 cần; `splitNames`; `safeBack` / `withFlash` / `withBack` (quay về đúng trang danh sách).
+- View: `admin/dishes/index.ejs`, `form.ejs`, `delete.ejs`; partial `admin-nav`, `admin-search`.
+- `public/js/ui.js`: ô gõ có gợi ý + chip (ComboPicker của block7) cho nguyên liệu và đầu bếp; chặn bấm gửi hai lần (`data-once`); hỏi lại khi rời form chưa lưu (`beforeunload`); focus ô lỗi đầu tiên; cuộn tới dòng vừa lưu.
+- CSS: `[hidden]` luôn thắng; `.choice-scroll` (danh sách tick có thanh cuộn khi không có JS).
+
+**Quyết định và lý do:**
+- **Dữ liệu thật luôn là ô HTML thường**: checkbox `tagIds` / `ingredientIds`, ô chọn `chefId` (có mục `new`), ô chữ `newTags` / `newIngredients` / `newChef`. Có JS thì `ui.js` dựng ô gợi ý + chip y như block7 nhưng chỉ tick / điền vào chính các ô đó → server nhận cùng một dạng dữ liệu; tắt JS vẫn thêm / sửa được (danh sách tick có thanh cuộn, ô chọn đầu bếp có nhóm "Đúng chuyên môn").
+- **Thêm nhanh khi lưu (plan 12.2.a)**: tên mới gõ cách nhau bằng dấu phẩy, bỏ trùng không phân biệt hoa thường; trùng tên đã có → `400` cạnh ô ("Đã có tag: …"), không tạo bản ghi thứ hai. Tag, nguyên liệu, đầu bếp mới và món ghi trong **một transaction** → lỗi giữa chừng không để lại bản ghi tạo dở. Đầu bếp mới nhận chuyên môn = các tag của món (như block7).
+- **Validate dùng lại nguyên `validateDish` / `checkDishRefs` của block7**: cùng câu lỗi. Chỉ bỏ lỗi "chọn ít nhất một …" khi người dùng đã gõ tên mới cho mục đó.
+- **Danh sách dùng lại `parseListQuery`** (page, q bắt buộc ở toàn văn / gần đúng, escape `%` `_` `\`); `mode` chỉ nhận 3 kiểu của admin (block7 API nhận cả `advanced` nếu sửa tay URL — ở đây báo lỗi, rõ ràng hơn). URL gọn bằng redirect như thực đơn.
+- **Quay về đúng trang**: link Sửa / Xoá mang `?back=` (URL danh sách đang xem); form gửi lại `back` trong ô ẩn; `safeBack` chỉ nhận URL bắt đầu bằng `/admin/dishes`. Thêm mới → trang 1 + thông báo (block7 plan 12); `?saved=<id>` tô dòng vừa lưu (thay `?id=` của block7 cho rõ nghĩa).
+- **Phương án đã bỏ:** gọi `fetch` để thêm tag / nguyên liệu ngay khi gõ (trái quy tắc SSR "không fetch/AJAX"); bỏ hẳn thêm nhanh (người dùng chốt giữ, 12.2.a).
+
+**Đã kiểm tra:**
+- Đọc (curl): `/admin` → 302 `/admin/dishes`; danh sách trang 1/2/60/61 → 200; `?q=&mode=basic` → 302 gọn; `mode=fuzzy` thiếu từ khoá, `mode=advanced`, `page=0` → 400; form mới, sửa `/1`, xác nhận xoá `/1` → 200; `/abc/edit`, `/99999/edit`, `/99999/delete` → 404.
+- **So với API block7** (chạy `block7/api` cổng 3001, tham số như trang admin block7 gửi): **8/8 ca trùng** id, điểm, `total` — mặc định, trang 2, trang 60, "lẩu" (tên + tag), "Miền Nam" trang 3, toàn văn "nước dùng xương", gần đúng "Bò lúc lắt", `q=%`.
+- **Ghi qua form thật + đọc lại DB: 16/16 ĐẠT** — form trống / giá 1.5 / link `javascript:` / id bịa → 400, giữ giá trị, không ghi; thêm → 303 `/admin/dishes?msg=dish-created&saved=<id>`, mô tả rỗng lưu `null`, `role=admin` trong body bị bỏ qua; thêm nhanh 2 tag mới (bỏ trùng hoa thường) + nguyên liệu mới + đầu bếp mới (chuyên môn = 2 tag); tên mới trùng → 400, không tạo tag; "Đầu bếp mới" thiếu tên → 400; sửa → 303 về `?page=3`, giá 0, bỏ tick "Đang phục vụ" → `false`; `back=https://evil.example/` → về `/admin/dishes`; sửa / xoá id không có → 404; GET trang xác nhận không xoá; xoá → 303 về `?page=2`; xoá lần hai → 404.
+- Dọn dữ liệu thử: DB còn đúng 1.200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag, không còn bản ghi "[TEST B8]". (Sequence id đã nhảy qua 1201–1202; seed ở bước 8 `RESTART IDENTITY` đặt lại.)
+- **Thao tác ô gợi ý trong Chrome thật** (script điều khiển Chrome qua DevTools Protocol): 10/10 ĐẠT — gõ "tom" ra "Tôm…" (bỏ dấu); Enter tick đúng checkbox; "+ Thêm nguyên liệu mới" ghi vào `newIngredients` + chip; Backspace bỏ chip cuối; Enter không gửi form; tick tag "Lẩu" → đầu bếp đúng chuyên môn lên đầu, dòng đếm cập nhật; chọn đầu bếp ghi `chefId`; "+ Thêm đầu bếp mới" → `chefId=new`, `newChef` = tên đã gõ.
+- Ảnh: danh sách 1280px (thông báo + dòng #25 được tô), form sửa 1280px (chip đầu bếp, 4 chip nguyên liệu, ảnh xem trước), danh sách 375px (bảng thành thẻ), form lỗi 375px (focus ô Giá, lỗi từng ô, ô "Tag mới" giữ giá trị + lỗi trùng).

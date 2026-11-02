@@ -557,5 +557,10 @@ html:not(.js) .js-only { display: none; }
 .advanced-note { flex-basis: 100%; margin: 0; font-size: .85rem; }
 /* Thanh danh mục: có JS thì các tag ít dùng ẩn sau nút "N tag khác". */
 .js .cat-bar[data-collapsible="true"]:not(.expanded) .cat-extra { display: none; }
-/* Hình minh hoạ in sẵn sau ảnh món, chỉ hiện khi ảnh lỗi (.dish-art đặt display: grid nên phải ẩn rõ). */
-.dish-art[hidden] { display: none; }
+/* Thuộc tính hidden luôn thắng (nhiều khối đặt display: grid/flex, vd. .field, .chip-list, .dish-art). */
+[hidden] { display: none !important; }
+
+/* Form món (SSR): danh sách tick nguyên liệu khi không có JavaScript — cuộn trong khung, không kéo dài form. */
+.choice-scroll { max-height: 300px; overflow-y: auto; padding: 2px; margin-bottom: 4px; }
+.quick-new { margin-top: 12px; }
+.quick-new > span:first-child { font-size: .9rem; }

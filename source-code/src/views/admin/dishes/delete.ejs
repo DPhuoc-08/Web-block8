@@ -1,0 +1,13 @@
+<%- include("../../partials/header", { title }) %>
+<%# Trang xác nhận xoá: mở trang chỉ đọc món; CHỈ nút "Xoá" gửi DELETE (POST + ?_method=DELETE). -%>
+<a class="back" href="<%= back %>">← Danh sách món</a>
+<div class="panel confirm">
+  <h1>Xoá món “<%= dish.name %>”?</h1>
+  <p class="muted">Món sẽ bị xoá khỏi thực đơn (kèm danh sách nguyên liệu của món) và không khôi phục được.</p>
+  <form method="post" action="/admin/dishes/<%= dish.id %>?_method=DELETE" class="form-actions" data-once>
+    <input type="hidden" name="back" value="<%= back %>">
+    <button type="submit" class="btn btn-danger" data-busy-label="Đang xoá…">Xoá</button>
+    <a class="btn" href="<%= back %>">Huỷ</a>
+  </form>
+</div>
+<%- include("../../partials/footer") %>

@@ -1,0 +1,150 @@
+<%- include("../../partials/header", { title }) %>
+<%#
+  Form thêm (/admin/dishes/new → POST) và sửa (/admin/dishes/:id/edit → POST ?_method=PATCH) món — chuyển từ
+  DishFormPage.jsx của block7. Dữ liệu thật luôn là các ô HTML thường (checkbox tagIds / ingredientIds, ô chọn
+  chefId, ô chữ newTags / newIngredients / newChef) → tắt JavaScript vẫn thêm / sửa được.
+  public/js/ui.js dựng giao diện "ô gõ có gợi ý + chip" (ComboPicker của block7) bên trên các ô đó, chỉ tick / điền vào
+  chính các ô thật → server nhận cùng một dạng dữ liệu dù có hay không có JavaScript.
+  Lỗi (400): mỗi ô hiện lỗi của mình, giữ nguyên giá trị đã nhập.
+-%>
+<% const err = (k) => errors[k] ? " invalid" : ""; const hasErr = Object.keys(errors).length > 0; -%>
+<a class="back" href="<%= back %>">← Danh sách món</a>
+
+<div class="panel form-panel">
+  <h1><%= id ? "Sửa món" : "Thêm món" %></h1>
+<% if (id) { %>  <p class="muted no-margin">Món #<%= id %></p>
+<% } -%>
+<% if (generalError) { %>  <p class="alert" role="alert"><%= generalError %></p>
+<% } else if (hasErr) { %>  <p class="alert" role="alert" data-focus-first-error>Dữ liệu chưa hợp lệ, vui lòng sửa các trường bên dưới.</p>
+<% } -%>
+
+<%# novalidate + không đặt required/min: server kiểm tra và báo lỗi cạnh ô theo cùng một kiểu. -%>
+  <form class="form" method="post" action="<%= id ? `/admin/dishes/${id}?_method=PATCH` : "/admin/dishes" %>" novalidate data-once data-unsaved-guard>
+    <input type="hidden" name="back" value="<%= back %>">
+
+    <label class="field<%= err("name") %>">
+      <span>Tên món</span>
+      <input name="name" value="<%= values.name %>">
+<% if (errors.name) { %>      <span class="error"><%= errors.name %></span>
+<% } -%>
+    </label>
+
+    <label class="field<%= err("price") %>">
+      <span>Giá (đồng)</span>
+      <input name="price" type="number" inputmode="numeric" value="<%= values.price %>" placeholder="50000">
+<% if (errors.price) { %>      <span class="error"><%= errors.price %></span>
+<% } -%>
+    </label>
+
+<%# Tag (loại món, đặc điểm, vùng miền): nút viên — mỗi nút là một checkbox thật trong <label>. -%>
+    <fieldset class="choice-group<%= err("tagIds") || err("newTags") %>" data-tag-group>
+      <legend>Tag <small class="muted">(chọn ít nhất 1)</small></legend>
+<% if (errors.tagIds) { %>      <p class="error"><%= errors.tagIds %></p>
+<% } -%>
+      <div class="pill-list">
+<% for (const t of tags) { -%>
+        <label class="pill-choice"><input type="checkbox" name="tagIds" value="<%= t.id %>" data-name="<%= t.name %>"<% if (values.tagIds.includes(String(t.id))) { %> checked<% } %>><span><%= t.name %></span></label>
+<% } -%>
+      </div>
+      <label class="field quick-new<%= err("newTags") %>">
+        <span>Tag mới <small class="muted">(nếu chưa có trong danh sách)</small></span>
+        <input name="newTags" value="<%= values.newTags %>" placeholder="Ví dụ: Món chay, Miền Tây — cách nhau bằng dấu phẩy" autocomplete="off">
+        <span class="hint">Tạo cùng lúc khi lưu món và được chọn cho món này.</span>
+<% if (errors.newTags) { %>        <span class="error"><%= errors.newTags %></span>
+<% } -%>
+      </label>
+    </fieldset>
+
+    <label class="field<%= err("description") %>">
+      <span>Mô tả</span>
+      <textarea name="description" rows="3"><%= values.description %></textarea>
+<% if (errors.description) { %>      <span class="error"><%= errors.description %></span>
+<% } -%>
+    </label>
+
+<%# Đầu bếp phụ trách: chọn đúng 1. Người có chuyên môn trùng tag đã chọn đứng đầu (gợi ý, không bắt buộc). -%>
+    <fieldset class="choice-group<%= err("chefId") || err("newChef") %>" data-combo="single" data-noun="đầu bếp">
+      <legend>Đầu bếp phụ trách</legend>
+<% if (errors.chefId) { %>      <p class="error"><%= errors.chefId %></p>
+<% } -%>
+      <label class="field combo-source">
+        <span class="sr-only">Chọn đầu bếp</span>
+        <select name="chefId">
+          <option value="">— Chọn đầu bếp —</option>
+<% const chefOption = (c, fit) => { -%>
+          <option value="<%= c.id %>" data-name="<%= c.name %>" data-tags="<%= c.tags.map((t) => t.id).join(",") %>" data-meta="<%= tagNames(c.tags) %>"<% if (values.chefId === String(c.id)) { %> selected<% } %>><%= c.name %> · <%= tagNames(c.tags) %><%= fit ? " · đúng chuyên môn" : "" %></option>
+<% }; -%>
+<% if (chefs.fit.length) { -%>
+          <optgroup label="Đúng chuyên môn với tag đã chọn">
+<% chefs.fit.forEach((c) => chefOption(c, true)); -%>
+          </optgroup>
+          <optgroup label="Đầu bếp khác">
+<% chefs.other.forEach((c) => chefOption(c, false)); -%>
+          </optgroup>
+<% } else { chefs.other.forEach((c) => chefOption(c, false)); } -%>
+          <option value="new"<% if (values.chefId === "new") { %> selected<% } %>>+ Đầu bếp mới (nhập tên bên dưới)</option>
+        </select>
+      </label>
+      <label class="field quick-new<%= err("newChef") %>">
+        <span>Tên đầu bếp mới <small class="muted">(khi chọn “+ Đầu bếp mới”)</small></span>
+        <input name="newChef" value="<%= values.newChef %>" autocomplete="off">
+        <span class="hint">Chuyên môn của đầu bếp mới = các tag của món này.</span>
+<% if (errors.newChef) { %>        <span class="error"><%= errors.newChef %></span>
+<% } -%>
+      </label>
+      <p class="muted choice-summary" data-fit-summary><%= values.tagIds.length === 0 ? "Chọn tag của món để thấy đầu bếp đúng chuyên môn ở đầu gợi ý." : `${chefs.fit.length} đầu bếp đúng chuyên môn với tag đã chọn.` %></p>
+    </fieldset>
+
+<%# Nguyên liệu: chọn nhiều. Không JavaScript: danh sách tick có thanh cuộn (đã chọn đứng đầu). -%>
+    <fieldset class="choice-group<%= err("ingredientIds") || err("newIngredients") %>" data-combo="multi" data-noun="nguyên liệu">
+      <legend>Nguyên liệu <small class="muted">(chọn ít nhất 1)</small></legend>
+<% if (errors.ingredientIds) { %>      <p class="error"><%= errors.ingredientIds %></p>
+<% } -%>
+      <div class="choice-scroll combo-source">
+        <div class="choice-grid compact">
+<% for (const i of ingredients) { -%>
+          <label class="choice"><input type="checkbox" name="ingredientIds" value="<%= i.id %>" data-name="<%= i.name %>" data-meta="<%= i.unit ?? "" %>"<% if (values.ingredientIds.includes(String(i.id))) { %> checked<% } %>><span><%= i.name %><% if (i.unit) { %><small><%= i.unit %></small><% } %></span></label>
+<% } -%>
+        </div>
+      </div>
+      <label class="field quick-new<%= err("newIngredients") %>">
+        <span>Nguyên liệu mới <small class="muted">(nếu chưa có trong danh sách)</small></span>
+        <input name="newIngredients" value="<%= values.newIngredients %>" placeholder="Ví dụ: Lá é, Mắm cáy — cách nhau bằng dấu phẩy" autocomplete="off">
+<% if (errors.newIngredients) { %>        <span class="error"><%= errors.newIngredients %></span>
+<% } -%>
+      </label>
+      <p class="muted choice-summary" data-count-summary>Đã chọn <%= values.ingredientIds.length %> nguyên liệu</p>
+    </fieldset>
+
+<%# Định dạng link (chỉ http/https) do server kiểm tra. -%>
+    <label class="field<%= err("imageUrl") %>">
+      <span>Link ảnh minh hoạ</span>
+      <input name="imageUrl" value="<%= values.imageUrl %>" placeholder="https://upload.wikimedia.org/...">
+      <span class="hint">Dán link trực tiếp tới file ảnh (nên dùng ảnh có giấy phép mở, vd. Wikimedia Commons).</span>
+<% if (errors.imageUrl) { %>      <span class="error"><%= errors.imageUrl %></span>
+<% } -%>
+    </label>
+<% if (/^https?:\/\//i.test(values.imageUrl.trim()) && !errors.imageUrl) { -%>
+    <img class="image-preview" src="<%= values.imageUrl.trim() %>" alt="Ảnh xem trước của món" referrerpolicy="no-referrer">
+<% } -%>
+
+    <label class="field<%= err("imageCredit") %>">
+      <span>Ghi công ảnh</span>
+      <input name="imageCredit" value="<%= values.imageCredit %>" placeholder="Tác giả · Giấy phép · Nguồn">
+<% if (errors.imageCredit) { %>      <span class="error"><%= errors.imageCredit %></span>
+<% } -%>
+    </label>
+
+    <label class="field inline">
+      <input name="available" type="checkbox"<% if (values.available) { %> checked<% } %>>
+      <span>Đang phục vụ</span>
+    </label>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" data-busy-label="Đang lưu…"><%= id ? "Lưu" : "Thêm" %></button>
+      <a class="btn" href="<%= back %>">Huỷ</a>
+    </div>
+  </form>
+</div>
+
+<%- include("../../partials/footer") %>

@@ -1,0 +1,26 @@
+<%#
+  Tìm kiếm trong trang quản trị (chuyển từ AdminSearch.jsx của block7): form GET → từ khoá + kiểu tìm nằm trên URL,
+  về trang 1. Tham số: base, label, state ({ q, mode }), modes, placeholder, errors, total (null khi chưa có kết quả),
+  modeLabel. Toàn văn / gần đúng bắt buộc có từ khoá: thiếu → server báo lỗi cạnh ô.
+-%>
+<form class="admin-search" role="search" method="get" action="<%= base %>" novalidate>
+  <label class="sr-only" for="admin-q"><%= label %></label>
+  <input id="admin-q" type="search" name="q" value="<%= state.q %>" placeholder="<%= placeholder %>"<% if (errors.q) { %> aria-invalid="true" aria-describedby="admin-q-error"<% } %>>
+<% if (modes) { -%>
+  <label class="admin-mode">
+    <span class="sr-only">Kiểu tìm</span>
+    <select name="mode">
+<% for (const m of modes) { %>      <option value="<%= m.value %>"<% if (m.value === state.mode) { %> selected<% } %>><%= m.label %></option>
+<% } -%>
+    </select>
+  </label>
+<% } -%>
+  <button type="submit" class="btn">Tìm</button>
+<% if (state.q || state.mode !== "basic") { %>  <a class="btn" href="<%= base %>">Xoá tìm kiếm</a>
+<% } -%>
+</form>
+<% if (errors.q) { %><p class="error search-count" id="admin-q-error"><%= errors.q %></p>
+<% } if (errors.mode) { %><p class="error search-count"><%= errors.mode %></p>
+<% } if (state.q && total !== null) { -%>
+<p class="muted search-count" role="status">Tìm thấy <%= total %> kết quả cho “<%= state.q %>”<% if (state.mode !== "basic") { %> · <%= modeLabel.toLowerCase() %>, xếp theo độ phù hợp<% } %>.</p>
+<% } -%>

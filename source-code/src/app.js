@@ -3,6 +3,7 @@ import express from "express";
 import methodOverride from "method-override";
 import { fileURLToPath } from "node:url";
 import menuRouter from "./routes/menu.js";
+import adminDishesRouter from "./routes/admin/dishes.js";
 import { formatPrice, formatMenuPrice, tagNames } from "./format.js";
 import { artFor, artShape } from "./dish-art.js";
 
@@ -61,6 +62,9 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => res.redirect("/dishes"));
 app.use(menuRouter);
+// Khu quản trị. Bước 10 gắn requireLogin trước các router này (plan block8 mục 5.7).
+app.get("/admin", (req, res) => res.redirect("/admin/dishes"));
+app.use("/admin/dishes", adminDishesRouter);
 
 // Không route nào khớp → 404.
 app.use((req, res) => {
