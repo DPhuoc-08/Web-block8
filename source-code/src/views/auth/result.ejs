@@ -1,0 +1,18 @@
+<%- include("_start") %>
+<%#
+  Màn chỉ còn một thông điệp (thành phần "Khối kết quả" trên Figma): đã gửi email, link không dùng được, tạm khoá (429),
+  dịch vụ xác minh không trả lời (503). Tham số: icon ("mail" | "clock" | "warn"), heading, text, button { href, label },
+  link { href, text }.
+-%>
+<% const ICONS = { mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>', clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', warn: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>' }; -%>
+<div class="auth-form auth-result"<% if (locals.code) { %> data-error-code="<%= code %>"<% } %> role="<%= icon === "mail" ? "status" : "alert" %>">
+  <span class="result-icon result-<%= icon %>"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%- ICONS[icon] %></svg></span>
+  <div class="auth-head">
+    <h1><%= heading %></h1>
+    <p><%= text %></p>
+  </div>
+<% if (locals.button) { %>  <a class="btn btn-primary btn-block" href="<%= button.href %>"><%= button.label %></a>
+<% } if (locals.link) { %>  <p class="auth-foot"><a href="<%= link.href %>"><%= link.text %></a></p>
+<% } -%>
+</div>
+<%- include("_end") %>

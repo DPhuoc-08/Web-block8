@@ -232,3 +232,21 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - `sendLater` trả về ngay (50ms đầu chưa có thư), sau đó link đặt lại đọc được đúng.
 - Log khi gửi lỗi: **0 dòng** chứa mã hoặc địa chỉ người nhận.
 - Gmail SMTP **chưa kiểm được**: cần App Password của nhóm (`.env`: `MAIL_TRANSPORT=smtp`, `SMTP_USER`, `SMTP_PASS`).
+
+## Bước 12 — Bộ đếm giới hạn, reCAPTCHA, trang 429 / 503
+**Đã làm:**
+- `src/auth/rate-limit.js`: `hit` (một câu `INSERT … ON CONFLICT (key) DO UPDATE … RETURNING`: đếm trong cửa sổ, đủ `lockAt` lần thì khoá `lockMs`, khoá còn hạn thì giữ), `peek`, `reset`, `limit` (đếm request, quá `max` → bị giới hạn + `retryAfter`).
+- `src/auth/recaptcha.js`: `siteverify` tại backend (timeout 5 giây), chỉ cho qua khi `success === true` **và** `hostname` thuộc `RECAPTCHA_HOSTNAMES`; không gọi được → `unavailable`.
+- `views/auth/result.ejs` (khối kết quả theo Figma: biểu tượng tròn + tiêu đề + nội dung + nút + link), `src/auth/pages.js`: `tooMany` (429 + `Retry-After`), `captchaUnavailable` (503). `views/auth/_captcha.ejs` + `ui.js` `renderCaptcha` (Google `render=explicit`; màn < 360px dùng bản `compact`).
+
+**Quyết định và lý do:**
+- **Một câu SQL cho mỗi lần đếm**: PostgreSQL khoá dòng của key trong lúc `ON CONFLICT DO UPDATE` → các request song song xếp hàng, không đọc-rồi-ghi đè lên nhau.
+- **`render=explicit`** thay cho tự dựng: Google gọi `renderCaptcha` sau khi script tải; chọn `compact` theo độ rộng màn hình trước khi vẽ (ghi chú Figma vòng 2: 304px không vừa 280px ở màn 320px).
+- Trang 429 / 503 dùng chung khối kết quả của khu tài khoản (plan đặt tên `429.ejs` / `503.ejs`; gộp thành `auth/result.ejs` + status vì cùng một bố cục).
+
+**Đã kiểm tra:**
+- 20 lần `hit` **song song** cùng một key → các giá trị trả về là đúng 1..20 không trùng, DB còn 20.
+- `lockAt 3, lockMs 5 phút`: lần 1–2 chưa khoá, lần 3 khoá ~5 phút; dời `windowStart` lùi 2 phút → lần sau đếm lại từ 1, khoá vẫn giữ.
+- `limit max 3`: lần 4 bị giới hạn, `retryAfter ≤ 60`; `reset` xoá bộ đếm.
+- reCAPTCHA (gọi `siteverify` thật): thiếu token → `missing-input-response`; **key thử công khai của Google → hợp lệ, `hostname = testkey.google.com`**; cùng token nhưng `RECAPTCHA_HOSTNAMES=localhost` → từ chối `hostname:testkey.google.com`; secret sai → `invalid-input-response`; fetch lỗi (giả lập mất mạng) → `unavailable` (route trả 503, không cho qua).
+- Chưa kiểm với key thật (cần nhóm tạo key v2 cho `localhost`).

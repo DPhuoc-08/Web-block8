@@ -1,0 +1,11 @@
+<%#
+  Widget reCAPTCHA v2 checkbox của Google (304×78px; < 360px dùng bản compact — ui.js dựng bằng render=explicit).
+  Widget tự điền token vào ô g-recaptcha-response của form; form vẫn gửi bằng HTML thường. Tham số: siteKey, errors.captcha.
+  Tắt JavaScript thì không có widget → server từ chối vì thiếu token (đã ghi giới hạn này trong plan mục 7).
+-%>
+<div class="a-field captcha-field<%= errors.captcha ? " invalid" : "" %>">
+  <div class="g-recaptcha" data-sitekey="<%= siteKey %>" data-hl="vi"></div>
+  <noscript><p class="a-error">Bước xác minh “Tôi không phải là người máy” cần bật JavaScript.</p></noscript>
+<% if (errors.captcha) { %>  <p class="a-error" id="f-captcha-error"><%= errors.captcha %></p>
+<% } -%>
+</div>

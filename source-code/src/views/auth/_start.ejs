@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="/css/style.css">
   <script src="/js/ui.js"></script>
 <% if (locals.recaptcha) { -%>
-<%# Widget reCAPTCHA v2 của Google: chỉ nạp ở trang có CAPTCHA. Màn < 360px dùng bản "compact" (ui.js). -%>
-  <script src="https://www.google.com/recaptcha/api.js?hl=vi" async defer></script>
+<%# Widget reCAPTCHA v2 của Google: chỉ nạp ở trang có CAPTCHA. render=explicit → ui.js tự dựng (compact khi < 360px). -%>
+  <script src="https://www.google.com/recaptcha/api.js?hl=vi&onload=renderCaptcha&render=explicit" async defer></script>
 <% } -%>
 </head>
 <body>

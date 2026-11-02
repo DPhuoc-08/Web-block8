@@ -644,3 +644,9 @@ html:not(.js) .js-only { display: none; }
   .auth-form { max-width: none; gap: 20px; }
   .auth-head h1 { font-size: 1.6rem; }
 }
+/* Ô reCAPTCHA: giữ chỗ cao 78px trước khi widget của Google tải xong (không làm form nhảy). */
+.captcha-field { min-height: 78px; }
+/* Khối kết quả (đã gửi email, tạm khoá 429, link hỏng): biểu tượng tròn 56px trên tiêu đề. */
+.result-icon { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; }
+.result-mail { background: var(--primary-soft); color: var(--primary); }
+.result-clock, .result-warn { background: var(--danger-soft); color: var(--danger); }

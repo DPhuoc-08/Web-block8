@@ -21,6 +21,14 @@ window.addEventListener(
   true,
 );
 
+// reCAPTCHA v2 (render=explicit): Google gọi hàm này khi script đã tải. Màn hẹp hơn 360px (vùng form chỉ còn ~280px)
+// dùng bản "compact" 164×144 của Google thay cho bản 304×78 để không tràn ngang (ghi chú Figma vòng 2).
+window.renderCaptcha = () => {
+  for (const el of document.querySelectorAll(".g-recaptcha")) {
+    window.grecaptcha.render(el, { sitekey: el.dataset.sitekey, size: window.innerWidth < 360 ? "compact" : "normal", hl: "vi" });
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   // Ô chọn có data-autosubmit (sắp xếp ở thực đơn): đổi là gửi form GET luôn, không cần bấm "Áp dụng".
   for (const select of document.querySelectorAll("select[data-autosubmit]")) {
