@@ -39,3 +39,23 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Host của `DATABASE_URL`: `aws-0-ap-southeast-1.pooler.supabase.com` (project block7, Singapore).
 - Đọc DB qua `src/db.js`: 1.200 món, 60 đầu bếp, 250 nguyên liệu, 16 tag, 2.106 `dish_tags`, 106 `chef_tags`, 5.357 `dish_ingredients`.
 - Chưa có `src/app.js` nên `npm start` chưa chạy: bước 2 viết khung SSR.
+
+## Bước 2 — Khung SSR
+**Đã làm:**
+- `src/app.js`: EJS (`src/views`), `express.static(public/)`, `express.urlencoded`, `req.body ??= {}`, `method-override` (`_method`), bảng thông báo `?msg=` (10 mã của block5/block7), `/` → `/dishes`, trang `404`, error handler `500`.
+- `src/views/partials/header.ejs`, `footer.ejs`: chuyển từ `Layout.jsx` của block7 — brand "Nhà hàng" (+ "/ Quản trị" khi ở `/admin`), nav Thực đơn / Quản trị có `aria-current`, footer "© 2026 Nhà hàng · Món Việt ba miền" chỉ ở trang khách.
+- `src/views/404.ejs`, `500.ejs` (như block5, 500 chỉ thông báo chung).
+- `public/css/style.css`: chép nguyên `web/src/styles/style.css` của block7; thêm phần "Block8 (SSR)" ở cuối.
+- `src/db.js`: sửa comment còn nói "response JSON / SPA / ok:false" cho đúng SSR (404, 400, 409).
+
+**Quyết định và lý do:**
+- **Nút đóng thông báo là link GET** về đúng URL hiện tại bỏ `msg` (và `saved`), thay cho button JS của block7: SSR không cần JavaScript cho việc này, `q`/`page` giữ nguyên.
+- **`section` (menu/admin) tính trong middleware** từ `req.path`, thay cho `useLocation()` của block7.
+- **`import "dotenv/config"` ở đầu `app.js`**: block7 nạp `.env` qua `db.js`, nhưng khung SSR chưa dùng DB nên `PORT` sẽ không được đọc.
+- **CSS chép nguyên, chưa xoá phần không dùng** (Tải thêm, Cuộn vô hạn, khung xương, công tắc cách hiển thị): bước 3 dựng thực đơn xong mới biết chính xác selector nào không còn dùng.
+
+**Đã kiểm tra (server chạy thật, curl):**
+- `GET /` → `302 /dishes`; `GET /css/style.css` → 200; `/dishes`, `/admin/dishes` → 404 (chưa có route, bước 3–5).
+- `/dishes?msg=dish-created&q=pho`: có thông báo "Đã thêm món mới.", link đóng = `/dishes?q=pho`. `?msg=<script>` (mã lạ) → không hiện thông báo.
+- `/admin/x`: brand có "/ Quản trị", "Quản trị" có `aria-current`, không có footer.
+- Chrome headless 1280px và 375px (375px nhúng iframe vì Chrome headless không thu cửa sổ dưới ~500px, như block7): header, thông báo, trang 404, footer đúng bố cục, không cuộn ngang.

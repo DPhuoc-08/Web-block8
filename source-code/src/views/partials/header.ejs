@@ -1,0 +1,31 @@
+<% const isAdmin = locals.section === "admin"; -%>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Nhà hàng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="<%= isAdmin ? "admin app" : "app" %>">
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="/dishes">Nhà hàng<% if (isAdmin) { %><span> / Quản trị</span><% } %></a>
+      <nav class="site-nav" aria-label="Điều hướng chính">
+        <a href="/dishes"<%- isAdmin ? "" : ' aria-current="page"' %>>Thực đơn</a>
+        <a href="/admin/dishes"<%- isAdmin ? ' aria-current="page"' : "" %>>Quản trị</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+<% if (locals.flash) { -%>
+    <div class="flash" role="status">
+      <span><%= flash %></span>
+      <a class="flash-close" href="<%= flashCloseHref %>" aria-label="Đóng thông báo">×</a>
+    </div>
+<% } -%>

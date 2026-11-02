@@ -1,5 +1,6 @@
 // Một PrismaClient dùng chung cho cả app: tạo nhiều client sẽ mở nhiều pool kết nối tới Supabase.
-// Chỉ dùng ở server: chuỗi kết nối nằm trong api/.env, không bao giờ xuất hiện trong response JSON hay mã của SPA.
+// Chỉ dùng ở server: chuỗi kết nối nằm trong .env, không bao giờ xuất hiện trong trang HTML; không truyền `prisma`
+// hay `process.env` vào res.render.
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -23,12 +24,12 @@ if (logSql) {
 }
 
 // Ba lỗi Prisma dưới đây là lỗi NGHIỆP VỤ đã biết trước (do dữ liệu, không phải hệ thống hỏng),
-// nên route bắt riêng và trả 200 + ok:false. Mọi lỗi khác để đi tới error handler chung → 500.
-// P2025: update/delete vào bản ghi không còn tồn tại (vd. vừa bị xoá ở tab khác) → NOT_FOUND.
+// nên route bắt riêng và render trang tương ứng. Mọi lỗi khác để đi tới error handler chung → 500.
+// P2025: update/delete vào bản ghi không còn tồn tại (vd. vừa bị xoá ở tab khác) → trang 404.
 export const isNotFound = (err) => err?.code === "P2025";
-// P2002: vi phạm @unique (vd. 2 người cùng lưu một tên ở 2 tab) → VALIDATION_FAILED, fields.name.
+// P2002: vi phạm @unique (vd. 2 người cùng lưu một tên ở 2 tab) → 400, form báo "tên đã tồn tại".
 export const isUniqueViolation = (err) => err?.code === "P2002";
-// P2003: vi phạm khoá ngoại → khi xoá: IN_USE; khi tạo/sửa món (đầu bếp/nguyên liệu vừa bị xoá): VALIDATION_FAILED.
+// P2003: vi phạm khoá ngoại → khi xoá: 409 (đang được dùng); khi tạo/sửa món (đầu bếp/nguyên liệu vừa bị xoá): 400.
 export const isForeignKeyViolation = (err) => err?.code === "P2003";
 
 // Một trang danh sách admin (đầu bếp, nguyên liệu), xếp id tăng dần — khoá chính nên thứ tự đã xác định.

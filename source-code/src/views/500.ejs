@@ -1,0 +1,11 @@
+<%- include("partials/header", { title: "Lỗi hệ thống" }) %>
+
+<%# Chỉ thông báo chung; chi tiết lỗi đã ghi vào log server, không hiển thị ra đây. %>
+<div class="message" role="alert">
+  <div class="code">500</div>
+  <h1>Đã có lỗi xảy ra</h1>
+  <p class="muted">Hệ thống đang gặp sự cố. Vui lòng thử lại sau.</p>
+  <a class="btn btn-primary" href="/dishes">Về thực đơn</a>
+</div>
+
+<%- include("partials/footer") %>
