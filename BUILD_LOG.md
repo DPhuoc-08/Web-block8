@@ -198,3 +198,22 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Mở form ghi → `Set-Cookie: sid=s%3A…; Path=/; Expires=<+2 giờ>; HttpOnly; SameSite=Lax` (không `Secure` ở localhost); bảng `sessions` thêm 1 dòng `userId` rỗng, có `csrfToken`.
 - POST thiếu `_csrf`, `_csrf` sai, đúng token nhưng `Origin: https://evil.example`, token của phiên khác, `?_method=DELETE` thiếu token → **403, DB không đổi**. Đúng token + đúng Origin → 303.
 - `check-ssr.mjs` (client tự gửi `_csrf` như trình duyệt): **48/48 ĐẠT**.
+
+## Bước 10 — Đăng nhập, đăng xuất, chặn `/admin`, khu tài khoản
+**Đã làm:**
+- `src/routes/auth/login.js`: `GET/POST /login`, `POST /logout`. `src/auth/require-login.js`: `requireLogin` (gắn `app.use("/admin", requireLogin)`), `safeNext`. `src/auth/photos.js`: ảnh món cho từng trang tài khoản (đọc `imageUrl`, `imageCredit` từ DB).
+- Giao diện theo **Figma vòng 2 đã duyệt** (làm luôn ở bước này, bước 17 chỉ còn đối chiếu): `views/auth/_start.ejs` / `_end.ejs` (hướng A: ảnh + lời chào trái, form phải; 240px / 196px ở 820 / 375), `_field.ejs` (nhãn luôn hiện, ô 48px chữ 16px, link cạnh nhãn, nút Hiện mật khẩu, gợi ý, lỗi + `aria-describedby`), `_banner.ejs`, `login.ejs`. Header: email + "Đăng xuất" (form POST) khi đã đăng nhập; điện thoại tách thành hàng thứ hai.
+- `ui.js`: nút Hiện / Ẩn mật khẩu. CSS khu tài khoản + trang tài khoản.
+- `scripts/check-auth.mjs` (`npm run check:auth`) phần D; `scripts/lib/server.mjs` (script tự chạy / dừng server thật ở cổng 3100); `scripts/lib/auth.mjs` đăng nhập bằng tài khoản seed → `check-ssr.mjs` dùng được sau khi `/admin` bị khoá.
+
+**Quyết định và lý do:**
+- **Thứ tự trong `POST /login`**: tìm user → `verifyPassword` (email không có vẫn chạy với hash giả) → sai: một câu chung "Email hoặc mật khẩu không đúng." → đúng nhưng `pending`: không tạo session, báo cần kích hoạt (chỉ người đã biết mật khẩu mới thấy) → `active`: `session.regenerate` (sid mới, phiên ẩn danh cũ bị xoá) → `userId`, `loginAt` → `save` xong mới `303`.
+- **Đăng xuất**: `session.destroy` (xoá bản ghi ở server) trước, rồi `clearCookie`, `303 /login?msg=logged-out`. Chỉ POST + `_csrf`.
+- **`requireLogin`**: GET → `303 /login?next=<url>`; method khác → `303 /login`. `Cache-Control: no-store` cho trang admin. `safeNext` chỉ nhận đường dẫn bắt đầu bằng `/`, không `//`, không `\`, không `/login…`.
+- Lỗi nhập ở form tài khoản trả **200** + `data-error-code` (plan 12.1 mục 11); thông báo `?msg=` của trang đăng nhập tra bảng riêng.
+- **Script tự chạy server**: ca "khởi động lại server" là dừng tiến trình thật rồi chạy lại, không phải giả lập.
+
+**Đã kiểm tra:**
+- `check-auth.mjs D`: **25/25 ĐẠT** — khách xem thực đơn không có `Set-Cookie`; 14 route GET `/admin` → `303 /login?next=…`; 9 request POST/PATCH/DELETE không đăng nhập (có `_csrf` hợp lệ) → `303 /login`, số dòng DB không đổi; cookie bịa → 303; sai mật khẩu và email không có → cùng 200, cùng nội dung; form giữ email, không giữ mật khẩu; đăng nhập đúng (email viết hoa + khoảng trắng) → 303, `HttpOnly; SameSite=Lax`; sid đổi, phiên cũ bị xoá; phiên mới có `userId`; `/admin/dishes` 200 + `no-store` + email + nút Đăng xuất; `next` nội bộ giữ, 3 kiểu `next` ra ngoài bị bỏ; pending đúng mật khẩu → `ACCOUNT_NOT_ACTIVATED`, không có phiên; CSRF thiếu / sai / Origin lạ / `?_method=DELETE` → 403; **dừng + chạy lại server → cookie cũ vẫn đăng nhập**; đăng xuất → bản ghi phiên bị xoá, bản sao sid cũ → 303; `GET /logout` → 404.
+- `check-ssr.mjs` (đăng nhập bằng tài khoản seed): **48/48 ĐẠT**.
+- Ảnh trang đăng nhập 1280 / 820 / 375 khớp Figma vòng 2 (ảnh Phở + ghi công thật từ DB; ở 375 dòng ghi công xuống 2 dòng vì dài hơn bản nháp).

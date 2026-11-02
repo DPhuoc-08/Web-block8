@@ -40,6 +40,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.search-form");
   if (form) setupSearchPanel(form);
 
+  // Nút "Hiện" mật khẩu (trang tài khoản): đổi ô giữa password và text; tắt JS thì nút ẩn, ô vẫn dùng được.
+  for (const button of document.querySelectorAll(".pw-toggle")) {
+    const input = document.getElementById(button.getAttribute("aria-controls"));
+    button.addEventListener("click", () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.setAttribute("aria-pressed", String(show));
+      button.setAttribute("aria-label", show ? "Ẩn mật khẩu" : "Hiện mật khẩu");
+      button.querySelector("span").textContent = show ? "Ẩn" : "Hiện";
+    });
+  }
+
   // ----- Khu quản trị -----
   // Form ghi (data-once): bấm lần hai khi request đầu chưa về thì bỏ qua → không tạo hai món giống nhau.
   for (const f of document.querySelectorAll("form[data-once]")) {

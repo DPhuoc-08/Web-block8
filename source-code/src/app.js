@@ -8,6 +8,8 @@ import { PrismaSessionStore } from "./auth/session-store.js";
 import { loadUser, SESSION_IDLE_MS } from "./auth/load-user.js";
 import { csrf } from "./auth/csrf.js";
 import { startCleanup } from "./auth/cleanup.js";
+import { requireLogin } from "./auth/require-login.js";
+import loginRouter from "./routes/auth/login.js";
 import menuRouter from "./routes/menu.js";
 import adminDishesRouter from "./routes/admin/dishes.js";
 import adminChefsRouter from "./routes/admin/chefs.js";
@@ -96,8 +98,11 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => res.redirect("/dishes"));
+// Trang công khai: thực đơn, chi tiết món, đăng nhập / đăng ký / quên mật khẩu.
 app.use(menuRouter);
-// Khu quản trị. Bước 10 gắn requireLogin trước các router này (plan block8 mục 5.7).
+app.use(loginRouter);
+// Khu quản trị = cụm CRUD: MỌI route dưới /admin (cả GET lẫn ghi) phải đăng nhập — chặn ở server (plan 5.7, 12.2).
+app.use("/admin", requireLogin);
 app.get("/admin", (req, res) => res.redirect("/admin/dishes"));
 app.use("/admin/dishes", adminDishesRouter);
 app.use("/admin/chefs", adminChefsRouter);

@@ -1,6 +1,8 @@
 // Trình duyệt tối giản cho script kiểm tra: giữ cookie giữa các request (như cookie jar của curl),
 // không tự đi theo redirect (để đọc được 302/303 + Location), đọc ô ẩn _csrf trong form của trang vừa mở.
-export const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+// Đọc mỗi lần gửi request (không cố định lúc import): check-auth.mjs tự chạy server riêng ở cổng khác.
+const base = () => process.env.BASE_URL ?? "http://localhost:3000";
+export const BASE = base();
 
 export function client() {
   const jar = new Map();
@@ -24,7 +26,7 @@ export function client() {
       for (const [k, v] of fields) body.append(k, v);
       init.body = body;
     }
-    const res = await fetch(BASE + path, init);
+    const res = await fetch(base() + path, init);
     store(res);
     const text = await res.text();
     const m = text.match(/name="_csrf" value="([^"]+)"/);
@@ -56,4 +58,4 @@ export function reporter(title) {
   };
 }
 
-export const savedIdOf = (location) => Number(new URL(location ?? "/", BASE).searchParams.get("saved"));
+export const savedIdOf = (location) => Number(new URL(location ?? "/", base()).searchParams.get("saved"));

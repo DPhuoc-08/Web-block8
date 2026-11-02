@@ -1,0 +1,38 @@
+<%#
+  Khung các trang tài khoản theo bản Figma vòng 2 (hướng A, đã duyệt 02/11/2026):
+  ≥ 1024px chia đôi (ảnh món + lời chào bên trái, form bên phải); 601–1023px dải ảnh 240px trên đầu; ≤ 600px dải 196px.
+  Không có header của site: thương hiệu + link về thực đơn nằm trên ảnh. Tham số: title, photo ({ url, name, credit } | null).
+-%>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Nhà hàng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/ui.js"></script>
+<% if (locals.recaptcha) { -%>
+<%# Widget reCAPTCHA v2 của Google: chỉ nạp ở trang có CAPTCHA. Màn < 360px dùng bản "compact" (ui.js). -%>
+  <script src="https://www.google.com/recaptcha/api.js?hl=vi" async defer></script>
+<% } -%>
+</head>
+<body>
+<div class="auth">
+  <aside class="auth-photo">
+<% if (photo) { %>    <img class="auth-photo-img" src="<%= photo.url %>" alt="" referrerpolicy="no-referrer">
+<% } -%>
+    <div class="auth-brand">
+      <a class="auth-brand-name" href="/dishes">Nhà hàng</a>
+      <a class="auth-brand-back" href="/dishes"><span class="wide-only">← Về thực đơn</span><span class="narrow-only">Thực đơn</span></a>
+    </div>
+    <div class="auth-greet">
+      <p class="auth-slogan">Ăn một bữa,<br class="wide-only"> đi trọn ba miền</p>
+      <p class="auth-intro">Phở, bún, cơm, lẩu và đồ uống của 60 đầu bếp — quản lý thực đơn ngay sau khi đăng nhập.</p>
+<% if (photo) { %>      <p class="auth-credit">Ảnh: <%= photo.name %><% if (photo.credit) { %> · <%= photo.credit %><% } %></p>
+<% } -%>
+    </div>
+  </aside>
+  <main class="auth-main">

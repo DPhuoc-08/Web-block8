@@ -21,6 +21,16 @@
         <a href="/dishes"<%- isAdmin ? "" : ' aria-current="page"' %>>Thực đơn</a>
         <a href="/admin/dishes"<%- isAdmin ? ' aria-current="page"' : "" %>>Quản trị</a>
       </nav>
+<% if (locals.currentUser) { -%>
+<%# Đã đăng nhập (Figma hàng 7): email + nút Đăng xuất. Đăng xuất là form POST có _csrf, không phải link GET. -%>
+      <div class="account">
+        <span class="account-email"><%= currentUser.email %></span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrf() %>">
+          <button type="submit" class="btn btn-sm">Đăng xuất</button>
+        </form>
+      </div>
+<% } -%>
     </div>
   </header>
 

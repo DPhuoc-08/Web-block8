@@ -9,7 +9,8 @@
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
     "postinstall": "prisma generate",
-    "check:ssr": "node scripts/check-ssr.mjs"
+    "check:ssr": "node scripts/check-ssr.mjs",
+    "check:auth": "node scripts/check-auth.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

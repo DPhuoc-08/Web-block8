@@ -1,0 +1,24 @@
+<%- include("_start") %>
+<%# Trang đăng nhập (Figma vòng 2, màn 1 + trạng thái ở hàng 6). Lỗi nhập trả 200 + data-error-code (plan 12). -%>
+<form class="auth-form" method="post" action="/login" novalidate data-once<% if (code) { %> data-error-code="<%= code %>"<% } %>>
+  <input type="hidden" name="_csrf" value="<%= csrf() %>">
+<% if (next) { %>  <input type="hidden" name="next" value="<%= next %>">
+<% } -%>
+  <div class="auth-head">
+    <h1>Đăng nhập</h1>
+    <p>Quản lý món, đầu bếp và nguyên liệu của nhà hàng.</p>
+  </div>
+  <%- include("_banner") %>
+  <div class="auth-fields">
+    <%- include("_field", { name: "email", label: "Email", type: "email", value: values.email, autocomplete: "email", placeholder: "ban@example.com", error: errors.email }) %>
+    <%- include("_field", { name: "password", label: "Mật khẩu", type: "password", autocomplete: "current-password", placeholder: "Nhập mật khẩu", error: errors.password, toggle: true, link: { href: "/forgot", text: "Quên mật khẩu?" } }) %>
+  </div>
+<% if (locals.captchaRequired) { -%>
+  <%- include("_captcha") %>
+<% } -%>
+  <button type="submit" class="btn btn-primary btn-block" data-busy-label="Đang đăng nhập…">Đăng nhập</button>
+  <hr class="auth-divider">
+  <p class="auth-foot">Chưa có tài khoản? <a href="/register">Đăng ký</a></p>
+  <p class="auth-note">Khách xem thực đơn không cần tài khoản.</p>
+</form>
+<%- include("_end") %>
