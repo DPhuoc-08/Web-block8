@@ -1,0 +1,11 @@
+<%- include("partials/header", { title }) %>
+
+<%# CSRF: thiếu / sai token của form, hoặc request đến từ trang khác. Không đổi dữ liệu. -%>
+<div class="message" role="alert">
+  <div class="code">403</div>
+  <h1>Yêu cầu bị từ chối</h1>
+  <p class="muted">Biểu mẫu đã hết hạn hoặc không được gửi từ trang của nhà hàng. Hãy mở lại trang rồi thử lần nữa.</p>
+  <a class="btn btn-primary" href="/dishes">Về thực đơn</a>
+</div>
+
+<%- include("partials/footer") %>

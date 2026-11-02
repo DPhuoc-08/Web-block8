@@ -9,6 +9,7 @@
 <% } -%>
   <form class="form" method="post" action="<%= id ? `/admin/chefs/${id}?_method=PATCH` : "/admin/chefs" %>" novalidate data-once data-unsaved-guard>
     <input type="hidden" name="back" value="<%= back %>">
+    <input type="hidden" name="_csrf" value="<%= csrf() %>">
     <label class="field<%= err("name") %>">
       <span>Tên đầu bếp</span>
       <input name="name" value="<%= values.name %>">

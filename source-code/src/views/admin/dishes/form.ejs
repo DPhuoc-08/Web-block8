@@ -21,6 +21,7 @@
 <%# novalidate + không đặt required/min: server kiểm tra và báo lỗi cạnh ô theo cùng một kiểu. -%>
   <form class="form" method="post" action="<%= id ? `/admin/dishes/${id}?_method=PATCH` : "/admin/dishes" %>" novalidate data-once data-unsaved-guard>
     <input type="hidden" name="back" value="<%= back %>">
+    <input type="hidden" name="_csrf" value="<%= csrf() %>">
 
     <label class="field<%= err("name") %>">
       <span>Tên món</span>

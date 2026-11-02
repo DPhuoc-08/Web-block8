@@ -177,3 +177,24 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Host khi seed: `aws-0-ap-southeast-1.pooler.supabase.com` (DB block7).
 - **Dấu vân tay md5 của 7 bảng block7** (mọi cột trừ `createdAt`, sắp theo khoá) **trước và sau seed giống hệt** — seed tất định tạo lại đúng dữ liệu block7. Thống kê seed: 1.200 món, 60 đầu bếp, 250 nguyên liệu, 16 tag; 2.106 món–tag, 106 đầu bếp–tag, 5.357 món–nguyên liệu; 4 món giá 0, 180 món tạm hết; 0 món sai chuyên môn; 2 tài khoản active.
 - `users`: id 1 viewer, id 2 admin, `status=active`, `passwordHash` dạng `$argon2id$v=19$m=65536,p=4,t=3$…`. Sequence id đã về 1 (`RESTART IDENTITY`) sau các lần thử ở bước 4–6.
+
+## Bước 9 — Session lưu ở DB, khôi phục người dùng, CSRF
+**Đã làm:**
+- Cài `express-session@1.19.0`. `src/auth/session-store.js`: `PrismaSessionStore` (get / set / destroy / touch trên bảng `sessions`; `userId` tách cột riêng), `destroyUserSessions`.
+- `src/auth/load-user.js`: mọi request, `req.session.userId` → đọc user; chỉ nhận user còn tồn tại, `active`, phiên chưa quá 12 giờ kể từ lúc đăng nhập → `res.locals.currentUser`; không đạt → phiên về ẩn danh.
+- `src/auth/csrf.js`: token đồng bộ 32 byte mỗi phiên, so bằng `timingSafeEqual`; header `Origin` (nếu có) phải bằng `APP_ORIGIN`; sai → `403`.
+- `src/auth/cleanup.js`: xoá phiên hết hạn, bộ đếm hết cửa sổ — khi khởi động và mỗi 30 phút.
+- `src/app.js`: thứ tự `static → urlencoded → body ??= {} → session → loadUser → csrf → methodOverride → flash → routes`; thiếu `SESSION_SECRET` / `OTP_PEPPER` / `APP_ORIGIN` → không khởi động. Không bật `trust proxy`.
+- `_csrf` vào **cả 7 form POST** (thêm/sửa, xác nhận xoá của 3 trang admin; trang xoá đầu bếp có 2 form). `403.ejs`.
+
+**Quyết định và lý do:**
+- **Template gọi `csrf()` thay vì token tính sẵn**: `res.render` sao chép `res.locals` (getter bị gọi ngay) → nếu gắn sẵn, mọi trang (kể cả thực đơn khách) đều tạo phiên. Gọi hàm trong form → phiên ẩn danh chỉ sinh ra khi trang có form ghi dữ liệu.
+- **Cookie**: `HttpOnly`, `SameSite=Lax`, `Path=/`, `Max-Age` 2 giờ gia hạn mỗi request (`rolling`); `Secure` chỉ khi `NODE_ENV=production` vì express-session không đặt cookie `Secure` qua http localhost.
+- **CSRF kiểm tra trước `method-override`**: form xoá gửi POST `?_method=DELETE`; kiểm tra trên method gốc → không có đường vòng nào bỏ qua được.
+- **Phương án đã bỏ:** `csurf` (ngừng bảo trì); `connect-pg-simple` (bảng của thư viện không có cột `userId` → huỷ phiên theo user phải truy vấn trong JSON; plan 12.6).
+
+**Đã kiểm tra (server thật): 9/9 ĐẠT**
+- Khách mở `/dishes` → không có `Set-Cookie`.
+- Mở form ghi → `Set-Cookie: sid=s%3A…; Path=/; Expires=<+2 giờ>; HttpOnly; SameSite=Lax` (không `Secure` ở localhost); bảng `sessions` thêm 1 dòng `userId` rỗng, có `csrfToken`.
+- POST thiếu `_csrf`, `_csrf` sai, đúng token nhưng `Origin: https://evil.example`, token của phiên khác, `?_method=DELETE` thiếu token → **403, DB không đổi**. Đúng token + đúng Origin → 303.
+- `check-ssr.mjs` (client tự gửi `_csrf` như trình duyệt): **48/48 ĐẠT**.

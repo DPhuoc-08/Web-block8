@@ -1,7 +1,13 @@
 import "dotenv/config";
 import express from "express";
 import methodOverride from "method-override";
+import session from "express-session";
 import { fileURLToPath } from "node:url";
+import { prisma } from "./db.js";
+import { PrismaSessionStore } from "./auth/session-store.js";
+import { loadUser, SESSION_IDLE_MS } from "./auth/load-user.js";
+import { csrf } from "./auth/csrf.js";
+import { startCleanup } from "./auth/cleanup.js";
 import menuRouter from "./routes/menu.js";
 import adminDishesRouter from "./routes/admin/dishes.js";
 import adminChefsRouter from "./routes/admin/chefs.js";
@@ -9,7 +15,14 @@ import adminIngredientsRouter from "./routes/admin/ingredients.js";
 import { formatPrice, formatMenuPrice, tagNames } from "./format.js";
 import { artFor, artShape } from "./dish-art.js";
 
+// Thiếu bí mật → không khởi động (ký cookie sid bằng chuỗi rỗng / mặc định là lỗ hổng âm thầm).
+for (const key of ["SESSION_SECRET", "OTP_PEPPER", "APP_ORIGIN"]) {
+  if (!process.env[key]) throw new Error(`Thiếu ${key} trong .env (xem .env.example).`);
+}
+
 const app = express();
+// Không bật "trust proxy": req.ip là địa chỉ kết nối thật, không tin header X-Forwarded-For do client tự gửi
+// (bộ đếm theo IP ở các bước sau dựa vào đây).
 
 // SSR: server đọc database, dựng HTML bằng EJS rồi trả cả trang. Không có API JSON ở block8 (block9 thêm lại kèm JWT).
 app.set("view engine", "ejs");
@@ -28,6 +41,26 @@ app.use((req, res, next) => {
   req.body ??= {};
   next();
 });
+
+// Phiên ở server (plan mục 6): cookie "sid" chỉ mang mã phiên ngẫu nhiên có chữ ký, dữ liệu nằm trong bảng sessions.
+// - HttpOnly: JavaScript của trang không đọc được cookie. SameSite=Lax: không gửi kèm POST từ site khác.
+// - Secure chỉ bật khi production (HTTPS): express-session KHÔNG đặt cookie Secure qua http://localhost.
+// - saveUninitialized: false → khách chỉ xem thực đơn thì không tạo phiên; rolling → gia hạn 2 giờ mỗi request.
+app.use(
+  session({
+    name: "sid",
+    secret: process.env.SESSION_SECRET,
+    store: new PrismaSessionStore(prisma),
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: SESSION_IDLE_MS },
+  }),
+);
+// Từ cookie sid → user đang đăng nhập (res.locals.currentUser) cho mọi route và template.
+app.use(loadUser);
+// CSRF: kiểm tra token trên method GỐC (POST) — phải đặt TRƯỚC method-override.
+app.use(csrf);
 
 // Form HTML chỉ gửi được GET/POST. Browser gửi POST kèm ?_method=PATCH|DELETE,
 // middleware đổi req.method trước khi tới router để khớp router.patch / router.delete. Phải đặt trước các router.
@@ -83,6 +116,7 @@ app.use((err, req, res, next) => {
 });
 
 const port = Number(process.env.PORT) || 3000;
+startCleanup();
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);
 });
