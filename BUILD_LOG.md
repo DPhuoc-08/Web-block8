@@ -273,3 +273,22 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - B: thiếu CAPTCHA → `CAPTCHA_REQUIRED`, không tạo user, không gửi thư; tự khai `captchaPassed=true` → vẫn từ chối; trang có site key, không có secret; server chạy với secret sai (Google trả không hợp lệ) và với `RECAPTCHA_HOSTNAMES=localhost` (hostname `testkey.google.com` không được phép) → `INVALID_CAPTCHA`; 11 lần đăng ký từ một IP → lần 11 nhận 429.
 - Ảnh: đăng ký 1280px (widget reCAPTCHA thật của Google, đang là key thử), nhập mã 375px (6 ô) khớp Figma.
 - **Chưa kiểm được với key reCAPTCHA thật**: ca "token thật dùng lại / hết hạn" cần bấm tay (checklist ở bước 16).
+
+## Bước 14 — Chống brute force ở đăng nhập
+**Đã làm:** `src/routes/auth/login.js` thêm theo đúng thứ tự plan 5.4:
+1. `login:ip:<ip>` — 30 lần gửi form / 15 phút (đếm mọi lần, kể cả thiếu dữ liệu, CAPTCHA sai) → 429.
+2. `login-fail:email:<email>` đang khoá → 429 "Tạm khoá đăng nhập" (nút "Đặt lại mật khẩu"), không xét CAPTCHA / mật khẩu.
+3. Bộ đếm theo email ≥ 3 trong 15 phút → bắt buộc reCAPTCHA **trước** khi so mật khẩu; thiếu → `CAPTCHA_REQUIRED`, sai → `INVALID_CAPTCHA`, Google không trả lời → 503; không so mật khẩu, không tăng bộ đếm email.
+4. Sai mật khẩu → `hit` bộ đếm email (đủ 10 → khoá 5 phút, trả 429 ngay); lần sai thứ 3 thì form trả về đã có CAPTCHA.
+5. Đăng nhập thành công → `reset` bộ đếm email (không đụng bộ đếm IP) → `regenerate` …
+- `GET /login` hiện sẵn CAPTCHA khi email vừa gõ (nhớ trong phiên ẩn danh) đang ở ngưỡng.
+- `check-auth.mjs` phần C.
+
+**Quyết định và lý do:**
+- Quyết định "có cần CAPTCHA" dựa trên **email trong request + bộ đếm ở DB**, không dựa vào form hay cookie → bỏ trường CAPTCHA, xoá cookie, gửi curl thẳng đều không lách được.
+- Email không có tài khoản có bộ đếm như email thật → việc bị đòi CAPTCHA / bị khoá không tiết lộ email nào tồn tại.
+- Lần sai thứ 10 trả 429 ngay (không đợi lần 11) để người dùng biết và đi tới "Đặt lại mật khẩu".
+- Tài khoản pending đúng mật khẩu: không có phiên, **không** xoá bộ đếm (chỉ đăng nhập thành công mới xoá — theo ghi chú của đề).
+
+**Đã kiểm tra — `check-auth.mjs C D`: 37/37 ĐẠT** (C 12, D 25):
+2 lần sai chưa có CAPTCHA (bộ đếm 2); lần 3 → form có CAPTCHA; mở lại `/login` vẫn có CAPTCHA; đủ ngưỡng + bỏ trường CAPTCHA + mật khẩu **đúng** → `CAPTCHA_REQUIRED`, không đăng nhập, bộ đếm giữ 3; CAPTCHA đúng + mật khẩu sai → bộ đếm 4; client mới (không cookie) → vẫn `CAPTCHA_REQUIRED`; lần sai 10 → 429 + `Retry-After`, `lockedUntil` +5 phút; đang khoá + mật khẩu đúng + CAPTCHA đúng → 429, không có phiên; hết khoá, cửa sổ còn → vẫn cần CAPTCHA; đúng + CAPTCHA → 303, xoá bộ đếm email, còn bộ đếm IP; email không tồn tại: 3 lần sai rồi `CAPTCHA_REQUIRED`; 31 lần gửi từ một IP → lần 31 nhận 429.

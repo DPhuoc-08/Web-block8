@@ -2,7 +2,7 @@
 // (MAIL_TRANSPORT=file → thư ghi vào .mail-outbox/), nên dừng / chạy lại server được. DB là DB block7.
 //   node scripts/check-auth.mjs          → chạy mọi phần
 //   node scripts/check-auth.mjs D        → chỉ phần D
-// A: đăng ký + mã kích hoạt + gửi lại. B: CAPTCHA (đăng ký; đăng nhập ở bước 14) + chống brute force.
+// A: đăng ký + mã kích hoạt + gửi lại. B: CAPTCHA ở đăng ký + giới hạn IP. C: chống brute force ở đăng nhập.
 // D: session + đăng nhập + đăng xuất + chặn CRUD + CSRF.
 // Bản ghi thử (tài khoản *@check.example, "[TEST B8]") được xoá ở cuối; bộ đếm giới hạn của tài khoản thử cũng xoá.
 import "dotenv/config";
@@ -52,6 +52,7 @@ await startServer({ MAIL_TRANSPORT: "file" });
 try {
   if (run("A")) await partA();
   if (run("B")) await partB();
+  if (run("C")) await partC();
   if (run("D")) await partD();
 } finally {
   await stopServer();
@@ -298,5 +299,61 @@ async function partB() {
   const statuses = [];
   for (let i = 0; i < 11; i++) statuses.push((await register(client(), newEmail("ip"), "ngan")).status);
   r.ok(statuses.slice(0, 10).every((s) => s === 200) && statuses[10] === 429, "11 lần đăng ký từ một IP trong 1 giờ → lần thứ 11 nhận 429", statuses.join(","));
+  results.push(r.counts);
+}
+
+async function partC() {
+  const r = reporter("C. Chống brute force ở đăng nhập");
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "login:ip:" } } });
+  const email = newEmail("bf"), pw = "mat-khau-dung-123";
+  await prisma.user.create({ data: { email, emailInput: email, passwordHash: await hashPassword(pw), status: "active", emailVerifiedAt: new Date() } });
+  const key = `login-fail:email:${email}`;
+  const fails = async () => (await prisma.rateLimit.findUnique({ where: { key } }))?.count ?? 0;
+  const c = client();
+  const attempt = async (password, { token = false, who = c } = {}) => {
+    await who.get("/login");
+    return who.post("/login", [["email", email], ["password", password], ...(token ? TOKEN : [])]);
+  };
+
+  let res = await attempt("sai-1");
+  res = await attempt("sai-2");
+  r.ok(code(res) === "INVALID_CREDENTIALS" && !res.text.includes('class="g-recaptcha"') && (await fails()) === 2, "2 lần sai: thông báo chung, chưa có CAPTCHA, bộ đếm 2");
+  res = await attempt("sai-3");
+  r.ok(code(res) === "INVALID_CREDENTIALS" && res.text.includes('class="g-recaptcha"') && (await fails()) === 3, "Lần sai thứ 3: form sau có CAPTCHA, bộ đếm 3");
+  r.ok((await c.get("/login")).text.includes('class="g-recaptcha"'), "Mở lại /login: vẫn hiện CAPTCHA (server nhớ email vừa gõ)");
+  res = await attempt(pw);
+  r.ok(code(res) === "CAPTCHA_REQUIRED" && (await fails()) === 3 && (await prisma.session.findUnique({ where: { sid: sidOf(c) } }))?.userId == null, "Đủ ngưỡng, bỏ trường CAPTCHA, mật khẩu ĐÚNG → chặn trước bước so mật khẩu, không đăng nhập, bộ đếm không đổi");
+  res = await attempt("sai-4", { token: true });
+  r.ok(code(res) === "INVALID_CREDENTIALS" && (await fails()) === 4, "Giải đúng CAPTCHA nhưng sai mật khẩu → bộ đếm tiếp tục tăng (4)");
+  const fresh = client();
+  res = await attempt(pw, { who: fresh });
+  r.ok(code(res) === "CAPTCHA_REQUIRED" && (await fails()) === 4, "Xoá cookie / phiên ẩn danh mới → vẫn phải CAPTCHA (bộ đếm theo email ở DB)");
+  for (let i = 5; i <= 9; i++) await attempt(`sai-${i}`, { token: true });
+  res = await attempt("sai-10", { token: true });
+  r.ok(res.status === 429 && res.headers.get("retry-after") && (await prisma.rateLimit.findUnique({ where: { key } })).lockedUntil > new Date(), "Lần sai thứ 10 → 429 Tạm khoá (Retry-After), khoá 5 phút");
+  res = await attempt(pw, { token: true });
+  r.ok(res.status === 429 && (await prisma.session.findUnique({ where: { sid: sidOf(c) } }))?.userId == null, "Đang khoá, gửi mật khẩu ĐÚNG + CAPTCHA đúng → vẫn 429, không có phiên");
+  // Hết khoá nhưng cửa sổ 15 phút còn: vẫn phải CAPTCHA; đăng nhập đúng → xoá bộ đếm theo email.
+  await prisma.rateLimit.update({ where: { key }, data: { lockedUntil: new Date(Date.now() - 1000) } });
+  res = await attempt(pw);
+  r.ok(code(res) === "CAPTCHA_REQUIRED", "Hết thời gian khoá, cửa sổ đếm còn hiệu lực → vẫn cần CAPTCHA");
+  res = await attempt(pw, { token: true });
+  r.ok(res.status === 303 && !(await prisma.rateLimit.findUnique({ where: { key } })) && (await prisma.rateLimit.count({ where: { key: { startsWith: "login:ip:" } } })) === 1, "Đăng nhập đúng (có CAPTCHA) → 303, xoá bộ đếm theo email, KHÔNG xoá giới hạn IP");
+
+  // Email không tồn tại: cùng quy tắc (không tạo kênh dò tài khoản).
+  const ghost = newEmail("khongco"), g = client();
+  const ghostCodes = [];
+  for (let i = 0; i < 3; i++) { await g.get("/login"); ghostCodes.push(code(await g.post("/login", [["email", ghost], ["password", "bat-ky-123"]]))); }
+  await g.get("/login");
+  ghostCodes.push(code(await g.post("/login", [["email", ghost], ["password", "bat-ky-123"]])));
+  r.ok(JSON.stringify(ghostCodes) === JSON.stringify(["INVALID_CREDENTIALS", "INVALID_CREDENTIALS", "INVALID_CREDENTIALS", "CAPTCHA_REQUIRED"]), "Email không tồn tại: 3 lần sai rồi bị đòi CAPTCHA, như email có thật", ghostCodes.join(","));
+
+  // Giới hạn theo IP: 30 lần gửi / 15 phút (kể cả lần thiếu dữ liệu) → lần 31 nhận 429.
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "login:ip:" } } });
+  const ipc = client(); await ipc.get("/login");
+  const st = [];
+  for (let i = 0; i < 31; i++) st.push((await ipc.post("/login", [["email", ""], ["password", ""]])).status);
+  r.ok(st.slice(0, 30).every((x) => x === 200) && st[30] === 429, "31 lần gửi form từ một IP trong 15 phút → lần 31 nhận 429");
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "login:ip:" } } });
   results.push(r.counts);
 }
