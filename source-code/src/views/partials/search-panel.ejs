@@ -1,0 +1,85 @@
+<%#
+  Khung tìm của thực đơn (chuyển từ SearchPanel.jsx của block7): form GET tới /dishes → điều kiện nằm trên URL,
+  Reload / copy link / Back mở lại đúng kết quả. Gõ chữ không đổi URL; chỉ áp dụng khi Enter / Tìm.
+  - Kiểu tìm: Cơ bản, Nâng cao (thêm tag, giá, trạng thái), Toàn văn, Gần đúng. Toàn văn / gần đúng bắt buộc có từ khoá
+    (server báo lỗi cạnh ô, không âm thầm lấy tất cả).
+  - "Tìm theo": tên món / nguyên liệu / đầu bếp. Toàn văn chỉ tìm tên + mô tả món → ô bị khoá ở "Theo tên món".
+  - Nhóm nâng cao: tiêu chí nối bằng AND; ô trống = không áp dụng. Có JavaScript: nút "Bộ lọc nâng cao" bật/tắt
+    kiểu Nâng cao và hiện/ẩn nhóm này (như block7). Không JavaScript: nhóm luôn hiện, kèm ghi chú chọn kiểu Nâng cao.
+  - Lỗi theo tên tham số (URL sửa tay ?minPrice=abc) hiện cạnh đúng ô; ô giữ nguyên giá trị đã gõ.
+-%>
+<% const isAdvanced = form.mode === "advanced"; const byValue = byLocked ? "name" : form.by; -%>
+<form class="search-form" role="search" aria-label="Tìm và lọc món" method="get" action="/dishes" novalidate>
+  <div class="search-bar<%= errors.q ? " invalid" : "" %>">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+    <label class="sr-only" for="menu-q"><%= isText ? "Từ khoá (bắt buộc)" : "Từ khoá" %></label>
+    <input id="menu-q" type="search" name="q" value="<%= form.q %>" placeholder="<%= placeholder %>" data-placeholders="<%= JSON.stringify(placeholders) %>"<% if (errors.q) { %> aria-invalid="true" aria-describedby="menu-q-error"<% } %>>
+    <button type="submit" class="btn btn-primary">Tìm</button>
+  </div>
+<% if (errors.q) { %>  <span class="error" id="menu-q-error"><%= errors.q %></span>
+<% } -%>
+
+  <div class="search-options">
+    <label class="mode-pick<%= errors.by ? " invalid" : "" %>">
+      <span class="sr-only">Tìm theo</span>
+      <select name="by"<% if (byLocked) { %> disabled<% } %>>
+<% for (const b of searchBy) { %>        <option value="<%= b.value %>"<% if (b.value === byValue) { %> selected<% } %>><%= b.label %></option>
+<% } -%>
+      </select>
+    </label>
+    <label class="mode-pick<%= errors.mode ? " invalid" : "" %>">
+      <span class="sr-only">Kiểu tìm</span>
+      <select name="mode">
+<% for (const m of modes) { %>        <option value="<%= m.value %>" data-hint="<%= m.hint %>"<% if (m.value === form.mode) { %> selected<% } %>><%= m.label %></option>
+<% } -%>
+      </select>
+    </label>
+    <button type="button" class="filter-toggle js-only" aria-expanded="<%= isAdvanced %>" aria-controls="search-advanced">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M3 5h14"/><path d="M6 10h8"/><path d="M8.5 15h3"/></svg>
+      <span><%= isAdvanced ? "Ẩn bộ lọc" : "Bộ lọc nâng cao" %></span>
+    </button>
+    <span class="muted mode-hint"><%= modeHint %></span>
+  </div>
+<% if (errors.mode) { %>  <span class="error"><%= errors.mode %></span>
+<% } if (errors.by) { %>  <span class="error"><%= errors.by %></span>
+<% } -%>
+
+  <div class="search-advanced" id="search-advanced"<% if (!isAdvanced) { %> data-collapsed<% } %>>
+    <p class="nojs-only muted advanced-note">Tag, giá, trạng thái chỉ áp dụng khi Kiểu tìm là <strong>Nâng cao</strong>.</p>
+    <label class="field<%= errors.tag ? " invalid" : "" %>">
+      <span>Tag</span>
+      <select name="tag">
+        <option value="">Mọi tag</option>
+<% for (const t of tagOptions) { %>        <option value="<%= t.id %>"<% if (String(t.id) === form.tag) { %> selected<% } %>><%= t.name %></option>
+<% } -%>
+      </select>
+<% if (errors.tag) { %>      <span class="error"><%= errors.tag %></span>
+<% } -%>
+    </label>
+<%# type="number" nhưng không đặt min: giá âm / sai do server kiểm tra (như block7). -%>
+    <label class="field<%= errors.minPrice ? " invalid" : "" %>">
+      <span>Giá từ (đ)</span>
+      <input name="minPrice" type="number" inputmode="numeric" value="<%= form.minPrice %>" placeholder="0">
+<% if (errors.minPrice) { %>      <span class="error"><%= errors.minPrice %></span>
+<% } -%>
+    </label>
+    <label class="field<%= errors.maxPrice ? " invalid" : "" %>">
+      <span>Giá đến (đ)</span>
+      <input name="maxPrice" type="number" inputmode="numeric" value="<%= form.maxPrice %>" placeholder="100000">
+<% if (errors.maxPrice) { %>      <span class="error"><%= errors.maxPrice %></span>
+<% } -%>
+    </label>
+    <label class="field<%= errors.available ? " invalid" : "" %>">
+      <span>Trạng thái</span>
+      <select name="available">
+<% for (const a of availability) { %>        <option value="<%= a.value %>"<% if (a.value === form.available) { %> selected<% } %>><%= a.label %></option>
+<% } -%>
+      </select>
+<% if (errors.available) { %>      <span class="error"><%= errors.available %></span>
+<% } -%>
+    </label>
+  </div>
+<%# Giữ cách sắp xếp đang dùng khi tìm lại (block7: form mang theo sort của URL). -%>
+<% if (form.sort) { %>  <input type="hidden" name="sort" value="<%= form.sort %>">
+<% } -%>
+</form>

@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/css/style.css">
+<%# Nạp trong <head> (không defer): phải bắt được lỗi tải ảnh của cả các ảnh đầu trang. Chỉ là tiện ích giao diện. -%>
+  <script src="/js/ui.js"></script>
 </head>
 <body>
 <div class="<%= isAdmin ? "admin app" : "app" %>">

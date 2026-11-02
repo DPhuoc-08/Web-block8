@@ -59,3 +59,29 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - `/dishes?msg=dish-created&q=pho`: có thông báo "Đã thêm món mới.", link đóng = `/dishes?q=pho`. `?msg=<script>` (mã lạ) → không hiện thông báo.
 - `/admin/x`: brand có "/ Quản trị", "Quản trị" có `aria-current`, không có footer.
 - Chrome headless 1280px và 375px (375px nhúng iframe vì Chrome headless không thu cửa sổ dưới ~500px, như block7): header, thông báo, trang 404, footer đúng bố cục, không cuộn ngang.
+
+## Bước 3 — Thực đơn `/dishes` và chi tiết `/dishes/:id` bằng SSR
+**Đã làm:**
+- `src/queries/dishes.js`: chuyển phần truy vấn của `api/src/routes/dishes.js` (block7) — `listDishes` (basic/advanced bằng Prisma, `total` + `items` trong một transaction `RepeatableRead`; fulltext/fuzzy qua `search/`), `getDish`, `listTags` (kèm `dishCount`). Câu truy vấn giữ nguyên, chỉ bỏ phần trả JSON.
+- `src/list-query.js`: chuyển `web/src/listQuery.js` (bỏ `view`): đọc nguyên văn các ô để điền lại form, `pageParams`/`menuUrl` dựng URL gọn, `pageWindow`, `safeMenuBack`.
+- `src/routes/menu.js`: `GET /dishes` (validate bằng `parseListQuery` của block7, render, `400` khi điều kiện sai), `GET /dishes/:id` (`404` khi id sai/không có).
+- `src/format.js`, `src/dish-art.js` (dữ liệu 11 hình minh hoạ, chuyển từ `DishArt.jsx`).
+- View: `dishes/index.ejs` (đầu trang đầy đủ/thu gọn, thanh công cụ, lỗi điều kiện, không có kết quả, trang vượt phạm vi, lưới thẻ), `dishes/show.ejs`; partial `search-panel`, `category-bar`, `dish-card`, `dish-image`, `art-icon`, `pagination`. `404.ejs` nhận tiêu đề riêng ("Không tìm thấy món").
+- `public/js/ui.js` (chỉ tiện dùng): ảnh lỗi → hình minh hoạ; sắp xếp tự gửi form; thu gọn "N tag khác"; khung tìm đổi gợi ý / khoá "Tìm theo" / hiện nhóm nâng cao theo kiểu tìm.
+- CSS: thêm quy tắc có/không có JS; bỏ CSS chỉ dành cho SPA (công tắc cách hiển thị, Tải thêm, Cuộn vô hạn, khung xương, biểu tượng xoay, hiệu ứng món nối thêm): 609 → 561 dòng.
+
+**Quyết định và lý do:**
+- **Validate dùng lại nguyên `parseListQuery` của block7** → cùng quy tắc, cùng câu báo lỗi; chỉ bỏ `pageSize` và `searchIn` khỏi URL trang (thực đơn cố định 12 món/trang như block7, `searchIn` là của admin).
+- **Chuyển về URL gọn bằng redirect 302**: form GET gửi cả ô trống (`tag=&minPrice=`) và tham số không thuộc chế độ đang chọn. Khi điều kiện hợp lệ, server chuyển về URL chỉ gồm tham số có hiệu lực (giống `toPageParams` của block7) → link copy gọn, `?page=1` về `/dishes`. Có lỗi thì giữ nguyên URL để hiện giá trị sai cạnh ô. Không lặp redirect vì URL đích được dựng bằng chính `URLSearchParams` mà lần sau so sánh.
+- **Kiểm tra `?tag=` có thật bằng danh sách tag đã tải** cho thanh danh mục (thay cho `findUnique` riêng của block7): bớt một vòng mạng tới Supabase, cùng kết quả. Danh sách tag và trang món tải song song.
+- **Link số trang có `#ket-qua`** thay cho `useListTop` (cuộn + focus bằng JS): trình duyệt tự cuộn tới đầu danh sách và Tab bắt đầu từ đó.
+- **Trang chi tiết quay về đúng danh sách đang lọc bằng `?back=`** (block7 dùng `state` của router). `safeMenuBack` chỉ nhận URL bắt đầu bằng `/dishes` → không thành open redirect. Thực đơn mặc định thì không thêm `back`.
+- **Tăng dần theo JS** (plan 9.3): không JS thì nhóm nâng cao luôn hiện kèm ghi chú "chỉ áp dụng khi Kiểu tìm là Nâng cao", đủ 16 nút danh mục, nút "Áp dụng" cho sắp xếp, ảnh lỗi hiện chữ alt. Có JS thì giống block7.
+- **Phương án đã bỏ:** `<details>` cho "N tag khác" (không đặt được các nút ẩn nối tiếp trong cùng hàng flex, nhất là thanh cuộn ngang ở điện thoại); tự nâng kiểu tìm lên Nâng cao khi có ô nâng cao (đổi hợp đồng: block7 bỏ qua tham số không thuộc chế độ).
+
+**Đã kiểm tra:**
+- Mã trạng thái (curl): `/dishes` 200; URL có ô trống → 302 `/dishes`; `?page=1` → 302 `/dishes`; `?page=999` 200 (trang vượt phạm vi); `?page=0`, `?mode=fuzzy` (thiếu từ khoá), `?q=a&q=b`, `?mode=advanced&tag=999`, `?minPrice=abc`, `?mode=xyz` → 400; `/dishes/1` 200; `/dishes/abc`, `/dishes/99999` → 404.
+- **So với API block7** (chạy `Week5/block7/api` ở cổng 3001, không sửa gì): script gom id món trên trang SSR và so với `items` của `GET /api/dishes` cùng điều kiện — **19/19 ca giống hệt** id, thứ tự, điểm phù hợp, số trang. Các ca: mặc định, trang 2/100, `q=bún`, sort giá giảm trang 3, sort tên, nâng cao (tag + giá 0–60.000 + còn bán + giá tăng, trang 2), `available=false`, giá 0, theo nguyên liệu "tôm" (trang 1, 5), theo đầu bếp "Mai", `q=100%`, `q=_`, toàn văn "nước dùng xương" / "cá kho tộ", gần đúng "bò lúc lắt", gần đúng theo nguyên liệu "tôm xú", theo đầu bếp "Trần Thị Bít".
+- Chrome headless: thực đơn 1280px (khớp ảnh `block7/evidence/screens/so-trang-1.png`, trừ công tắc cách hiển thị đã bỏ), 820px (2 cột, kết quả "bò" giá giảm, nhãn Tạm hết), 375px (dòng món ảnh 96px, thanh danh mục cuộn ngang, phân trang "Trang 1/100"), điều kiện sai 1280px (lỗi cạnh ô + khung "Điều kiện tìm không hợp lệ"), lọc tag "Miền Bắc" 820px (phần tag ẩn tự mở vì tag đang chọn nằm trong đó), chi tiết món không ảnh 375px (hình minh hoạ, "← Thực đơn" về `/dishes?q=miến`).
+- Tắt JavaScript (HTML bỏ thẻ `<script>`): nhóm nâng cao hiện kèm ghi chú, nút "Bộ lọc nâng cao" ẩn, form vẫn gửi bình thường.
+- Lần mở đầu sau khi server khởi động ~5,4s (mở kết nối tới Supabase Singapore), các lần sau ~0,35s.

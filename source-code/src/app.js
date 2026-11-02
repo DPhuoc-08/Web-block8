@@ -2,12 +2,17 @@ import "dotenv/config";
 import express from "express";
 import methodOverride from "method-override";
 import { fileURLToPath } from "node:url";
+import menuRouter from "./routes/menu.js";
+import { formatPrice, formatMenuPrice, tagNames } from "./format.js";
+import { artFor, artShape } from "./dish-art.js";
 
 const app = express();
 
 // SSR: server đọc database, dựng HTML bằng EJS rồi trả cả trang. Không có API JSON ở block8 (block9 thêm lại kèm JWT).
 app.set("view engine", "ejs");
 app.set("views", fileURLToPath(new URL("./views", import.meta.url)));
+// Hàm định dạng dùng trong mọi template (chỉ là hàm thuần, không có dữ liệu hay bí mật nào).
+Object.assign(app.locals, { formatPrice, formatMenuPrice, tagNames, artFor, artShape });
 
 // File tĩnh (CSS, JS tiện dùng) trong public/. Chỉ phục vụ file, không có route ghi dữ liệu.
 app.use(express.static(fileURLToPath(new URL("../public", import.meta.url))));
@@ -55,6 +60,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => res.redirect("/dishes"));
+app.use(menuRouter);
 
 // Không route nào khớp → 404.
 app.use((req, res) => {

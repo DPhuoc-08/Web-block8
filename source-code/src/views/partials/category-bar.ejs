@@ -1,0 +1,18 @@
+<%#
+  Thanh danh mục (chuyển từ CategoryBar.jsx của block7): mỗi nút là link tới mode=advanced&tag=<id>, giữ từ khoá /
+  giá đã áp dụng, về trang 1. Hiện sẵn 5 loại món nhiều món nhất; các tag còn lại (cat-extra):
+  - có JavaScript: ẩn sau nút "N tag khác" (như block7);
+  - không JavaScript: hiện hết (không mất lối tắt nào);
+  - tag đang lọc nằm trong phần ẩn → không thu gọn (nút đang chọn phải luôn thấy được).
+-%>
+<% const c = categories; if (c.shown.length || c.hidden.length) { -%>
+<nav class="cat-bar" aria-label="Lọc theo tag" data-collapsible="<%= c.hidden.length > 0 && !c.activeHidden %>">
+  <a class="cat-pill" href="<%= c.allUrl %>" aria-current="<%= c.allCurrent %>">Tất cả</a>
+<% for (const t of [...c.shown, ...c.hidden]) { -%>
+  <a class="cat-pill<%= c.hidden.includes(t) ? " cat-extra" : "" %>" href="<%= t.url %>" aria-current="<%= t.current %>"><% if (t.art) { %><%- include("art-icon", { shape: artShape(t.name), cls: "cat-icon" }) %><% } %><span><%= t.name %></span><span class="cat-count"><%= t.dishCount %></span></a>
+<% } -%>
+<% if (c.hidden.length && !c.activeHidden) { -%>
+  <button type="button" class="cat-more js-only" aria-expanded="false" data-label="<%= c.hidden.length %> tag khác"><%= c.hidden.length %> tag khác</button>
+<% } -%>
+</nav>
+<% } -%>

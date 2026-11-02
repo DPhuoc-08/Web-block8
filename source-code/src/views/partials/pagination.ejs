@@ -1,0 +1,24 @@
+<%#
+  Phân trang dạng số trang (chuyển từ Pagination.jsx của block7). Tham số: page, totalPages, pages (dải rút gọn),
+  pageHref(n), label. Mỗi nút là LINK tới URL có ?page=N: copy link, mở tab mới, Back/Forward đều ra đúng trang.
+  ≤ 600px: CSS ẩn dải số, chỉ còn Trước · "Trang 4/100" · Sau.
+-%>
+<% if (totalPages > 1) { -%>
+<% const prev = page > 1 && page <= totalPages ? page - 1 : null; const next = page < totalPages ? page + 1 : null; -%>
+<nav class="pagination" aria-label="<%= label %>">
+<% if (prev) { %>  <a class="page-btn" href="<%= pageHref(prev) %>" rel="prev">← Trước</a>
+<% } else { %>  <span class="page-btn" aria-disabled="true">← Trước</span>
+<% } -%>
+  <ol class="page-list">
+<% for (const p of pages) { -%>
+<% if (p === "…") { %>    <li class="page-gap" aria-hidden="true">…</li>
+<% } else { %>    <li><a class="page-num" href="<%= pageHref(p) %>"<% if (p === page) { %> aria-current="page"<% } %> aria-label="Trang <%= p %>"><%= p %></a></li>
+<% } -%>
+<% } -%>
+  </ol>
+  <span class="page-status">Trang <%= page %>/<%= totalPages %></span>
+<% if (next) { %>  <a class="page-btn" href="<%= pageHref(next) %>" rel="next">Sau →</a>
+<% } else { %>  <span class="page-btn" aria-disabled="true">Sau →</span>
+<% } -%>
+</nav>
+<% } -%>

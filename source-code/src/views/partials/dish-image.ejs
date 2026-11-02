@@ -1,0 +1,11 @@
+<%#
+  Ảnh món (link ngoài, giấy phép mở — giữ từ block5/block7). Tham số: src, alt, cls, tags, label, lazy, w, h.
+  - Không có ảnh → hình minh hoạ theo loại món.
+  - Có ảnh → in thêm hình minh hoạ đang ẩn ngay sau <img>: link ảnh chết thì public/js/ui.js bỏ <img> và hiện hình
+    minh hoạ (như onError của block7). Tắt JavaScript thì trình duyệt hiện chữ alt.
+-%>
+<% const art = artFor(tags); -%>
+<% if (src) { -%>
+<img class="<%= cls %> dish-photo" src="<%= src %>" alt="<%= alt %>" referrerpolicy="no-referrer"<% if (locals.lazy) { %> loading="lazy"<% } %><% if (locals.w) { %> width="<%= w %>" height="<%= h %>"<% } %>>
+<% } -%>
+<span class="dish-art art-<%= art.group %> <%= cls %>"<% if (src) { %> hidden<% } %>><%- include("art-icon", { shape: art.shape, cls: "art-icon" }) %><% if (locals.label && art.name) { %><span class="art-label"><%= art.name %></span><% } %></span>

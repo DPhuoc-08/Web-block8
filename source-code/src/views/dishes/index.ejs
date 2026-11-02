@@ -1,0 +1,101 @@
+<%- include("../partials/header", { title }) %>
+<%#
+  Thực đơn (/dishes) — chuyển từ DishListPage.jsx (kiểu số trang) của block7. Mỗi lần mở trang, server đọc URL,
+  truy vấn đúng một trang (12 món) tại PostgreSQL rồi trả cả trang HTML.
+  Đầu trang đầy đủ chỉ ở trang 1 khi chưa có điều kiện; có từ khoá / bộ lọc / sắp xếp hoặc page ≥ 2 → thu gọn.
+-%>
+<% if (heroFull) { -%>
+<section class="menu-hero" aria-labelledby="menu-title">
+  <div class="hero-text">
+<%# Trang khách không hiện số đếm (block7 13.4). Lời giới thiệu chỉ nhắc món có thật trong thực đơn (seed). -%>
+    <p class="hero-eyebrow">Thực đơn</p>
+    <h1 id="menu-title">Ăn một bữa,<br>đi trọn ba miền</h1>
+    <p class="hero-lead">Bún chả Hà Nội khói than hoa, mì Quảng vàng ươm bánh tráng nướng, cá kho tộ đậm đà miền Tây — mỗi món là một vùng đất trên bàn ăn của bạn.</p>
+    <%- include("../partials/search-panel") %>
+  </div>
+<% if (heroPhotos.length === 3) { -%>
+  <div class="hero-photos">
+<% for (const d of heroPhotos) { -%>
+    <a class="hero-photo" href="/dishes/<%= d.id %>"><%- include("../partials/dish-image", { src: d.imageUrl, alt: d.name, cls: "hero-img", tags: d.tags, label: false }) %></a>
+<% } -%>
+  </div>
+<% } -%>
+</section>
+<% } else { -%>
+<section class="menu-hero compact" aria-labelledby="menu-title">
+  <h1 id="menu-title">Thực đơn</h1>
+  <%- include("../partials/search-panel") %>
+</section>
+<% } -%>
+
+<%- include("../partials/category-bar") %>
+
+<%# Link số trang có #ket-qua → trình duyệt cuộn tới đây và bắt đầu Tab từ đầu danh sách mới. -%>
+<div id="ket-qua" class="list-anchor" tabindex="-1">
+  <span class="sr-only">Danh sách món, trang <%= result ? result.page : (form.page || 1) %></span>
+</div>
+
+<div class="menu-toolbar">
+  <div class="result-line">
+<% if (result && filtered) { -%>
+    <span><% if (form.q) { %>Kết quả cho <%= byNoun %>“<%= form.q %>”<% } else { %>Kết quả theo bộ lọc<% } %><% if (isText && result.total > 0) { %> · xếp theo độ phù hợp<% } %></span>
+<% } -%>
+<% if (filtered) { %>    <a href="<%= clearUrl %>">Xoá bộ lọc</a>
+<% } -%>
+  </div>
+<%# Sắp xếp: gửi lại bộ điều kiện ĐÃ ÁP DỤNG (ô ẩn) + sort mới, về trang 1. Có JS thì đổi là áp dụng ngay;
+    không JS thì bấm "Áp dụng". Toàn văn / gần đúng xếp theo điểm → khoá ô. -%>
+  <form class="toolbar-tools" method="get" action="/dishes">
+<% for (const [k, v] of sortHidden) { %>    <input type="hidden" name="<%= k %>" value="<%= v %>">
+<% } -%>
+    <label class="sort-pick<%= errors.sort ? " invalid" : "" %>">
+      <span>Sắp xếp</span>
+      <select name="sort" data-autosubmit<% if (isText) { %> disabled<% } %>>
+<% if (isText) { %>        <option value="">Theo độ phù hợp</option>
+<% } else { for (const s of sorts) { %>        <option value="<%= s.value %>"<% if (s.value === form.sort) { %> selected<% } %>><%= s.label %></option>
+<% } } -%>
+      </select>
+    </label>
+<% if (!isText) { %>    <button type="submit" class="btn js-hide">Áp dụng</button>
+<% } -%>
+  </form>
+<% if (errors.sort) { %>  <span class="error"><%= errors.sort %></span>
+<% } -%>
+</div>
+
+<% if (invalid) { -%>
+<%# Điều kiện trên URL không hợp lệ (vd. ?page=0, ?minPrice=abc): không phải lỗi máy chủ → chỉ ra điều kiện sai. -%>
+<div class="panel empty" role="alert">
+  <strong>Điều kiện tìm không hợp lệ</strong>
+  <ul class="invalid-list">
+<% for (const m of new Set(Object.values(errors))) { %>    <li><%= m %></li>
+<% } -%>
+  </ul>
+  <a class="btn" href="<%= clearUrl %>">Xoá bộ lọc</a>
+</div>
+<% } else if (result.total === 0) { -%>
+<div class="empty">
+  <strong><%= filtered ? "Không có món nào khớp điều kiện." : "Chưa có món nào." %></strong>
+<% if (form.mode === "fuzzy") { %>  Tìm gần đúng không bỏ dấu: thử gõ có dấu, hoặc dùng chế độ Cơ bản.
+<% } if (filtered) { %>  Thử bỏ bớt tiêu chí hoặc <a href="<%= clearUrl %>">xem toàn bộ thực đơn</a>.
+<% } -%>
+</div>
+<% } else if (result.items.length === 0) { -%>
+<%# Trang vượt phạm vi (sửa tay URL): kết quả hợp lệ nhưng trang này rỗng. -%>
+<div class="empty">
+  <strong>Trang <%= result.page %> không có món nào.</strong>
+  <a href="<%= pageHref(totalPages) %>">Về trang cuối (<%= totalPages %>)</a>
+</div>
+<% } else { -%>
+<section class="menu-group">
+  <h2 class="sr-only">Kết quả</h2>
+  <div class="menu-cards">
+<% for (const dish of result.items) { -%>
+    <%- include("../partials/dish-card", { dish, href: cardHref(dish.id) }) %>
+<% } -%>
+  </div>
+</section>
+<%- include("../partials/pagination", { page: result.page, totalPages, pages, pageHref, label: "Phân trang thực đơn" }) %>
+<% } -%>
+
+<%- include("../partials/footer") %>

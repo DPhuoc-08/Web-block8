@@ -1,0 +1,57 @@
+<%- include("../partials/header", { title }) %>
+<%#
+  Chi tiết món (/dishes/:id) — chuyển từ DishDetailPage.jsx của block7. Id đọc từ URL, món đọc lại từ database
+  ở mỗi lần mở trang. backUrl: danh sách đang lọc (?back=, chỉ nhận URL của thực đơn).
+-%>
+<a class="back" href="<%= backUrl %>">← Thực đơn</a>
+
+<div class="detail">
+  <figure class="detail-photo">
+    <%- include("../partials/dish-image", { src: dish.imageUrl, alt: dish.name, cls: "", tags: dish.tags, label: true, w: 960, h: 720 }) %>
+<%# CC BY / BY-SA yêu cầu ghi công tác giả và giấy phép. -%>
+<% if (dish.imageUrl && dish.imageCredit) { %>    <figcaption>Ảnh: <%= dish.imageCredit %></figcaption>
+<% } -%>
+  </figure>
+
+  <div class="detail-info">
+<%# Chip tag là link lọc thực đơn theo tag đó; tag đầu tiên (loại món) có màu nhấn. -%>
+<% if (dish.tags.length) { -%>
+    <ul class="tag-list" aria-label="Tag của món">
+<% for (const t of dish.tags) { %>      <li><a class="tag-chip<%= t.id === dish.tags[0].id ? " main" : "" %>" href="/dishes?mode=advanced&tag=<%= t.id %>"><%= t.name %></a></li>
+<% } -%>
+    </ul>
+<% } -%>
+    <h1><%= dish.name %></h1>
+    <div class="price-line">
+      <span class="detail-price<%= dish.price === 0 ? " free" : "" %>"><%= formatMenuPrice(dish.price) %></span>
+<% if (dish.available) { %>      <span class="badge on">Đang phục vụ</span>
+<% } else { %>      <span class="badge off">Tạm hết</span>
+<% } -%>
+    </div>
+    <p class="detail-desc"><%= dish.description ?? "Chưa có mô tả cho món này." %></p>
+
+    <dl class="facts">
+      <dt>Mã món</dt>
+      <dd>#<%= dish.id %></dd>
+      <dt>Đầu bếp</dt>
+      <dd><%= dish.chef.name %><span class="muted normal"> · <%= tagNames(dish.chef.tags) %></span></dd>
+      <dt>Tình trạng</dt>
+      <dd><%= dish.available ? "Đang phục vụ" : "Tạm hết" %></dd>
+    </dl>
+
+<% if (dish.ingredients.length) { -%>
+    <section aria-labelledby="ingredients-title">
+      <h2 id="ingredients-title" class="section-label">Nguyên liệu</h2>
+      <ul class="ingredient-tags">
+<% for (const ingredient of dish.ingredients) { %>        <li><%= ingredient.name %></li>
+<% } -%>
+      </ul>
+    </section>
+<% } -%>
+
+<% if (dish.tags.length) { %>    <a class="btn" href="/dishes?mode=advanced&tag=<%= dish.tags[0].id %>">Xem thêm <%= dish.tags[0].name %></a>
+<% } -%>
+  </div>
+</div>
+
+<%- include("../partials/footer") %>

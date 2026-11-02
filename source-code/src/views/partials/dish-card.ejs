@@ -1,0 +1,30 @@
+<%#
+  Một thẻ món trên thực đơn (chuyển từ DishCard.jsx của block7). Một cấu trúc cho mọi cỡ màn hình, CSS đổi bố cục:
+  ≥ 1024px lưới 3 cột, 601–1023px 2 cột, ≤ 600px dòng món ảnh 96px.
+  Link chỉ mang id (+ ?back= là URL danh sách đang lọc); trang chi tiết tự đọc lại món từ database theo id.
+  Tag đầu tiên (loại món) là chip; tag còn lại ghi bằng chữ. score chỉ có ở toàn văn / gần đúng.
+-%>
+<% const [mainTag, ...otherTags] = dish.tags; -%>
+<a class="dish-card<%= dish.available ? "" : " unavailable" %>" href="<%= href %>">
+  <span class="card-media">
+    <%- include("dish-image", { src: dish.imageUrl, alt: dish.name, cls: "card-img", tags: dish.tags, label: true, lazy: true, w: 344, h: 230 }) %>
+<% if (!dish.available) { -%>
+    <span class="sold-badge">Tạm hết</span>
+<% } -%>
+  </span>
+  <span class="card-body">
+    <span class="card-title">
+      <span class="dish-name"><%= dish.name %></span>
+      <span class="dish-price<%= dish.price === 0 ? " free" : "" %>"><%= formatMenuPrice(dish.price) %></span>
+    </span>
+<% if (dish.description) { -%>
+    <span class="dish-desc"><%= dish.description %></span>
+<% } -%>
+    <span class="dish-meta">
+<% if (mainTag) { %>      <span class="tag-chip main"><%= mainTag.name %></span>
+<% } if (otherTags.length) { %>      <span class="meta-text"><%= tagNames(otherTags) %></span>
+<% } if (dish.score !== undefined) { %>      <span class="score">phù hợp <%= dish.score.toFixed(3) %></span>
+<% } -%>
+    </span>
+  </span>
+</a>
