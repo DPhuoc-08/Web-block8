@@ -15,3 +15,27 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
   - `.env.*` (đã có) che luôn `.env.test` chứa key thử reCAPTCHA.
 
 **Đã kiểm tra:** `git status` chỉ thấy `.gitignore` và `BUILD_LOG.md`.
+
+## Bước 1 — Chép nền backend block7
+**Đã làm:**
+- Lấy `api/` của block7 bằng `git archive HEAD` (commit `789bbba`, cây làm việc block7 sạch) vào thư mục tạm, rồi chép **chỉ phần backend dùng lại** vào `source-code/`:
+  - `prisma/` (schema 7 bảng, seed tất định + `seed-data/`, `sql/`), `prisma.config.js`, `certs/supabase-ca.crt`
+  - `src/db.js`, `src/search/` (fulltext, fuzzy), `src/validators/` (list-query, dish, chef, ingredient, tag, common, id)
+  - `scripts/run-sql.js`, `package.json`, `package-lock.json`
+- **Không chép** (plan mục 0, CLAUDE.md): `src/app.js` (app API JSON có CORS), `src/http/` (envelope JSON), `src/routes/` (route JSON), `scripts/check-api.sh` (kiểm tra API JSON), `.env.example` cũ.
+- `package.json`: tên `block8`, mô tả mới; gỡ `cors`; thêm `ejs@7.0.1`, `method-override@3.0.0` (đúng bản block5 đã dùng, ghim chính xác như block7).
+- `.env.example` mới: `DATABASE_URL` (ghi rõ là DB block7, seed xoá sạch rồi tạo lại), `PORT`, `LOG_SQL`. Biến của phần auth thêm dần ở bước cần tới.
+- `.env`: người dùng đồng ý cho chép từ `Week5/block7/api/.env` bằng `cp`, không đọc nội dung; xoá dòng `CORS_ORIGIN` không còn dùng.
+
+**Quyết định và lý do:**
+- **`git archive` + chép chọn lọc**: chỉ lấy file đã commit của block7, không thể lỡ chép `node_modules/`, `generated/`, `.env`.
+- **Logic truy vấn món của `routes/dishes.js` (handler `GET /` và `textSearch`) chưa chép**: phần lớn logic đã nằm trong `validators/list-query.js` (`parseListQuery`, `escapeLike`, `basicAdvancedWhere`) và `search/`. Phần còn lại sẽ chuyển sang route SSR ở bước 3, đổi đầu ra JSON → `res.render`, giữ nguyên câu truy vấn.
+- **`src/db.js` giữ nguyên**: `findPage`, `findFuzzyPage`, `nameTaken`, mã lỗi Prisma dùng lại cho admin SSR. Comment nói "response JSON / SPA" sửa ở bước 2 khi viết app SSR.
+- **Phiên bản**: express 5.3.0, Prisma 7.10.0, pg 8.23.1, dotenv 18.0.8 giữ theo lockfile block7.
+
+**Đã kiểm tra:**
+- `npm install` → `prisma generate` sinh `generated/prisma` (7.10.0).
+- `git check-ignore`: `source-code/.env` bị bỏ qua. `.env` chỉ có `DATABASE_URL`, `PORT`.
+- Host của `DATABASE_URL`: `aws-0-ap-southeast-1.pooler.supabase.com` (project block7, Singapore).
+- Đọc DB qua `src/db.js`: 1.200 món, 60 đầu bếp, 250 nguyên liệu, 16 tag, 2.106 `dish_tags`, 106 `chef_tags`, 5.357 `dish_ingredients`.
+- Chưa có `src/app.js` nên `npm start` chưa chạy: bước 2 viết khung SSR.
