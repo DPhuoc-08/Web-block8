@@ -1,0 +1,35 @@
+<%- include("_start") %>
+<%#
+  Nhập mã kích hoạt (Figma vòng 2, màn 3). MỘT form, hai nút: "Kích hoạt" gửi tới /activate, "Gửi lại mã" gửi tới
+  /activate/resend (formaction) — gửi lại luôn dùng đúng email đang có trong ô.
+  Ô mã: MỘT <input name="otp"> (inputmode numeric, autocomplete one-time-code) — ui.js vẽ 6 ô bên trên (nhóm chốt
+  02/11/2026); dán cả mã, tự điền trên điện thoại, trình đọc màn hình đều làm việc với một ô. Tắt JS: ô thường.
+-%>
+<form class="auth-form" method="post" action="/activate" novalidate data-once<% if (code) { %> data-error-code="<%= code %>"<% } %>>
+  <input type="hidden" name="_csrf" value="<%= csrf() %>">
+  <div class="auth-head">
+    <h1>Nhập mã kích hoạt</h1>
+    <p>Mã 6 số đã được gửi tới email bạn vừa đăng ký. Mã có hạn 10 phút.</p>
+  </div>
+  <%- include("_banner") %>
+  <div class="auth-fields">
+    <%- include("_field", { name: "email", label: "Email", type: "email", value: values.email, autocomplete: "email", placeholder: "ban@example.com", error: errors.email }) %>
+    <div class="a-field<%= errors.otp ? " invalid" : "" %>">
+      <div class="a-label-row"><label for="f-otp">Mã kích hoạt</label></div>
+      <div class="otp" data-otp>
+        <input id="f-otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Nhập 6 chữ số" aria-describedby="f-otp-hint<% if (errors.otp) { %> f-otp-error<% } %>"<% if (errors.otp) { %> aria-invalid="true"<% } %>>
+      </div>
+      <p class="a-hint" id="f-otp-hint">Mã gồm 6 chữ số trong email. Có thể dán cả mã một lần.</p>
+<% if (errors.otp) { %>      <p class="a-error" id="f-otp-error"><%= errors.otp %></p>
+<% } -%>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block" data-busy-label="Đang kích hoạt…">Kích hoạt tài khoản</button>
+  <hr class="auth-divider">
+  <div class="resend">
+    <p class="auth-foot">Chưa nhận được mã? Kiểm tra cả mục Spam hoặc Quảng cáo.</p>
+    <button type="submit" class="btn btn-block" formaction="/activate/resend" formnovalidate<% if (cooldown > 0) { %> data-cooldown="<%= cooldown %>"<% } %>>Gửi lại mã</button>
+  </div>
+  <p class="auth-foot"><a href="/login">Về đăng nhập</a></p>
+</form>
+<%- include("_end") %>

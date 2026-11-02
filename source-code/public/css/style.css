@@ -650,3 +650,17 @@ html:not(.js) .js-only { display: none; }
 .result-icon { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; }
 .result-mail { background: var(--primary-soft); color: var(--primary); }
 .result-clock, .result-warn { background: var(--danger-soft); color: var(--danger); }
+/* Ô mã kích hoạt 6 ô (nhóm chốt 02/11/2026): 6 ô chỉ để nhìn, ô nhập thật nằm phủ lên trên và trong suốt. */
+.otp { position: relative; }
+.otp input { min-height: 48px; font-size: 16px; letter-spacing: .2em; }
+.otp-enhanced input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: text; }
+.otp-boxes { display: flex; gap: 8px; }
+.otp-box { display: grid; place-items: center; width: 48px; height: 56px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); font-size: 1.5rem; font-weight: 600; }
+.otp-enhanced:focus-within .otp-box.active { border: 2px solid var(--primary); }
+.otp-enhanced:focus-within .otp-box.active:empty::after { content: ""; width: 2px; height: 26px; background: var(--primary); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.a-field.invalid .otp-box { border: 2px solid var(--danger); }
+@media (max-width: 359px) { .otp-box { width: 40px; height: 52px; } }
+.resend { display: grid; gap: 10px; }
+.resend .auth-foot { font-size: .88rem; }
+.btn:disabled { opacity: .55; cursor: default; }

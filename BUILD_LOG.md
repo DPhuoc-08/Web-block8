@@ -250,3 +250,26 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - `limit max 3`: lần 4 bị giới hạn, `retryAfter ≤ 60`; `reset` xoá bộ đếm.
 - reCAPTCHA (gọi `siteverify` thật): thiếu token → `missing-input-response`; **key thử công khai của Google → hợp lệ, `hostname = testkey.google.com`**; cùng token nhưng `RECAPTCHA_HOSTNAMES=localhost` → từ chối `hostname:testkey.google.com`; secret sai → `invalid-input-response`; fetch lỗi (giả lập mất mạng) → `unavailable` (route trả 503, không cho qua).
 - Chưa kiểm với key thật (cần nhóm tạo key v2 cho `localhost`).
+
+## Bước 13 — Đăng ký, kích hoạt bằng mã, gửi lại mã
+**Đã làm:**
+- `src/routes/auth/register.js`: `GET/POST /register`, `GET/POST /activate`, `POST /activate/resend`.
+- View `auth/register.ejs` (email, mật khẩu + quy tắc nói trước, nhập lại, reCAPTCHA), `auth/activate.ejs` (một form hai nút: "Kích hoạt" → `/activate`, "Gửi lại mã" → `formaction="/activate/resend"`), `auth/_captcha.ejs`.
+- `ui.js`: 6 ô mã vẽ trên **một** ô nhập thật (trong suốt, vẫn nhận gõ / dán / tự điền); đếm ngược "Gửi lại mã sau 0:42"; nút "Đang …" theo đúng nút vừa bấm (`event.submitter`).
+- `check-auth.mjs` phần A (đăng ký + kích hoạt), B (CAPTCHA ở đăng ký + giới hạn IP); `scripts/lib/server.mjs` giữ log của server để kiểm tra log không chứa mã.
+
+**Luồng (plan 5.2, 5.3):**
+- Đăng ký: giới hạn 10 / giờ theo IP → **reCAPTCHA trước** khi băm / tạo / gửi → kiểm tra dữ liệu (không đọc `role`) → **luôn băm mật khẩu** → email mới: tạo user `pending` + mã (một lệnh lồng nhau) và gửi thư bất đồng bộ; đang pending: không ghi đè mật khẩu, coi như gửi lại theo giới hạn (quá thì lặng lẽ bỏ qua); đã active: không làm gì. Cả ba → `303 /activate`.
+- Kích hoạt: giới hạn IP → đang khoá (bản ghi mã, hoặc bộ đếm theo email nếu không có tài khoản pending) → 429 → so HMAC bằng `timingSafeEqual` → một transaction: `updateMany` có điều kiện (pending, `activation`, chưa dùng, chưa hết hạn, `attempts < 5`, không khoá, hash khớp) đặt `usedAt`, `count = 1` thì đặt `active` + `emailVerifiedAt` → `303 /login?msg=activated` (không tự đăng nhập). Sai vì bất kỳ lý do gì → cùng `INVALID_OTP`, `attempts + 1`; đủ 5 → khoá 15 phút.
+- Gửi lại: chờ 60 giây + tối đa 5 / giờ theo email (cả email không có tài khoản) → mã mới ghi đè `otpHash`, hạn, `usedAt`; **giữ `attempts`, `lockedUntil`**.
+
+**Lỗi phát hiện trong lúc làm:**
+1. *(Rò rỉ, phát hiện khi đọc lại code, trước khi chạy)* Trang nhập mã có đếm ngược dựa trên `session.otpSentAt`; bản đầu chỉ đặt giá trị này khi thật sự gửi thư → trang sau đăng ký của email mới có đếm ngược, của email đã active thì không → **lộ email nào đã đăng ký**. Sửa: đặt `otpSentAt` ở mọi nhánh. Bằng chứng: ca "Trang sau đăng ký giống hệt nhau cho email mới / pending / đã active" ĐẠT (so từng dòng: chỉ khác CSRF token, email đã gõ và số giây đếm ngược 57 / 60 do thời điểm bấm).
+2. *(Của script)* Lần chạy đầu 29/31: ca so trang chưa bỏ số giây đếm ngược; ca hostname nhận 429 vì phần A + B đã đăng ký 11 lần từ cùng IP (giới hạn 10/giờ hoạt động đúng). Sửa script, chạy lại đạt hết.
+3. *(Của script)* `scripts/lib/server.mjs` cộng dồn log qua các lần chạy → khi khởi động lại, dòng "Server chạy tại" của lần trước làm hàm trả về trước khi server mới lên. Sửa: chỉ xét log của lần chạy hiện tại.
+
+**Đã kiểm tra — `check-auth.mjs`: 56/56 ĐẠT** (A 25, B 6, D 25):
+- A: đăng ký kèm `role=admin` → pending, `viewer`; mật khẩu Argon2id, mã HMAC 64 hex; mã có trong thư, không có trong response / trang; pending đăng nhập → không có phiên; mã kích hoạt làm mật khẩu → từ chối; đăng ký lại email pending không ghi đè mật khẩu; email đã active → không đổi gì, không gửi thư; 3 trang sau đăng ký giống nhau; dữ liệu sai → `VALIDATION_FAILED`, không tạo user; 3 lần mã sai → cùng `INVALID_OTP`, `attempts = 3`; gửi lại → mã mới, `attempts` vẫn 3; mã cũ bị từ chối; lần sai thứ 5 → khoá; đang khoá mã đúng → 429 + `Retry-After`; hết khoá, mã đúng → active, `emailVerifiedAt`, `usedAt`, không tự đăng nhập; dùng lại mã → `INVALID_OTP`; **2 request cùng mã đúng song song → một 303 + một `INVALID_OTP`**; mã hết hạn → `INVALID_OTP`; gửi lại 2 lần trong 60 giây → 429 (cả email không có tài khoản); email không có tài khoản: 5 lần sai rồi 429; log server không chứa mã hay mật khẩu.
+- B: thiếu CAPTCHA → `CAPTCHA_REQUIRED`, không tạo user, không gửi thư; tự khai `captchaPassed=true` → vẫn từ chối; trang có site key, không có secret; server chạy với secret sai (Google trả không hợp lệ) và với `RECAPTCHA_HOSTNAMES=localhost` (hostname `testkey.google.com` không được phép) → `INVALID_CAPTCHA`; 11 lần đăng ký từ một IP → lần 11 nhận 429.
+- Ảnh: đăng ký 1280px (widget reCAPTCHA thật của Google, đang là key thử), nhập mã 375px (6 ô) khớp Figma.
+- **Chưa kiểm được với key reCAPTCHA thật**: ca "token thật dùng lại / hết hạn" cần bấm tay (checklist ở bước 16).

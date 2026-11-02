@@ -60,13 +60,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Ô mã kích hoạt: vẽ 6 ô bên trên MỘT ô nhập thật (ô thật vẫn nhận gõ, dán, tự điền; chỉ trong suốt).
+  for (const wrap of document.querySelectorAll("[data-otp]")) setupOtp(wrap);
+
+  // "Gửi lại mã" vừa bấm: khoá nút + đếm ngược 60 giây cho dễ hiểu. Server vẫn tự chặn 60 giây (tắt JS vẫn an toàn).
+  for (const button of document.querySelectorAll("button[data-cooldown]")) {
+    const label = button.textContent;
+    let left = Number(button.dataset.cooldown);
+    const tick = () => {
+      if (left <= 0) return ((button.disabled = false), (button.textContent = label));
+      button.disabled = true;
+      button.textContent = `Gửi lại mã sau ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      left -= 1;
+      setTimeout(tick, 1000);
+    };
+    tick();
+  }
+
   // ----- Khu quản trị -----
   // Form ghi (data-once): bấm lần hai khi request đầu chưa về thì bỏ qua → không tạo hai món giống nhau.
   for (const f of document.querySelectorAll("form[data-once]")) {
     f.addEventListener("submit", (event) => {
       if (f.dataset.submitting) return event.preventDefault();
       f.dataset.submitting = "1";
-      const button = f.querySelector("[data-busy-label]");
+      // Nút vừa bấm (form nhập mã có hai nút: Kích hoạt / Gửi lại mã).
+      const button = event.submitter?.dataset.busyLabel ? event.submitter : event.submitter ? null : f.querySelector("[data-busy-label]");
       if (button) button.textContent = button.dataset.busyLabel;
     });
   }
@@ -340,4 +358,26 @@ function setupSearchPanel(form) {
     mode.value = mode.value === "advanced" ? "basic" : "advanced";
     sync();
   });
+}
+
+function setupOtp(wrap) {
+  const input = wrap.querySelector("input");
+  const boxes = document.createElement("div");
+  boxes.className = "otp-boxes";
+  boxes.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 6; i++) boxes.append(Object.assign(document.createElement("span"), { className: "otp-box" }));
+  wrap.prepend(boxes);
+  wrap.classList.add("otp-enhanced");
+  input.placeholder = "";
+  const render = () => {
+    // Chỉ giữ chữ số, tối đa 6 (dán "482 913" hay "482-913" vẫn ra 482913).
+    const digits = input.value.replace(/\D/g, "").slice(0, 6);
+    if (input.value !== digits) input.value = digits;
+    [...boxes.children].forEach((box, i) => {
+      box.textContent = digits[i] ?? "";
+      box.classList.toggle("active", i === Math.min(digits.length, 5));
+    });
+  };
+  input.addEventListener("input", render);
+  render();
 }
