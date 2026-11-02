@@ -310,3 +310,43 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 
 **Đã kiểm tra — `check-auth.mjs` toàn bộ: 92/92 ĐẠT** (A 25, B 6, C 12, D 25, E 20, F 4). Phần E:
 email có / không có → cùng 303, cùng trang, thời gian gần nhau (chênh < 400ms); thư chứa `APP_ORIGIN/reset?token=…`, DB chỉ có SHA-256, hạn 15 phút; `GET /reset` hợp lệ → form, `usedAt` rỗng, `Referrer-Policy: no-referrer`; mật khẩu mới không khớp → `VALIDATION_FAILED`, token chưa dùng; đăng nhập ở tab 1, đặt lại ở tab 2 → 303 `/login`, không tự đăng nhập, **sid của tab 1 bị từ chối**, user còn 0 phiên, có thư báo đã đổi; mật khẩu cũ bị từ chối, mới đăng nhập được; dùng lại token → "Link không dùng được", mật khẩu không đổi; token cũ sau yêu cầu mới → từ chối; token hết hạn → từ chối (GET và POST); token bịa → cùng trang; **2 request cùng token song song → một 303 + một từ chối**; reset token dùng làm mã kích hoạt / mật khẩu / cookie sid → đều bị từ chối; đặt lại cho tài khoản pending → vẫn pending; 4 yêu cầu `/forgot` cùng email (có / không có tài khoản) → lần 4 nhận 429; log không chứa reset token.
+
+## Bước 16 — Nghiệm thu: kiểm tra mã nguồn, chạy lại toàn bộ, mốc "đạt tiêu chí block8"
+
+### Kiểm tra mã nguồn (5 câu của đề)
+1. **Password, OTP, reset token, sid có bị lưu đọc được, ghi log, trả trong response không?**
+   - Lưu: mật khẩu chỉ lưu Argon2id (`src/auth/password.js:10`); OTP chỉ lưu HMAC (`src/auth/secrets.js` `hashOtp`, `register.js` `issueOtp`); reset token chỉ lưu SHA-256 (`password-reset.js` `issueResetToken`); sid là khoá của bảng `sessions` (cần để tra phiên — đúng thiết kế của session ở server).
+   - Log: `grep console.` trong `src/` chỉ còn 6 chỗ — lỗi 500 (`app.js:123`), dòng khởi động, `LOG_SQL` (`db.js`), dọn bản ghi (`cleanup.js`), gửi thư lỗi (`mailer.js`), tạo link lỗi (`password-reset.js`); 3 chỗ cuối chỉ in loại thư / thời điểm / mã lỗi. Không có `console.log(req.body)`. **→ phát hiện lỗi `LOG_SQL` (bên dưới), đã sửa.**
+   - Response: mã chỉ đi qua email (ca A "Mã có trong email, KHÔNG có trong response / trang"); token chỉ trong link email; mật khẩu không bao giờ điền lại vào form (`views/auth/_field.ejs` bỏ `value` khi `type=password`); secret reCAPTCHA không có trong trang (ca B).
+2. **Password được băm bằng gì?** Argon2id: tạo ở `src/auth/password.js:10` (dùng bởi `register.js:86`, `password-reset.js:124`, `prisma/seed.js:30`), so ở `password.js:17-23` (`argon2.verify`, email không có → hash giả). Không có MD5 / SHA cho mật khẩu (`createHash` duy nhất ở `secrets.js` cho reset token 32 byte ngẫu nhiên).
+3. **Tài khoản pending có nhận session không?** Không: `src/routes/auth/login.js:113` kiểm `status !== "active"` và `return` **trước** `regenerate` / gán `userId` (dòng 122–123). Ca D "Pending đúng mật khẩu → không có phiên đăng nhập", ca A "Tài khoản pending đăng nhập đúng mật khẩu → không cấp session". `loadUser` cũng chỉ nhận user `active` (`src/auth/load-user.js`).
+4. **Route CRUD nào thiếu kiểm tra đăng nhập; GET nào đổi dữ liệu?** `app.use("/admin", requireLogin)` (`src/app.js:109`) đứng trước cả 3 router admin (dòng 111–113) → không route nào dưới `/admin` lọt. Ca D: 14 route GET + 9 request ghi không đăng nhập → đều 303 `/login`, DB không đổi. Quét mọi `router.get` trong `src/routes`: **không** handler GET nào gọi `create / update / delete / upsert`. `GET /reset` không ghi `usedAt` (ca E); `GET /logout` → 404. (GET các trang có form chỉ tạo phiên ẩn danh để giữ CSRF token — không phải dữ liệu nghiệp vụ.)
+5. **Session, bộ đếm lưu ở đâu; đáp án / secret CAPTCHA có lọt không?** Session: bảng `sessions` qua `PrismaSessionStore` (`src/app.js:57`, không MemoryStore) — ca D khởi động lại server vẫn đăng nhập. Bộ đếm: bảng `rate_limits` (`src/auth/rate-limit.js`, một câu `INSERT … ON CONFLICT`) — ca C client mới vẫn bị đòi CAPTCHA. reCAPTCHA: không có "đáp án" ở phía ứng dụng (Google giữ thử thách); secret chỉ đọc ở `src/auth/recaptcha.js:15` từ `.env`, không có trong trang (ca B).
+
+### Lỗi phát hiện khi kiểm tra mã nguồn: `LOG_SQL=1` làm lộ sid
+- **Nguồn gốc:** chế độ in SQL kèm tham số mang nguyên từ block7 (`src/db.js`, dùng làm bằng chứng LIMIT/OFFSET). Ở block7 tham số chỉ là từ khoá, số trang; ở block8 tham số của câu tra phiên là **sid**, dữ liệu phiên có **csrfToken**.
+- **Tái hiện:** chạy server với `LOG_SQL=1`, đăng nhập, mở `/admin/dishes` → log có 21 dòng `[SQL]`, **sid của phiên đăng nhập xuất hiện 7 lần**, có `csrfToken` (ví dụ đã che: `params: ["<sid>",2,"{\"cookie\":…`). Ai đọc được log (ảnh chụp terminal nộp làm bằng chứng!) sẽ chiếm được phiên.
+- **Sửa:** câu SQL có tên bảng `sessions`, `users`, `activation_challenges`, `password_resets`, `rate_limits` → in `params: [ẩn — bảng xác thực]`; câu SQL thực đơn / admin vẫn in đủ tham số.
+- **Bằng chứng sau khi sửa:** chạy lại cùng kịch bản → sid xuất hiện **0 lần**, không còn `csrfToken`; câu SQL tìm "phở" vẫn in tham số `phở`.
+
+### Chạy lại toàn bộ
+- `check-ssr.mjs`: **48/48 ĐẠT**.
+- `check-auth.mjs`: **92/92 ĐẠT** ở 2 lần chạy liên tiếp (mã thoát 0). Một lần chạy trước đó dừng giữa chừng với lỗi của Node mà mình **không lưu được thông báo**; không tái hiện được ở các lần sau. Nghi do kết nối tới Supabase chập chờn, **chưa có bằng chứng** — nếu gặp lại khi demo, chạy lại và giữ output.
+- Seed lại: 1.200 món / 60 / 250 / 16, 2 tài khoản active; dấu vân tay 7 bảng block7 vẫn giống lúc ban đầu.
+
+### Đối chiếu bảng nghiệm thu của đề (plan 10.1)
+| Nhóm | Kịch bản của đề | Ca kiểm tra |
+| :--- | :--- | :--- |
+| Đăng ký, kích hoạt | pending đăng nhập; OTP hợp lệ; OTP sai / hết hạn / đã dùng; gửi lại; vượt giới hạn; role admin; kích hoạt xong không session; OTP làm mật khẩu | A (25 ca) |
+| CAPTCHA, brute force | đăng ký thiếu / sai CAPTCHA; CAPTCHA hợp lệ; dùng lại / sai mục đích; bỏ trường CAPTCHA; CAPTCHA đúng mật khẩu sai; đạt giới hạn; xoá cookie | B (6) + C (12); "token thật dùng lại / hết hạn" làm tay (checklist) |
+| Đăng nhập, đăng xuất, CRUD | chưa đăng nhập gọi CRUD; đăng nhập đúng; sai email / mật khẩu; sid đổi; khởi động lại server; logout dùng lại sid; form từ trang khác | D (25) + F (4); "form từ trang khác trên trình duyệt thật" làm tay (checklist) |
+| Quên mật khẩu | email có / không có; vượt giới hạn; token cũ / hết hạn / đã dùng; GET không tiêu thụ; reset xong sid cũ bị từ chối; token ở route khác | E (20) |
+
+### Checklist thao tác tay (cần trình duyệt thật / key thật — nhóm làm và đánh dấu)
+- [ ] Điền `.env`: `SEED_VIEWER_EMAIL`, `SEED_ADMIN_EMAIL` (Gmail của nhóm, có `+`), chạy lại `npx prisma db seed`.
+- [ ] Gmail: `MAIL_TRANSPORT=smtp`, `SMTP_USER`, `SMTP_PASS` (App Password), `MAIL_FROM` → đăng ký bằng Gmail thật, nhận mã, kích hoạt; quên mật khẩu → nhận link (xem cả mục Spam).
+- [ ] reCAPTCHA thật: tạo key v2 checkbox cho `localhost`, điền `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`, `RECAPTCHA_HOSTNAMES=localhost` → đăng ký với tick thật (đi tiếp); chép giá trị `g-recaptcha-response` từ Network rồi gửi lại bằng curl → bị từ chối (dùng lại); chờ quá 2 phút rồi bấm gửi → bị từ chối (hết hạn).
+- [ ] DevTools → Application → Cookies: `sid` có HttpOnly, SameSite=Lax, Path=/; so giá trị trước / sau đăng nhập.
+- [ ] Network: `POST /login` → 303 + `Set-Cookie`; request sau có `Cookie: sid=…`.
+- [ ] Trang khác gửi form: mở một file HTML ở `http://127.0.0.1:5500` có form tự gửi `POST http://localhost:3000/admin/dishes/1?_method=DELETE` khi đang đăng nhập → bị từ chối (SameSite không gửi cookie → 303 `/login`, hoặc thiếu `_csrf` → 403), món #1 còn.
+- [ ] Bấm Back sau khi đăng xuất: trang cũ có thể hiện lại, nhưng thao tác tiếp theo bị đưa về `/login`.

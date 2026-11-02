@@ -17,10 +17,16 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, ssl: 
 // LOG_SQL=1 trong .env: in từng câu SQL Prisma thực sự gửi tới PostgreSQL (kèm tham số và thời gian) — bằng chứng nộp
 // cho thấy LIMIT/OFFSET, COUNT, ILIKE, tsquery, similarity chạy TẠI DATABASE (plan mục 5, 9). Mặc định tắt.
 // Log chỉ có câu SQL và giá trị tham số (từ khoá, số trang), không có chuỗi kết nối.
+// Block8: câu SQL chạm bảng xác thực (sessions, users, …) KHÔNG in tham số — tham số ở đó là sid, CSRF token, hash mật
+// khẩu / mã / token; in ra log là ai đọc được log cũng chiếm được phiên (lỗi phát hiện ở bước 16, BUILD_LOG).
 const logSql = process.env.LOG_SQL === "1";
+const SENSITIVE = /"(sessions|users|activation_challenges|password_resets|rate_limits)"|\b(sessions|users|activation_challenges|password_resets|rate_limits)\b/;
 export const prisma = new PrismaClient({ adapter, log: logSql ? [{ emit: "event", level: "query" }] : [] });
 if (logSql) {
-  prisma.$on("query", (e) => console.log(`[SQL ${Math.round(Number(e.duration))}ms] ${e.query}\n          params: ${e.params}`));
+  prisma.$on("query", (e) => {
+    const params = SENSITIVE.test(e.query) ? "[ẩn — bảng xác thực]" : e.params;
+    console.log(`[SQL ${Math.round(Number(e.duration))}ms] ${e.query}\n          params: ${params}`);
+  });
 }
 
 // Ba lỗi Prisma dưới đây là lỗi NGHIỆP VỤ đã biết trước (do dữ liệu, không phải hệ thống hỏng),
