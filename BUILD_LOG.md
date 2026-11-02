@@ -217,3 +217,18 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - `check-auth.mjs D`: **25/25 ĐẠT** — khách xem thực đơn không có `Set-Cookie`; 14 route GET `/admin` → `303 /login?next=…`; 9 request POST/PATCH/DELETE không đăng nhập (có `_csrf` hợp lệ) → `303 /login`, số dòng DB không đổi; cookie bịa → 303; sai mật khẩu và email không có → cùng 200, cùng nội dung; form giữ email, không giữ mật khẩu; đăng nhập đúng (email viết hoa + khoảng trắng) → 303, `HttpOnly; SameSite=Lax`; sid đổi, phiên cũ bị xoá; phiên mới có `userId`; `/admin/dishes` 200 + `no-store` + email + nút Đăng xuất; `next` nội bộ giữ, 3 kiểu `next` ra ngoài bị bỏ; pending đúng mật khẩu → `ACCOUNT_NOT_ACTIVATED`, không có phiên; CSRF thiếu / sai / Origin lạ / `?_method=DELETE` → 403; **dừng + chạy lại server → cookie cũ vẫn đăng nhập**; đăng xuất → bản ghi phiên bị xoá, bản sao sid cũ → 303; `GET /logout` → 404.
 - `check-ssr.mjs` (đăng nhập bằng tài khoản seed): **48/48 ĐẠT**.
 - Ảnh trang đăng nhập 1280 / 820 / 375 khớp Figma vòng 2 (ảnh Phở + ghi công thật từ DB; ở 375 dòng ghi công xuống 2 dòng vì dài hơn bản nháp).
+
+## Bước 11 — Gửi email, sinh mã
+**Đã làm:**
+- Cài `nodemailer@10.3.1`. `src/auth/mailer.js`: `MAIL_TRANSPORT=smtp` (Gmail `smtp.gmail.com:465`, App Password) hoặc `file` (dựng thư MIME đầy đủ rồi ghi `.eml` vào `source-code/.mail-outbox/`, đã có trong `.gitignore`); `sendLater` gửi bất đồng bộ; 3 mẫu thư (mã kích hoạt, link đặt lại, báo đã đổi mật khẩu), văn bản + HTML cùng màu ứng dụng; header `X-Mail-Kind` để script lọc.
+- `src/auth/secrets.js`: `generateOtp` (`crypto.randomInt`, 6 chữ số), `hashOtp` (HMAC-SHA256 với `OTP_PEPPER`), `generateToken` (32 byte base64url), `sha256`, `sameHex` (`timingSafeEqual`).
+- `scripts/lib/outbox.mjs`: đọc thư mới nhất gửi tới một địa chỉ, giải quoted-printable, lấy mã / link (từ chối chạy khi `NODE_ENV=production`).
+
+**Lỗi phát hiện trong lúc làm:** bản đầu `sendMail` là hàm thường; khi `MAIL_TRANSPORT=smtp` mà thiếu `SMTP_PASS`, `getTransport()` ném lỗi **đồng bộ** → `.catch` trong `sendLater` không bắt được → tiến trình server sập ngay trong `setImmediate`. Sửa: `sendMail` thành `async` (mọi lỗi thành promise bị từ chối). Bằng chứng sau khi sửa: chạy `sendLater` với SMTP thiếu mật khẩu → log `[mail] Gửi thư "activation" thất bại lúc …: Error`, tiến trình vẫn chạy.
+
+**Đã kiểm tra:**
+- 2.000 mã sinh thử đều đúng 6 chữ số, có mã bắt đầu bằng `0` (không mất số 0 đầu). HMAC là 64 ký tự hex, cùng mã → cùng hash, `sameHex` đúng / sai đúng. Token 43 ký tự base64url.
+- Thư kích hoạt ghi vào outbox, đọc lại đúng mã; tên người gửi có dấu được mã hoá đúng (`=?UTF-8?Q?Nhà_hàng?=`).
+- `sendLater` trả về ngay (50ms đầu chưa có thư), sau đó link đặt lại đọc được đúng.
+- Log khi gửi lỗi: **0 dòng** chứa mã hoặc địa chỉ người nhận.
+- Gmail SMTP **chưa kiểm được**: cần App Password của nhóm (`.env`: `MAIL_TRANSPORT=smtp`, `SMTP_USER`, `SMTP_PASS`).
