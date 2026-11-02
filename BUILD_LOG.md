@@ -160,3 +160,20 @@ Hướng làm (đã chốt 02/11/2026): ứng dụng SSR đúng yêu cầu đề
 - Host trước khi push: `aws-0-ap-southeast-1.pooler.supabase.com` (DB block7). `prisma validate` hợp lệ.
 - Sau push: 12 bảng; 7 bảng cũ giữ nguyên số dòng (1200 / 60 / 250 / 16 / 2106 / 106 / 5357); 5 bảng mới rỗng.
 - API block7 (`Week5/block7/api`, cổng 3001) vẫn trả `/api/dishes`, `/api/chefs` bình thường; repo block7 không có thay đổi.
+
+## Bước 8 — Seed thêm tài khoản
+**Đã làm:**
+- Cài `argon2@0.45.1`, `validator@13.15.35` (ghim chính xác). `src/auth/password.js` (Argon2id, hash giả cho email không có, quy tắc 8–64 ký tự), `src/auth/email.js` (một hàm chuẩn hoá email dùng mọi nơi, kiểm định dạng bằng `validator.isEmail`).
+- `prisma/seed.js`: `TRUNCATE` thêm 5 bảng xác thực; tạo 2 tài khoản `active` có `emailVerifiedAt` (viewer, admin) từ `SEED_VIEWER_EMAIL`, `SEED_ADMIN_EMAIL`, `SEED_USER_PASSWORD`. Thiếu / sai biến → dừng **trước** khi xoá dữ liệu. Băm mật khẩu trước, ngoài transaction.
+- `.env.example` đủ biến của block8 (APP_ORIGIN, SESSION_SECRET, OTP_PEPPER, SEED_*, MAIL_*, SMTP_*, RECAPTCHA_*), có hướng dẫn tạo.
+- `.env` (không commit): sinh ngẫu nhiên `SESSION_SECRET` (48 byte), `OTP_PEPPER` (32 byte), `SEED_USER_PASSWORD`; không in giá trị ra log.
+
+**Giả định tạm, nhóm cần thay trước khi demo:**
+- `SEED_VIEWER_EMAIL=viewer@example.com`, `SEED_ADMIN_EMAIL=admin@example.com`: tên miền `example.com` dành riêng cho ví dụ, thư không tới ai. Plan 12.2.c chốt Gmail của nhóm có dấu `+` — nhóm điền rồi chạy lại seed.
+- `RECAPTCHA_*`: cặp **key thử công khai** của Google (luôn trả hợp lệ) cho tới khi nhóm tạo key v2 thật; `RECAPTCHA_HOSTNAMES=localhost,testkey.google.com`. Không dùng khi demo, không làm bằng chứng chặn bot (plan 12.2.b).
+- `MAIL_TRANSPORT=file`: thư ghi vào `.mail-outbox/` cho tới khi có Gmail App Password.
+
+**Đã kiểm tra:**
+- Host khi seed: `aws-0-ap-southeast-1.pooler.supabase.com` (DB block7).
+- **Dấu vân tay md5 của 7 bảng block7** (mọi cột trừ `createdAt`, sắp theo khoá) **trước và sau seed giống hệt** — seed tất định tạo lại đúng dữ liệu block7. Thống kê seed: 1.200 món, 60 đầu bếp, 250 nguyên liệu, 16 tag; 2.106 món–tag, 106 đầu bếp–tag, 5.357 món–nguyên liệu; 4 món giá 0, 180 món tạm hết; 0 món sai chuyên môn; 2 tài khoản active.
+- `users`: id 1 viewer, id 2 admin, `status=active`, `passwordHash` dạng `$argon2id$v=19$m=65536,p=4,t=3$…`. Sequence id đã về 1 (`RESTART IDENTITY`) sau các lần thử ở bước 4–6.
