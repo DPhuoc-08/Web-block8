@@ -29,13 +29,15 @@ const LOCKED = `thu.khoa@${D}`; // tài khoản bị dò mật khẩu tới kho�
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- che dữ liệu nhạy cảm ----------
-// sid không in ra; thay bằng "vân tay" (8 ký tự đầu SHA-256 của giá trị) để vẫn so được sid trước / sau đăng nhập.
+// sid không in ra; thay bằng "vân tay" (8 ký tự đầu SHA-256 của sid) để vẫn so được sid trước / sau đăng nhập.
 const print = (v) => createHash("sha256").update(String(v)).digest("hex").slice(0, 8);
+// Cookie mang "s:<sid>.<chữ ký>": vân tay tính trên phần <sid> → trùng vân tay của bản ghi sessions (db/, auth-state.sql).
+const sidPrint = (cookieValue) => { const v = decodeURIComponent(cookieValue); return print(v.match(/^s:([^.]+)\./)?.[1] ?? v); };
 const SECRET_FIELDS = ["_csrf", "password", "passwordConfirm", "otp", "token", "g-recaptcha-response"];
 const secrets = [PW, USER_PW, USER_PW2, process.env.SESSION_SECRET, process.env.OTP_PEPPER, process.env.RECAPTCHA_SECRET_KEY, process.env.SMTP_PASS].filter((s) => s && s.length >= 6);
 function mask(text) {
   let t = String(text);
-  t = t.replace(/sid=([^;\s,&"]+)/g, (_, v) => `sid=<đã che · vân tay ${print(decodeURIComponent(v))}>`);
+  t = t.replace(/sid=([^;\s,&"]+)/g, (_, v) => `sid=<đã che · vân tay ${sidPrint(v)}>`);
   for (const f of SECRET_FIELDS) t = t.replace(new RegExp(`(^|[?&\\s])${f}=[^&\\s]*`, "gm"), `$1${f}=<đã che>`);
   t = t.replace(/(Mã kích hoạt[^\n:]*: )\d{6}/g, "$1<đã che>"); // dòng Subject và thân thư
   for (const s of secrets) t = t.split(s).join("<đã che>");
@@ -205,7 +207,7 @@ try {
   network(NET, "6. Đăng nhập: POST /login → 303 + Set-Cookie sid MỚI (regenerate); request sau gửi Cookie, trang quản trị Cache-Control: no-store", b.takeNetwork());
   const after = await b.cookies();
   cookieTable(NET, "7. Sau đăng nhập: giá trị sid khác hẳn (regenerate) — so vân tay với bảng 5", after);
-  add(NET, `Vân tay sid trước: ${print(decodeURIComponent(before.find((c) => c.name === "sid")?.value))} · sau: ${print(decodeURIComponent(after.find((c) => c.name === "sid")?.value))} → ${before[0]?.value !== after[0]?.value ? "KHÁC NHAU" : "GIỐNG NHAU (lỗi)"}\n`);
+  add(NET, `Vân tay sid trước: ${sidPrint(before.find((c) => c.name === "sid")?.value)} · sau: ${sidPrint(after.find((c) => c.name === "sid")?.value)} → ${before[0]?.value !== after[0]?.value ? "KHÁC NHAU" : "GIỐNG NHAU (lỗi)"}\n`);
   await shot("09-quan-tri-da-dang-nhap-1280");
   await b.viewport(375);
   await shot("09-quan-tri-da-dang-nhap-375");

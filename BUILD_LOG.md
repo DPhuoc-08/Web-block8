@@ -415,3 +415,18 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 **Đối chiếu với code:** đọc lại 4 handler (`register.js` POST /register + /activate, `login.js` POST /login + /logout, `password-reset.js`) và `app.js` (thứ tự middleware sau bước 18) trước khi vẽ; mở cả 4 SVG trong Chrome, sửa chữ tràn khung và nhãn mũi tên chồng ô; thêm nhánh 429 theo IP ở `/reset` mà bản đầu bỏ sót.
 
 **Chờ nhóm duyệt:** cách trình bày (cột luồng chính / cột dừng), mức chi tiết, có cần thêm sơ đồ thứ tự middleware hay không.
+
+## Bước 20 — README, tài liệu trình bày, seed lại
+**Đã làm:**
+- `README.md`: chạy ứng dụng, bảng biến `.env` (giá trị nhóm tự điền), thêm 5 bảng lần đầu, kiểm tra (`check-auth` 94, `check-ssr` 48, cách tạo `.env.test`), thu lại bằng chứng / vẽ lại sơ đồ, bảng route, cấu trúc thư mục.
+- `hotrotrinhbay.html`: mục tiêu + kết quả, vì sao hybrid và chỗ lệch chữ của đề, bảng chính sách công bố, ba lựa chọn (reCAPTCHA v2, bảng `sessions`, CSRF ba lớp) kèm phương án khác và **giới hạn nêu trung thực**, 6 câu hỏi trình bày (mỗi câu trỏ tới file bằng chứng cụ thể), lỗi do agent tạo ra, bảng công nghệ + “cố ý không dùng”.
+- `kichban.html`: 5 bảng mới, bảng luồng 10 thao tác (request → thứ tự kiểm tra → DB → kết quả), 4 sơ đồ, kịch bản demo theo 4 nhóm của bảng nghiệm thu (làm gì → cho xem gì → đối chiếu bằng chứng nào), bảng lỗi đã phát hiện.
+- Hai trang dùng nguyên stylesheet của tài liệu block7 (cùng bộ màu), thêm một quy tắc giữ tên bảng ở cột đầu không bị ngắt giữa chữ trên điện thoại.
+- `prisma/sql/auth-state.sql`: xem nhanh 5 bảng xác thực khi demo, **chỉ đọc**, đã che (Argon2id chỉ phần tham số, hash 6 ký tự đầu, `sid` chỉ vân tay). `collect-evidence.mjs` đổi vân tay cookie sang SHA-256 của phần `<sid>` → vân tay trong Network trùng vân tay bản ghi `sessions` (đã chạy lại: cookie sau đăng nhập và `db/4` cùng `9e5770ff`).
+- CLAUDE.md / plan (ngoài repo) cập nhật tên script `.mjs`, `scripts/lib/outbox.mjs`, plan 6.3 (luật Origin hiện tại).
+
+**Đối chiếu với code trước khi viết:** đọc lại 4 handler, `app.js`, `load-user.js`, hằng số chính sách; sửa 2 chỗ README viết sai so với thực tế (phần B không có ca Google lỗi → 503; `public/` không có ảnh).
+
+**Đã kiểm tra:** hai trang không cuộn ngang ở 375 và 320px (Chrome giả lập thiết bị, `scrollWidth` = bề rộng). Seed lại (in host trước): 1.200 món / 60 / 250 / 16, 2 tài khoản active; `auth-state.sql`: 0 mã, 0 token, 0 phiên đăng nhập, 0 bộ đếm.
+
+**Chưa làm (chờ nhóm):** đóng gói xoá `node_modules/`, `generated/`, `.mail-outbox/` — để lại vì nhóm còn chạy demo và checklist tay (cần key reCAPTCHA thật, Gmail App Password). Sơ đồ luồng chờ nhóm duyệt.

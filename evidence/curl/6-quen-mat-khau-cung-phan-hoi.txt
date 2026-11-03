@@ -1,14 +1,14 @@
 # Quên mật khẩu: email có / không có tài khoản → cùng status, cùng Location, thời gian gần nhau
 
 $ POST /forgot
-  Cookie: sid=<đã che · vân tay de42785b>
+  Cookie: sid=<đã che · vân tay 3e9e10d0>
   _csrf=<đã che>&email=admin%40example.com
-→ 303  Location: /forgot?msg=forgot-sent  (138 ms)
-  Set-Cookie: sid=<đã che · vân tay de42785b>; Path=/; Expires=Tue, 03 Nov 2026 06:03:19 GMT; HttpOnly; SameSite=Lax
+→ 303  Location: /forgot?msg=forgot-sent  (139 ms)
+  Set-Cookie: sid=<đã che · vân tay 3e9e10d0>; Path=/; Expires=Tue, 03 Nov 2026 06:14:43 GMT; HttpOnly; SameSite=Lax
 
 $ POST /forgot
-  Cookie: sid=<đã che · vân tay 3432061a>
+  Cookie: sid=<đã che · vân tay bd075ed9>
   _csrf=<đã che>&email=khong-ton-tai%40demo.example
-→ 303  Location: /forgot?msg=forgot-sent  (141 ms)
-  Set-Cookie: sid=<đã che · vân tay 3432061a>; Path=/; Expires=Tue, 03 Nov 2026 06:03:19 GMT; HttpOnly; SameSite=Lax
+→ 303  Location: /forgot?msg=forgot-sent  (134 ms)
+  Set-Cookie: sid=<đã che · vân tay bd075ed9>; Path=/; Expires=Tue, 03 Nov 2026 06:14:43 GMT; HttpOnly; SameSite=Lax
 

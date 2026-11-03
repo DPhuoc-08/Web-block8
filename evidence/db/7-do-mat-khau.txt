@@ -1,8 +1,8 @@
-## Sau 10 lần sai: bộ đếm theo email ở bảng rate_limits, lockedUntil = +5 phút  (lúc 2026-11-03 04:03:10Z)
+## Sau 10 lần sai: bộ đếm theo email ở bảng rate_limits, lockedUntil = +5 phút  (lúc 2026-11-03 04:14:28Z)
 
-users #85  email=thu.khoa@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-03 04:01:27Z
-  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 4cdfc0cc)
+users #88  email=thu.khoa@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-03 04:13:37Z
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay b2076418)
   sessions của user: 0
 rate_limits:
-  login-fail:email:thu.khoa@demo.example  count=10  windowStart=2026-11-03 04:01:28Z  lockedUntil=2026-11-03 04:08:10Z
+  login-fail:email:thu.khoa@demo.example  count=10  windowStart=2026-11-03 04:13:38Z  lockedUntil=2026-11-03 04:19:28Z
 

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kịch bản – Block 8</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #5b6672;
+    --border: #e1e5ea;
+    --accent: #2563eb;
+    --accent-soft: #e8efff;
+    --ok: #15803d;
+    --ok-soft: #e7f6ec;
+    --warn: #b45309;
+    --warn-soft: #fff4e0;
+    --err: #dc2626;
+    --err-soft: #fdecec;
+    --code-bg: #f1f3f6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 16px; }
+  @media (min-width: 768px) { .wrap { padding: 24px; } }
+
+  header.top { padding: 8px 0 4px; }
+  header.top h1 { margin: 0; font-size: 28px; line-height: 1.25; }
+  header.top p { margin: 4px 0 0; color: var(--muted); }
+  .members {
+    margin: 12px 0 0; padding: 0; list-style: none;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .members li {
+    margin: 0; background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; font-size: 14px;
+  }
+  .members .mssv { font-family: var(--mono); color: var(--muted); margin-left: 6px; }
+
+  nav.toc {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    margin: 12px -16px 0; padding: 8px 16px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  nav.toc a {
+    text-decoration: none; color: var(--text);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 12px; font-size: 14px;
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section.card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin-top: 20px;
+    scroll-margin-top: 64px;
+  }
+  section.card > h2 { margin: 0 0 12px; font-size: 22px; }
+  h3 { margin: 20px 0 8px; font-size: 17px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+
+  code, pre { font-family: var(--mono); font-size: 0.9em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  pre {
+    background: var(--code-bg); border-radius: 8px;
+    padding: 12px 14px; overflow-x: auto; margin: 8px 0; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; overflow-wrap: normal; }
+
+  .muted { color: var(--muted); }
+  .tag {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 1px 8px; border-radius: 999px; vertical-align: middle;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .s200 { background: var(--ok-soft); color: var(--ok); }
+  .biz { background: var(--warn-soft); color: var(--warn); }
+  .no { background: var(--err-soft); color: var(--err); }
+
+  .grid { display: grid; gap: 12px; }
+  /* Ô lưới mặc định min-width: auto → giãn theo dòng code dài nhất và đẩy trang tràn ngang ở 375px.
+     min-width: 0 để khối <pre> tự cuộn ngang bên trong ô. */
+  .grid > * { min-width: 0; }
+  @media (min-width: 768px) { .grid.two { grid-template-columns: 1fr 1fr; } .grid.three { grid-template-columns: 1fr 1fr 1fr; } }
+  .box { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .box h3 { margin-top: 0; }
+  .box.chosen { border-color: var(--accent); background: var(--accent-soft); }
+  .box .label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-weight: 600; white-space: nowrap; }
+  td:first-child { font-weight: 600; }
+  td:first-child code { white-space: nowrap; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+  .flow .step {
+    border: 1px solid var(--border); background: var(--card);
+    border-radius: 6px; padding: 4px 10px; font-size: 14px;
+  }
+  .flow .step.key { border-color: var(--accent); background: var(--accent-soft); }
+  .flow .arrow { color: var(--muted); }
+
+  .callout {
+    border-left: 4px solid var(--accent); background: var(--accent-soft);
+    padding: 10px 14px; border-radius: 6px; margin: 8px 0 12px;
+  }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+
+  footer { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0 8px; }
+
+  @media print { nav.toc { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Kịch bản trình bày Block 8</h1>
+  <p>Các bảng mới, luồng từng thao tác (form ↔ request ↔ bản ghi DB), kịch bản demo theo bảng nghiệm thu của đề, lỗi đã phát hiện</p>
+</header>
+
+<nav class="toc" aria-label="Mục lục">
+  <a href="#bang">1. Năm bảng mới</a>
+  <a href="#luong">2. Luồng thao tác</a>
+  <a href="#so-do">3. Sơ đồ</a>
+  <a href="#demo">4. Kịch bản demo</a>
+  <a href="#loi">5. Lỗi đã phát hiện</a>
+</nav>
+
+<section class="card" id="bang">
+  <h2>1. Năm bảng mới (thêm vào database block 7)</h2>
+  <p>7 bảng của block 7 giữ nguyên cột và quan hệ. Năm bảng dưới đây được thêm bằng <code>prisma db push</code> sau khi in SQL (<code>prisma/sql/block8-auth-tables.sql</code>) cho nhóm xem. Xem nhanh trạng thái (đã che hash, sid): <code>node scripts/run-sql.js prisma/sql/auth-state.sql</code>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Bảng</th><th>Cột chính</th><th>Dùng để</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td><code>email</code> (đã chuẩn hoá, unique), <code>emailInput</code>, <code>passwordHash</code> (Argon2id), <code>role</code> (mặc định <code>viewer</code>), <code>status</code> (<code>pending</code> / <code>active</code>), <code>emailVerifiedAt</code></td><td>Tài khoản. Seed 2 tài khoản <code>active</code>, email và mật khẩu đọc từ <code>.env</code></td></tr>
+      <tr><td><code>activation_challenges</code></td><td><code>userId</code> (khoá chính — mỗi user một mã), <code>purpose</code>, <code>otpHash</code> (HMAC-SHA256 + <code>OTP_PEPPER</code>), <code>expiresAt</code>, <code>usedAt</code>, <code>attempts</code>, <code>lockedUntil</code>, <code>lastSentAt</code></td><td>Mã kích hoạt 6 số. Gửi lại ghi đè <code>otpHash</code>, giữ <code>attempts</code></td></tr>
+      <tr><td><code>password_resets</code></td><td><code>userId</code>, <code>tokenHash</code> (SHA-256, unique), <code>expiresAt</code>, <code>usedAt</code>, <code>createdAt</code></td><td>Link đặt lại mật khẩu; yêu cầu mới vô hiệu token cũ</td></tr>
+      <tr><td><code>sessions</code></td><td><code>sid</code> (khoá chính), <code>userId</code> (rỗng với phiên ẩn danh), <code>data</code> (JSON: <code>userId</code>, <code>loginAt</code>, <code>csrfToken</code>…), <code>expiresAt</code></td><td>Phiên ở server. Cột <code>userId</code> để xoá mọi phiên của một user khi đặt lại mật khẩu</td></tr>
+      <tr><td><code>rate_limits</code></td><td><code>key</code> (vd. <code>login-fail:email:an@x.vn</code>, <code>login:ip:::1</code>), <code>count</code>, <code>windowStart</code>, <code>lockedUntil</code></td><td>Mọi bộ đếm và khoá; tăng bằng một câu <code>INSERT … ON CONFLICT DO UPDATE</code> (20 request song song → đúng 20)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Xoá user → xoá theo (cascade) mã, token, phiên của user đó. Một vòng dọn định kỳ xoá phiên và bộ đếm đã hết hạn (<code>src/auth/cleanup.js</code>).</p>
+</section>
+
+<section class="card" id="luong">
+  <h2>2. Luồng từng thao tác: form ↔ request ↔ bản ghi DB</h2>
+  <p>Mọi form ghi đều có ô ẩn <code>_csrf</code>; thứ tự middleware trong <code>src/app.js</code>: <code>session</code> → <code>loadUser</code> → <code>requireLogin</code> cho <code>/admin</code> → <code>csrf</code> → <code>method-override</code> → các route.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Thao tác</th><th>Request</th><th>Server kiểm tra (theo thứ tự)</th><th>DB</th><th>Kết quả</th></tr></thead>
+    <tbody>
+      <tr><td>Đăng ký</td><td><code>POST /register</code><br>email, password, passwordConfirm, <code>g-recaptcha-response</code></td><td>CSRF → 10 / giờ / IP → reCAPTCHA (siteverify) → dữ liệu → băm Argon2id → email đã có?</td><td>Mới: <code>users</code> pending + <code>activation_challenges</code> (một transaction). Pending: không ghi đè mật khẩu, gửi lại mã nếu còn hạn mức. Active: không ghi</td><td><code>303 /activate?msg=registered</code> — giống nhau cả ba nhánh</td></tr>
+      <tr><td>Nhập mã</td><td><code>POST /activate</code><br>email, otp</td><td>CSRF → IP → đang khoá? → 6 điều kiện của mã</td><td>Đúng: <code>usedAt</code> + <code>status=active</code> + <code>emailVerifiedAt</code> (một transaction, <code>updateMany</code> có điều kiện). Sai: <code>attempts + 1</code>, đủ 5 → <code>lockedUntil</code></td><td>Đúng: <code>303 /login?msg=activated</code>. Sai: <code>200 INVALID_OTP</code>. Khoá: <code>429</code></td></tr>
+      <tr><td>Gửi lại mã</td><td><code>POST /activate/resend</code> (cùng form, nút có <code>formaction</code>)</td><td>CSRF → định dạng email → chờ 60 giây → 5 lần / giờ / email (tính cả email không có)</td><td>Pending: <code>otpHash</code> mới, hạn mới, <code>attempts</code> giữ nguyên</td><td><code>303 /activate?msg=otp-sent</code> (giống nhau dù email không có); quá hạn mức: <code>429</code></td></tr>
+      <tr><td>Đăng nhập</td><td><code>POST /login</code><br>email, password, next (+ CAPTCHA)</td><td>CSRF → 30 / 15 phút / IP → khoá theo email → CAPTCHA nếu đã sai ≥ 3 → mật khẩu → active?</td><td>Sai: <code>rate_limits</code> <code>login-fail:email:…</code> + 1. Đúng: xoá bộ đếm email, <code>regenerate</code> → bản ghi <code>sessions</code> mới có <code>userId</code></td><td>Đúng: <code>303</code> + <code>Set-Cookie: sid</code> mới. Sai: <code>200 INVALID_CREDENTIALS</code>. Pending: <code>200 ACCOUNT_NOT_ACTIVATED</code>. Khoá: <code>429</code></td></tr>
+      <tr><td>Vào quản trị</td><td><code>GET /admin/dishes</code><br>Cookie: sid</td><td><code>loadUser</code> tra phiên + user active, chưa quá 12 giờ → <code>requireLogin</code></td><td>Đọc <code>sessions</code>, <code>users</code>; gia hạn <code>expiresAt</code> 2 giờ</td><td>Có phiên: <code>200</code> + <code>Cache-Control: no-store</code>. Không: <code>303 /login?next=…</code></td></tr>
+      <tr><td>Thêm / sửa / xoá</td><td><code>POST /admin/…</code> (<code>?_method=PATCH|DELETE</code>)</td><td><code>requireLogin</code> → CSRF (trên method gốc) → <code>method-override</code> → validate</td><td>Bảng block 7 (<code>dishes</code>, <code>chefs</code>…)</td><td><code>303</code> về danh sách (PRG). Chưa đăng nhập: <code>303 /login</code>. Thiếu <code>_csrf</code>: <code>403</code></td></tr>
+      <tr><td>Đăng xuất</td><td><code>POST /logout</code></td><td>CSRF</td><td>Xoá bản ghi <code>sessions</code> <strong>trước</strong></td><td>Xoá cookie, <code>303 /login?msg=logged-out</code></td></tr>
+      <tr><td>Quên mật khẩu</td><td><code>POST /forgot</code><br>email</td><td>CSRF → 10 / giờ / IP → định dạng → 3 / giờ / email</td><td>Sau khi trả lời: email có tài khoản → vô hiệu token cũ + tạo <code>password_resets</code> (SHA-256, 15 phút), gửi thư</td><td><code>303 /forgot?msg=forgot-sent</code> — như nhau dù email có hay không</td></tr>
+      <tr><td>Mở link</td><td><code>GET /reset?token=…</code></td><td>20 / 15 phút / IP → token còn hạn, chưa dùng?</td><td>Chỉ đọc — <strong>không</strong> ghi <code>usedAt</code></td><td>Form (token ở ô ẩn), <code>Referrer-Policy: no-referrer</code>; hỏng: “Link không dùng được”</td></tr>
+      <tr><td>Đặt mật khẩu mới</td><td><code>POST /reset</code><br>token, password, passwordConfirm</td><td>CSRF (nhận <code>Origin: null</code> ở đây) → IP → token → mật khẩu mới</td><td>Một transaction: <code>usedAt</code> (có điều kiện) → <code>passwordHash</code> → vô hiệu token khác → xoá mọi <code>sessions</code> của user</td><td><code>303 /login?msg=password-reset</code>, không tự đăng nhập; thư báo đã đổi</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="card" id="so-do">
+  <h2>3. Sơ đồ luồng (bản nháp, chờ nhóm duyệt)</h2>
+  <p>Vẽ từ code thật: cột trái là luồng chính đúng thứ tự trong code, cột phải là nơi request dừng; mỗi ô ghi <code>file:dòng</code>. Đổi code xong chạy <code>node evidence/diagrams/ve-so-do.mjs</code> để cập nhật số dòng (script báo lỗi nếu đoạn code được trỏ tới không còn).</p>
+  <div class="grid two">
+    <a class="box" href="evidence/diagrams/1-dang-ky-captcha.svg"><span class="label">Sơ đồ 1</span><h3>Đăng ký có CAPTCHA + kích hoạt</h3><img src="evidence/diagrams/1-dang-ky-captcha.svg" alt="Sơ đồ đăng ký có CAPTCHA và kích hoạt bằng mã" loading="lazy" style="width:100%;height:auto;border:1px solid var(--border);border-radius:6px"></a>
+    <a class="box" href="evidence/diagrams/2-dang-nhap-chong-brute-force.svg"><span class="label">Sơ đồ 2</span><h3>Đăng nhập chống brute force</h3><img src="evidence/diagrams/2-dang-nhap-chong-brute-force.svg" alt="Sơ đồ đăng nhập chống brute force" loading="lazy" style="width:100%;height:auto;border:1px solid var(--border);border-radius:6px"></a>
+    <a class="box" href="evidence/diagrams/3-dang-xuat.svg"><span class="label">Sơ đồ 3</span><h3>Đăng xuất và request sau đó</h3><img src="evidence/diagrams/3-dang-xuat.svg" alt="Sơ đồ đăng xuất" loading="lazy" style="width:100%;height:auto;border:1px solid var(--border);border-radius:6px"></a>
+    <a class="box" href="evidence/diagrams/4-quen-mat-khau.svg"><span class="label">Sơ đồ 4</span><h3>Quên và đặt lại mật khẩu</h3><img src="evidence/diagrams/4-quen-mat-khau.svg" alt="Sơ đồ quên và đặt lại mật khẩu" loading="lazy" style="width:100%;height:auto;border:1px solid var(--border);border-radius:6px"></a>
+  </div>
+</section>
+
+<section class="card" id="demo">
+  <h2>4. Kịch bản demo theo bảng nghiệm thu</h2>
+  <div class="callout warn"><strong>Chuẩn bị (trước buổi trình bày):</strong> mở lại project Supabase nếu bị tạm dừng · <code>.env</code> có key reCAPTCHA v2 <strong>thật</strong> (domain <code>localhost</code>), Gmail + App Password, <code>MAIL_TRANSPORT=smtp</code> · seed lại (in host của <code>DATABASE_URL</code> trước) · <code>npm start</code> · Chrome mở DevTools (Network bật “Preserve log”, Application → Cookies) · một terminal để chạy <code>auth-state.sql</code> · che mật khẩu, mã, token khi chiếu.</div>
+
+  <h3>Phần 1 — Đăng ký và kích hoạt</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Làm</th><th>Cho xem</th><th>Đối chiếu bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Đăng ký Gmail của nhóm (có <code>+demo</code>), tick CAPTCHA</td><td>Network: <code>POST /register → 303 /activate</code>; <code>auth-state.sql</code>: user <code>pending</code>, <code>viewer</code>, <code>otpHash</code> chỉ 6 ký tự đầu</td><td><code>db/1</code>, ảnh 03–04</td></tr>
+      <tr><td>Đăng nhập ngay bằng tài khoản đó</td><td>Trang “chưa kích hoạt”, không có phiên đăng nhập</td><td>ảnh 06, <code>db/2</code></td></tr>
+      <tr><td>Nhập mã sai một lần, rồi mã đúng trong Gmail</td><td><code>INVALID_OTP</code>, <code>attempts=1</code>; rồi <code>303 /login?msg=activated</code>, không tự đăng nhập; <code>usedAt</code> có giá trị</td><td>ảnh 05, 07; <code>db/3</code></td></tr>
+      <tr><td>Đăng ký lại cùng Gmail, kèm <code>role=admin</code> (sửa form bằng DevTools)</td><td>Cùng trang; DB không đổi, role vẫn <code>viewer</code>, không có thư mới</td><td><code>curl/4</code></td></tr>
+      <tr><td>Gửi form đăng ký mà không tick; tick xong chờ quá 2 phút mới gửi; chép <code>g-recaptcha-response</code> từ Network gửi lại bằng curl</td><td>Ba lần đều bị từ chối, không tạo user (CAPTCHA thiếu / hết hạn / dùng lại)</td><td>ảnh 02; <code>curl/5</code> (bản tự động)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Phần 2 — CAPTCHA và brute force</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Làm</th><th>Cho xem</th><th>Đối chiếu bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Sai mật khẩu 2 lần, rồi lần 3</td><td>Thông báo chung; từ lần 3 form có CAPTCHA; <code>rate_limits</code> <code>count=3</code></td><td>ảnh 15–16</td></tr>
+      <tr><td>Bỏ trường CAPTCHA (xoá widget bằng DevTools) rồi gửi đúng mật khẩu</td><td>Chặn trước bước so mật khẩu, bộ đếm không đổi</td><td>check-auth C</td></tr>
+      <tr><td>Tick đúng CAPTCHA nhưng mật khẩu sai</td><td>Bộ đếm tiếp tục tăng</td><td>check-auth C</td></tr>
+      <tr><td>Xoá cookie / mở tab ẩn danh, mở lại <code>/login</code> và gõ cùng email</td><td>Vẫn đòi CAPTCHA (bộ đếm ở DB)</td><td>check-auth C</td></tr>
+      <tr><td>Sai tới lần 10, rồi gửi đúng mật khẩu + CAPTCHA</td><td>Trang <code>429</code> + <code>Retry-After</code>, không có phiên</td><td>ảnh 17, <code>curl/7</code>, <code>db/7</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Phần 3 — Đăng nhập, đăng xuất, CRUD</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Làm</th><th>Cho xem</th><th>Đối chiếu bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Chưa đăng nhập: <code>curl -i -X POST localhost:3000/admin/dishes/1?_method=DELETE</code></td><td><code>303 /login</code>, món #1 còn</td><td><code>curl/1</code>, ảnh 08</td></tr>
+      <tr><td>Ghi lại <code>sid</code> ở Application, đăng nhập bằng tài khoản seed</td><td><code>POST /login → 303</code> + <code>Set-Cookie</code>; <code>sid</code> khác trước; HttpOnly, SameSite=Lax, Path=/; vân tay sid khớp dòng trong <code>auth-state.sql</code></td><td>network mục 5–7, ảnh 09</td></tr>
+      <tr><td>Sai email và sai mật khẩu (email có thật)</td><td>Cùng một câu thông báo</td><td>check-auth D</td></tr>
+      <tr><td>Dừng <code>npm start</code> (Ctrl+C), chạy lại, F5 trang quản trị</td><td>Vẫn đăng nhập; bản ghi phiên vẫn trong <code>sessions</code></td><td><code>curl/3</code></td></tr>
+      <tr><td>Chép <code>sid</code>, bấm Đăng xuất, gửi lại <code>sid</code> cũ bằng curl</td><td><code>303 /login</code>; bản ghi đã xoá</td><td><code>curl/2</code>, network mục 8–9</td></tr>
+      <tr><td>Mở một file HTML ở cổng khác có form tự gửi xoá món #1 tới <code>localhost:3000</code></td><td>Bị từ chối (SameSite không gửi cookie → <code>303 /login</code>, hoặc thiếu <code>_csrf</code> → <code>403</code>); món #1 còn</td><td><code>curl/2</code> (Origin lạ → 403)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Phần 4 — Quên mật khẩu</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Làm</th><th>Cho xem</th><th>Đối chiếu bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td><code>/forgot</code> với Gmail có tài khoản, rồi với email không có</td><td>Cùng trang, cùng status, thời gian gần nhau (Network)</td><td><code>curl/6</code>, ảnh 11</td></tr>
+      <tr><td>Gửi <code>/forgot</code> cùng email lần thứ 4 trong giờ</td><td>Trang <code>429</code></td><td>check-auth E</td></tr>
+      <tr><td>Đăng nhập ở tab 1. Mở link trong Gmail ở tab 2</td><td>Form; <code>usedAt</code> vẫn rỗng; header <code>Referrer-Policy: no-referrer</code></td><td>network mục 10, <code>db/5</code></td></tr>
+      <tr><td>Đặt mật khẩu mới ở tab 2, rồi F5 tab 1</td><td><code>303 /login</code> ở tab 2 (không tự đăng nhập); tab 1 bị đưa về <code>/login</code>; 0 phiên của user</td><td>network mục 11, <code>db/6</code></td></tr>
+      <tr><td>Mở lại link cũ; dùng token làm mã kích hoạt / mật khẩu</td><td>“Link không dùng được”; các chỗ khác đều từ chối; mật khẩu không đổi</td><td>ảnh 14, check-auth E</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Chạy lại toàn bộ tự động: <code>node scripts/check-auth.mjs</code> (tự chạy server riêng ở :3100, dùng key thử từ <code>.env.test</code>) và <code>npm start</code> + <code>node scripts/check-ssr.mjs</code>. Thu lại bằng chứng: tắt <code>npm start</code> rồi <code>node scripts/collect-evidence.mjs</code>. Seed lại sau khi chạy.</p>
+</section>
+
+<section class="card" id="loi">
+  <h2>5. Lỗi đã phát hiện và cách sửa</h2>
+
+  <h3>Lỗi chính (đề yêu cầu): <code>LOG_SQL=1</code> làm lộ <code>sid</code> — bước 16</h3>
+  <div class="grid two">
+    <div class="box"><span class="label">Tái hiện</span><p>Chạy server với <code>LOG_SQL=1</code>, đăng nhập, mở <code>/admin/dishes</code>. Log có 21 dòng <code>[SQL]</code>; <code>sid</code> của phiên đăng nhập xuất hiện <strong>7 lần</strong> trong tham số, dữ liệu phiên có <code>csrfToken</code>.</p></div>
+    <div class="box"><span class="label">Nguyên nhân</span><p>Chế độ in SQL kèm tham số mang nguyên từ block 7 (ở đó tham số chỉ là từ khoá, số trang). Ở block 8, tham số của câu tra phiên chính là <code>sid</code>. Ai đọc được log — kể cả ảnh terminal nộp làm bằng chứng — chiếm được phiên.</p></div>
+    <div class="box"><span class="label">Sửa</span><p><code>src/db.js</code>: câu SQL chạm <code>sessions</code>, <code>users</code>, <code>activation_challenges</code>, <code>password_resets</code>, <code>rate_limits</code> in <code>params: [ẩn — bảng xác thực]</code>; câu SQL thực đơn vẫn in đủ tham số.</p></div>
+    <div class="box chosen"><span class="label">Bằng chứng sau khi sửa</span><p>Cùng kịch bản: <code>sid</code> xuất hiện 0 lần, không còn <code>csrfToken</code>; câu tìm “phở” vẫn in tham số <code>phở</code>.</p></div>
+  </div>
+
+  <h3>Các lỗi khác (đã sửa, chi tiết trong <code>BUILD_LOG.md</code>)</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Lỗi</th><th>Cách lộ ra</th><th>Sửa</th><th>Bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Đếm ngược “Gửi lại mã” chỉ có khi thư thật sự được gửi → trang sau đăng ký khác nhau giữa email mới và email đã active (lộ email đã đăng ký) — bước 13</td><td>Đọc lại code trước khi chạy</td><td>Đặt <code>otpSentAt</code> ở mọi nhánh</td><td>check-auth A “3 trang sau đăng ký giống nhau”</td></tr>
+      <tr><td>Thiếu <code>SMTP_PASS</code> làm sập cả server khi gửi thư nền — bước 11</td><td>Thử transport <code>smtp</code> thiếu mật khẩu</td><td><code>sendMail</code> thành <code>async</code></td><td>Log lỗi gửi thư, server vẫn chạy</td></tr>
+      <tr><td>Mọi form <code>403</code> khi mở bằng địa chỉ khác <code>APP_ORIGIN</code> (vd. <code>127.0.0.1</code>) — bước 17</td><td>Chrome thật luôn gửi <code>Origin</code>; script không gửi</td><td>Nhận cả origin của chính request; script gửi <code>Origin</code></td><td>check-auth 92/92 khi đó</td></tr>
+      <tr><td><code>POST /reset</code> luôn <code>403</code> trên Chrome — bước 18</td><td>Trang <code>no-referrer</code> → Chrome gửi <code>Origin: null</code></td><td>Nhận <code>null</code> chỉ ở <code>POST /reset</code> (vẫn cần <code>_csrf</code> + token)</td><td>network mục 11 (<code>Origin: null → 303</code>)</td></tr>
+      <tr><td>curl không cookie gọi CRUD nhận <code>403</code> thay vì <code>303 /login</code> — bước 18</td><td>Thu bằng chứng bằng request trần</td><td><code>requireLogin</code> đặt trước <code>csrf</code></td><td><code>curl/1</code> (9 request đều 303)</td></tr>
+      <tr><td>Header quản trị tràn ngang ở điện thoại khi đã đăng nhập — bước 17</td><td>Chrome 375px: trang rộng 525px</td><td>Header có khu tài khoản được xuống dòng</td><td>ảnh 09 (375px)</td></tr>
+      <tr><td>Trang <code>429</code> ghi “6 phút” cho khoá 5 phút — bước 18</td><td>Ảnh chụp trang khoá</td><td>Làm tròn tới phút gần nhất (một hàm chung)</td><td>ảnh 17</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>Block 8 · viết ngày 03/11/2026, đối chiếu với mã nguồn trong <code>source-code/</code> và bằng chứng trong <code>evidence/</code></footer>
+</div>
+</body>
+</html>

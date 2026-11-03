@@ -1,9 +1,9 @@
 # Session ở DB: khởi động lại server, cookie cũ vẫn đăng nhập
 
 $ GET /admin/dishes   # trước khi khởi động lại
-  Cookie: sid=<đã che · vân tay ad54046e>
-→ 200  (337 ms)
-  Set-Cookie: sid=<đã che · vân tay ad54046e>; Path=/; Expires=Tue, 03 Nov 2026 06:03:13 GMT; HttpOnly; SameSite=Lax
+  Cookie: sid=<đã che · vân tay 2e0b875f>
+→ 200  (382 ms)
+  Set-Cookie: sid=<đã che · vân tay 2e0b875f>; Path=/; Expires=Tue, 03 Nov 2026 06:14:38 GMT; HttpOnly; SameSite=Lax
   Trang: "Quản trị món ăn"
 
 (dừng server — tiến trình Node kết thúc, mọi thứ trong bộ nhớ mất)
@@ -11,8 +11,8 @@ $ GET /admin/dishes   # trước khi khởi động lại
 (chạy lại server)
 
 $ GET /admin/dishes   # cùng cookie, sau khi khởi động lại
-  Cookie: sid=<đã che · vân tay ad54046e>
-→ 200  (878 ms)
-  Set-Cookie: sid=<đã che · vân tay ad54046e>; Path=/; Expires=Tue, 03 Nov 2026 06:03:16 GMT; HttpOnly; SameSite=Lax
+  Cookie: sid=<đã che · vân tay 2e0b875f>
+→ 200  (880 ms)
+  Set-Cookie: sid=<đã che · vân tay 2e0b875f>; Path=/; Expires=Tue, 03 Nov 2026 06:14:40 GMT; HttpOnly; SameSite=Lax
   Trang: "Quản trị món ăn"
 
