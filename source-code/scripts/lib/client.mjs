@@ -19,7 +19,8 @@ export function client() {
   }
   let csrf = "";
   async function request(method, path, fields, headers = {}) {
-    const init = { method, redirect: "manual", headers: { ...headers } };
+    // POST gửi kèm Origin như trình duyệt thật (Chrome luôn gửi; thiếu thì không bắt được lỗi kiểm Origin — bước 17).
+    const init = { method, redirect: "manual", headers: method === "POST" ? { origin: base(), ...headers } : { ...headers } };
     if (jar.size) init.headers.cookie = cookieHeader();
     if (fields) {
       const body = new URLSearchParams();

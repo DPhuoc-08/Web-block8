@@ -571,7 +571,10 @@ html:not(.js) .js-only { display: none; }
 .account form { margin: 0; }
 .account .btn { min-height: 44px; }
 @media (max-width: 600px) {
-  /* Điện thoại: tách thành hàng thứ hai, nền xám nhạt, email cắt "…" cho vừa. */
+  /* Điện thoại: tách thành hàng thứ hai, nền xám nhạt, email cắt "…" cho vừa.
+     Header điện thoại đặt nowrap (logo + nav một dòng) → phải cho xuống dòng lại khi có khu tài khoản,
+     nếu không hàng tài khoản bị ép cùng dòng và đẩy trang cuộn ngang (lỗi bước 17). */
+  .site-header .container:has(.account) { flex-wrap: wrap; row-gap: 0; }
   .account { flex-basis: calc(100% + 32px); margin: 0 -16px; padding: 6px 16px 8px; border-left: 0; background: var(--surface-2); justify-content: space-between; }
   .account-email { max-width: none; min-width: 0; flex: 1 1 auto; }
 }

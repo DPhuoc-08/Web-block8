@@ -350,3 +350,23 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 - [ ] Network: `POST /login` → 303 + `Set-Cookie`; request sau có `Cookie: sid=…`.
 - [ ] Trang khác gửi form: mở một file HTML ở `http://127.0.0.1:5500` có form tự gửi `POST http://localhost:3000/admin/dishes/1?_method=DELETE` khi đang đăng nhập → bị từ chối (SameSite không gửi cookie → 303 `/login`, hoặc thiếu `_csrf` → 403), món #1 còn.
 - [ ] Bấm Back sau khi đăng xuất: trang cũ có thể hiện lại, nhưng thao tác tiếp theo bị đưa về `/login`.
+
+## Bước 17 — Giao diện xác thực theo Figma đã duyệt: đối chiếu trên Chrome thật, 320–1280px
+**Đã làm:** mở từng trạng thái trên Chrome headless (điều khiển qua DevTools Protocol, script tạm, đã xoá sau khi dùng) ở 375 / 820 / 1280px và kiểm 320px, so với khung Figma vòng 2 (hướng A): đăng nhập sai, đăng nhập phải giải CAPTCHA, chưa kích hoạt, trang 429; đăng ký có lỗi nhập; kích hoạt ngay sau đăng ký (6 ô mã, đếm ngược gửi lại), mã sai; quên mật khẩu "đã gửi"; link đặt lại không dùng được; trang quản trị khi đã đăng nhập.
+
+**Kết quả đối chiếu:** bố cục, thứ tự trường, banner lỗi, khối kết quả và 6 ô mã khớp Figma. reCAPTCHA ở 320px tự chuyển bản `compact` (164×144) nên không tràn. Hai lỗi dưới đây chỉ lộ ra trên trình duyệt thật — script curl / fetch không thấy được.
+
+### Lỗi 1 (agent viết sai): mọi form bị 403 khi mở bằng địa chỉ khác `APP_ORIGIN`
+- **Tái hiện:** chạy server ở cổng 3200 (hoặc mở `http://127.0.0.1:3000` trong khi `APP_ORIGIN=http://localhost:3000`), bấm Đăng nhập → **403 "Yêu cầu bị từ chối"**, kể cả form hợp lệ có `_csrf` đúng. Đăng xuất, lưu món… cũng 403.
+- **Nguyên nhân:** `csrf.js` chỉ chấp nhận `Origin` bằng đúng `APP_ORIGIN`. Chrome luôn gửi `Origin` với POST; script kiểm tra (fetch của Node) **không** gửi nên 92/92 vẫn ĐẠT — ca kiểm tra thiếu đúng điều kiện của trình duyệt thật.
+- **Sửa:** `src/auth/csrf.js` nhận `Origin` là `APP_ORIGIN` **hoặc** chính địa chỉ của request (`req.protocol://Host`). Trang lạ gửi form tới mình thì `Origin` là trang lạ, khác `Host` của mình → vẫn bị từ chối; trang lạ không sửa được header `Origin` do trình duyệt nạn nhân gửi. (Trường hợp DNS rebinding — trang lạ trỏ tên miền của nó về máy mình — Origin và Host trùng nhau, nhưng trình duyệt không gửi cookie `sid` của `localhost` cho tên miền lạ → không có phiên, không có token → vẫn 403.)
+- **Sửa script để bắt được lỗi này về sau:** `scripts/lib/client.mjs` gửi `Origin` với mọi POST như Chrome.
+- **Bằng chứng sau khi sửa:** đăng nhập trên Chrome ở cổng 3200 → 303 `/admin/dishes`; `check-auth.mjs` (chạy server riêng ở cổng khác, giờ có gửi Origin) **92/92 ĐẠT**; ca "Origin lạ + token đúng → 403" (phần D) vẫn ĐẠT.
+
+### Lỗi 2: header trang quản trị tràn ngang trên điện thoại khi đã đăng nhập
+- **Tái hiện:** đăng nhập, mở `/admin/dishes` ở 375px → trang cuộn ngang, `document.documentElement.scrollWidth = 525` (khu tài khoản `div.account` kéo dài tới 525px). Trang chưa đăng nhập không bị (không có khu tài khoản).
+- **Nguyên nhân:** quy tắc điện thoại của block7 đặt `.site-header .container { flex-wrap: nowrap }` để logo + menu nằm một dòng; khu tài khoản (bước 10) cần xuống hàng thứ hai (`flex-basis: 100%`) nhưng bị ép cùng dòng.
+- **Sửa:** `public/css/style.css` — ở ≤600px, `.site-header .container:has(.account) { flex-wrap: wrap }`: chỉ header có khu tài khoản mới xuống dòng, header của khách giữ nguyên như block7.
+- **Bằng chứng sau khi sửa:** `scrollWidth` = 375 ở 375px, = 320 ở 320px, không phần tử nào vượt mép phải; ảnh chụp: hàng 2 nền xám (email + Đăng xuất) như Figma hàng 7; ở 820px email và nút vẫn cùng một dòng với menu.
+
+**Đã kiểm tra:** `check-auth.mjs` **92/92 ĐẠT**, `check-ssr.mjs` **48/48 ĐẠT** (server ở :3000).
