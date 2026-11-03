@@ -1,0 +1,17 @@
+# CAPTCHA kiểm ở backend: thiếu token / tự khai "đã qua" → từ chối, chưa băm mật khẩu, chưa tạo user
+
+$ POST /register   # không gửi g-recaptcha-response
+  Cookie: sid=<đã che · vân tay 7f5ad10d>
+  _csrf=<đã che>&email=bot%40demo.example&password=<đã che>&passwordConfirm=<đã che>
+→ 200  (108 ms)
+  Set-Cookie: sid=<đã che · vân tay 7f5ad10d>; Path=/; Expires=Tue, 03 Nov 2026 06:03:18 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="CAPTCHA_REQUIRED"
+
+$ POST /register   # tự khai đã qua CAPTCHA
+  Cookie: sid=<đã che · vân tay 65bc27c6>
+  _csrf=<đã che>&email=bot%40demo.example&password=<đã che>&passwordConfirm=<đã che>&captchaPassed=true&recaptchaScore=1
+→ 200  (105 ms)
+  Set-Cookie: sid=<đã che · vân tay 65bc27c6>; Path=/; Expires=Tue, 03 Nov 2026 06:03:18 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="CAPTCHA_REQUIRED"
+
+DB: user bot@demo.example = 0

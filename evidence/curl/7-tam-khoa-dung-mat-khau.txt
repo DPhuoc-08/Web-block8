@@ -1,0 +1,9 @@
+# Đang bị khoá (sau phần 6 của ảnh): gửi đúng mật khẩu + CAPTCHA vẫn 429
+
+$ POST /login   # mật khẩu ĐÚNG
+  Cookie: sid=<đã che · vân tay 18a70e1f>
+  _csrf=<đã che>&email=thu.khoa%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 429  Retry-After: 292  (149 ms)
+  Set-Cookie: sid=<đã che · vân tay 18a70e1f>; Path=/; Expires=Tue, 03 Nov 2026 06:03:19 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạm khoá đăng nhập"  data-error-code="RATE_LIMITED"
+

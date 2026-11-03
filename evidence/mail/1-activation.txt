@@ -1,0 +1,8 @@
+X-Mail-Kind: activation
+From: Nhà hàng <no-reply@example.com>
+To: minh.anh@demo.example
+Subject: Mã kích hoạt tài khoản: <đã che>
+
+Mã kích hoạt tài khoản Nhà hàng của bạn: <đã che>
+Mã có hạn 10 phút và chỉ dùng được một lần.
+Nếu bạn không đăng ký, hãy bỏ qua thư này.

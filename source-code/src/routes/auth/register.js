@@ -9,7 +9,7 @@ import { generateOtp, hashOtp, sameHex } from "../../auth/secrets.js";
 import { sendLater, activationMail } from "../../auth/mailer.js";
 import { verifyRecaptcha, recaptchaSiteKey } from "../../auth/recaptcha.js";
 import { hit, peek, limit, retryAfter } from "../../auth/rate-limit.js";
-import { tooMany, captchaUnavailable } from "../../auth/pages.js";
+import { tooMany, captchaUnavailable, minutesOf } from "../../auth/pages.js";
 import { photoFor } from "../../auth/photos.js";
 import { one } from "../../forms.js";
 
@@ -158,7 +158,7 @@ router.post("/activate", async (req, res) => {
   // Đang khoá → 429 dù mã đúng. Email không có tài khoản pending cũng có bộ đếm (theo email) → 429 không lộ tài khoản.
   const lockedUntil = challenge ? (challenge.lockedUntil > new Date() ? challenge.lockedUntil : null) : (await peek(failKey, { windowMs: OTP_LOCK })).lockedUntil;
   if (lockedUntil) {
-    return tooMany(res, "activate", { retryAfter: retryAfter(lockedUntil), heading: "Tạm khoá kích hoạt", text: `Bạn đã nhập sai mã quá nhiều lần. Hãy thử lại sau khoảng ${Math.ceil(retryAfter(lockedUntil) / 60)} phút.`, link: { href: "/login", text: "Về đăng nhập" } });
+    return tooMany(res, "activate", { retryAfter: retryAfter(lockedUntil), heading: "Tạm khoá kích hoạt", text: `Bạn đã nhập sai mã quá nhiều lần. Hãy thử lại sau khoảng ${minutesOf(retryAfter(lockedUntil))} phút.`, link: { href: "/login", text: "Về đăng nhập" } });
   }
 
   // Mã đúng khi đủ 6 điều kiện: tài khoản pending, purpose = activation, chưa hết hạn, chưa dùng, chưa vượt giới hạn
@@ -207,7 +207,7 @@ router.post("/activate/resend", async (req, res) => {
 
   // Chờ 60 giây / tối đa 5 lần mỗi giờ theo email — kể cả email không có tài khoản (429 không lộ tài khoản).
   const budget = await sendBudget(email);
-  if (budget.limited) return tooMany(res, "activate", { retryAfter: budget.retryAfter, heading: "Chưa gửi được mã mới", text: `Bạn vừa yêu cầu mã. Hãy chờ khoảng ${budget.retryAfter < 60 ? `${budget.retryAfter} giây` : `${Math.ceil(budget.retryAfter / 60)} phút`} rồi thử lại.`, button: { href: "/activate", label: "Về trang nhập mã" } });
+  if (budget.limited) return tooMany(res, "activate", { retryAfter: budget.retryAfter, heading: "Chưa gửi được mã mới", text: `Bạn vừa yêu cầu mã. Hãy chờ khoảng ${budget.retryAfter < 60 ? `${budget.retryAfter} giây` : `${minutesOf(budget.retryAfter)} phút`} rồi thử lại.`, button: { href: "/activate", label: "Về trang nhập mã" } });
 
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true, status: true, activation: { select: { userId: true } } } });
   if (user?.status === "pending" && user.activation) await issueOtp(user.id, email);

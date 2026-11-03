@@ -63,6 +63,10 @@ app.use(
 );
 // Từ cookie sid → user đang đăng nhập (res.locals.currentUser) cho mọi route và template.
 app.use(loadUser);
+// Khu quản trị = cụm CRUD: MỌI route dưới /admin (cả GET lẫn ghi) phải đăng nhập — chặn ở server (plan 5.7, 12.2).
+// Đặt TRƯỚC csrf: chưa đăng nhập thì mọi request /admin (kể cả POST gửi thẳng bằng curl, không cookie, không token)
+// đều nhận 303 /login như đề yêu cầu, thay vì 403 của CSRF (lỗi phát hiện ở bước 18). Đã đăng nhập thì đi tiếp qua csrf.
+app.use("/admin", requireLogin);
 // CSRF: kiểm tra token trên method GỐC (POST) — phải đặt TRƯỚC method-override.
 app.use(csrf);
 
@@ -105,8 +109,7 @@ app.use(menuRouter);
 app.use(loginRouter);
 app.use(registerRouter);
 app.use(passwordResetRouter);
-// Khu quản trị = cụm CRUD: MỌI route dưới /admin (cả GET lẫn ghi) phải đăng nhập — chặn ở server (plan 5.7, 12.2).
-app.use("/admin", requireLogin);
+// Khu quản trị: requireLogin đã chặn ở trên (sau loadUser, trước csrf).
 app.get("/admin", (req, res) => res.redirect("/admin/dishes"));
 app.use("/admin/dishes", adminDishesRouter);
 app.use("/admin/chefs", adminChefsRouter);

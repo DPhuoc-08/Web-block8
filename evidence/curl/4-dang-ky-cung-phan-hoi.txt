@@ -1,0 +1,22 @@
+# Đăng ký: email mới, email đang pending, email đã active → cùng status, cùng Location; role trong body bị bỏ qua
+
+$ POST /register   # email mới, kèm role=admin
+  Cookie: sid=<đã che · vân tay 3f9ce3c9>
+  _csrf=<đã che>&email=moi%40demo.example&password=<đã che>&passwordConfirm=<đã che>&role=admin&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (728 ms)
+  Set-Cookie: sid=<đã che · vân tay 3f9ce3c9>; Path=/; Expires=Tue, 03 Nov 2026 06:03:17 GMT; HttpOnly; SameSite=Lax
+
+$ POST /register   # cùng email lần 2 (đang pending), mật khẩu KHÁC
+  Cookie: sid=<đã che · vân tay 0e7a04f4>
+  _csrf=<đã che>&email=moi%40demo.example&password=<đã che>&passwordConfirm=<đã che>&role=admin&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (343 ms)
+  Set-Cookie: sid=<đã che · vân tay 0e7a04f4>; Path=/; Expires=Tue, 03 Nov 2026 06:03:18 GMT; HttpOnly; SameSite=Lax
+
+$ POST /register   # email đã active
+  Cookie: sid=<đã che · vân tay 06b6e2dc>
+  _csrf=<đã che>&email=admin%40example.com&password=<đã che>&passwordConfirm=<đã che>&role=admin&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (281 ms)
+  Set-Cookie: sid=<đã che · vân tay 06b6e2dc>; Path=/; Expires=Tue, 03 Nov 2026 06:03:18 GMT; HttpOnly; SameSite=Lax
+
+DB: moi@demo.example role=viewer status=pending; passwordHash sau lần 2 GIỐNG lần 1 (không ghi đè) (vân tay 27f8e0ef → 27f8e0ef).
+DB: admin@example.com không đổi; thư kích hoạt gửi tới admin@example.com: 0.

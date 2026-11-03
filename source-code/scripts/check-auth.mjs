@@ -5,7 +5,7 @@
 // A: đăng ký + mã kích hoạt + gửi lại. B: CAPTCHA ở đăng ký + giới hạn IP. C: chống brute force ở đăng nhập.
 // D: session + đăng nhập + đăng xuất + chặn CRUD + CSRF. E: quên / đặt lại mật khẩu. F: hồi quy nhanh (thực đơn, CRUD sau đăng nhập).
 // Bản ghi thử (tài khoản *@check.example, "[TEST B8]") được xoá ở cuối; bộ đếm giới hạn của tài khoản thử cũng xoá.
-import "dotenv/config";
+import "./lib/test-env.mjs"; // .env + key thử reCAPTCHA từ .env.test
 import { prisma } from "../src/db.js";
 import { hashPassword } from "../src/auth/password.js";
 import { client, reporter } from "./lib/client.mjs";
@@ -93,6 +93,13 @@ async function partD() {
     if (!(res.status === 303 && res.location === "/login")) badWrites.push(`${u} ${res.status}`);
   }
   r.ok(badWrites.length === 0 && (await counts()) === before, `${writes.length} request POST / PATCH / DELETE khi chưa đăng nhập → 303 /login, dữ liệu không đổi`, badWrites.join(", "));
+  // Như curl trần: không cookie, không _csrf (lỗi bước 18: trước đây nhận 403 của CSRF thay vì 303 /login).
+  const bare = [];
+  for (const [u, f] of writes) {
+    const res = await client().post(u, f, { csrf: false });
+    if (!(res.status === 303 && res.location === "/login")) bare.push(`${u} ${res.status}`);
+  }
+  r.ok(bare.length === 0 && (await counts()) === before, `${writes.length} request ghi KHÔNG cookie, KHÔNG _csrf (curl trần) → cũng 303 /login, dữ liệu không đổi`, bare.join(", "));
   const forged = client();
   forged.jar.set("sid", "s%3Abia-dat.chu-ky-gia");
   r.ok((await forged.get("/admin/dishes")).status === 303, "Cookie sid bịa → 303 /login (không lỗi 500)");
@@ -147,6 +154,8 @@ async function partD() {
   r.ok(res.status === 403 && (await prisma.ingredient.count()) === nIng, "_csrf sai → 403, không ghi");
   res = await c.post("/admin/ingredients", [["name", "[TEST B8] csrf"]], { headers: { origin: "https://evil.example" } });
   r.ok(res.status === 403 && (await prisma.ingredient.count()) === nIng, "Form gửi từ trang khác (Origin lạ) → 403, không ghi");
+  res = await c.post("/admin/ingredients", [["name", "[TEST B8] csrf"]], { headers: { origin: "null" } });
+  r.ok(res.status === 403 && (await prisma.ingredient.count()) === nIng, "Origin: null (trang lạ đặt no-referrer / iframe sandbox) ở route quản trị → 403");
   res = await c.post("/admin/dishes/1?_method=DELETE", [], { csrf: false });
   r.ok(res.status === 403 && Boolean(await prisma.dish.findUnique({ where: { id: 1 } })), "?_method=DELETE thiếu _csrf → 403 (kiểm tra trước method-override)");
 
@@ -400,7 +409,8 @@ async function partE() {
   r.ok((await tab1.get("/admin/dishes")).status === 200, "Tab 1 đã đăng nhập bằng mật khẩu cũ");
   const before = await prisma.user.findUnique({ where: { email: u } });
   const t1 = Date.now();
-  res = await c2.post("/reset", [["token", tok1], ["password", "mat-khau-moi-123"], ["passwordConfirm", "mat-khau-moi-123"]]);
+  // Origin: null — đúng thứ Chrome gửi từ trang có Referrer-Policy: no-referrer (lỗi bước 18).
+  res = await c2.post("/reset", [["token", tok1], ["password", "mat-khau-moi-123"], ["passwordConfirm", "mat-khau-moi-123"]], { headers: { origin: "null" } });
   const after = await prisma.user.findUnique({ where: { email: u } });
   r.ok(res.status === 303 && res.location === "/login?msg=password-reset" && after.passwordHash !== before.passwordHash && (await c2.get("/admin/dishes")).status === 303, "Đặt lại thành công → 303 /login, đổi passwordHash, KHÔNG tự đăng nhập");
   r.ok((await tab1.get("/admin/dishes")).status === 303 && (await prisma.session.count({ where: { userId: after.id } })) === 0, "Sid cũ của tab 1 bị từ chối; mọi phiên của user đã bị xoá");

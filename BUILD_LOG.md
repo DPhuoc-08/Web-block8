@@ -370,3 +370,39 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 - **Bằng chứng sau khi sửa:** `scrollWidth` = 375 ở 375px, = 320 ở 320px, không phần tử nào vượt mép phải; ảnh chụp: hàng 2 nền xám (email + Đăng xuất) như Figma hàng 7; ở 820px email và nút vẫn cùng một dòng với menu.
 
 **Đã kiểm tra:** `check-auth.mjs` **92/92 ĐẠT**, `check-ssr.mjs` **48/48 ĐẠT** (server ở :3000).
+
+## Bước 18 — Bằng chứng nộp (`evidence/`)
+**Đã làm:**
+- `scripts/collect-evidence.mjs`: chạy server thật ở :3000, điều khiển Chrome thật qua 17 trạng thái của luồng (đăng ký → mã sai → đăng nhập khi pending → kích hoạt → vào quản trị → đăng xuất → quên / đặt lại → dùng lại link → dò mật khẩu tới khoá), ghi ảnh, Network (header thật của Chrome) và bảng cookie như tab Application; sau đó gửi request trực tiếp như `curl -i` (CRUD khi chưa đăng nhập, CSRF, sid cũ sau đăng xuất, khởi động lại server, đăng ký email mới / pending / active, CAPTCHA thiếu / tự khai, quên mật khẩu email có / không có, đúng mật khẩu khi đang khoá); chụp bản ghi DB ở 7 thời điểm; chép 3 thư. Tài khoản `@demo.example` và bộ đếm bị xoá ở cuối.
+- `scripts/lib/browser.mjs`: Chrome headless qua DevTools Protocol (WebSocket có sẵn của Node, không thêm thư viện).
+- **Che bí mật:** mật khẩu / mã / token / `_csrf` / `g-recaptcha-response` → `<đã che>`; `sid` → vân tay 8 ký tự SHA-256 (so được trước / sau, không dùng lại được); hash chỉ 6 ký tự đầu; Argon2id chỉ phần tham số. Chặn cuối: script gom mọi giá trị bí mật nó gặp (mật khẩu, mã, token, sid, CSRF token, hash đầy đủ) và **từ chối ghi** nếu còn sót. Chặn này bắt được 3 chỗ che thiếu khi làm (regex Argon2 sai thứ tự tham số `m,p,t`; `_csrf` ở đầu dòng thụt lề; mã trong dòng Subject dạng MIME `=?UTF-8?Q?…?=`) — file của các lần chạy đó chưa bao giờ được commit, và các lần chạy đạt sau đó đã ghi đè chúng.
+- `evidence/README.md`: bảng nghiệm thu của đề → ảnh / Network / request / DB.
+- `.env.test`: key thử reCAPTCHA của Google chuyển **ra khỏi `.env`** sang `.env.test` (đúng CLAUDE.md: key thử chỉ cho script). `scripts/lib/test-env.mjs` nạp `.env` rồi để `.env.test` ghi đè; `check-auth.mjs` và `collect-evidence.mjs` dùng nó. `.env` giờ để trống `RECAPTCHA_SITE_KEY` / `RECAPTCHA_SECRET_KEY` → **demo cần key thật** (checklist bước 16). `.env.example` ghi cách tạo `.env.test`.
+
+**Quyết định:**
+- CAPTCHA khi chạy tự động: bấm ô "Tôi không phải người máy" từ Chrome do script điều khiển thì widget quay mãi (Google nhận ra trình duyệt tự động, kể cả với key thử; đã thử user agent thường cũng vậy). **Không** tìm cách lách. Vì secret thử chấp nhận mọi token, script điền token thử vào ô `g-recaptcha-response`; ảnh vì vậy thấy ô chưa tick — ghi rõ trong `evidence/README.md`. Bằng chứng chặn bot vẫn là phần làm tay với key thật.
+- Script không xoá thư mục `evidence/` mà ghi đè từng file (tên file cố định).
+
+### Lỗi 1 (agent viết sai): Chrome không đặt lại được mật khẩu — `POST /reset` luôn 403
+- **Tái hiện:** mở link đặt lại trong Chrome, nhập mật khẩu mới, bấm Lưu → 403 "Yêu cầu bị từ chối". Network: request có `Origin: null`.
+- **Nguyên nhân:** trang `/reset` gửi `Referrer-Policy: no-referrer` (để token trong URL không lọt ra ngoài). Theo chuẩn Fetch, form gửi từ trang có chính sách này mang `Origin: null`; `csrf.js` (bước 17) chỉ nhận `APP_ORIGIN` hoặc origin của chính request → chặn. `check-auth` không thấy vì client của script gửi Origin của server, không mô phỏng chính sách referrer.
+- **Sửa:** `src/auth/csrf.js` chấp nhận `Origin: null` **chỉ** cho `POST /reset` — request đó vẫn phải có `_csrf` đúng của phiên và reset token bí mật; giữ nguyên `no-referrer` như hợp đồng. Mọi route khác vẫn từ chối `null` (trang lạ có thể tự tạo `Origin: null` bằng `no-referrer` hoặc iframe sandbox).
+- **Kiểm tra thêm vào `check-auth.mjs`:** phần E gửi `POST /reset` với `Origin: null` như Chrome → 303; phần D gửi `Origin: null` vào `/admin/ingredients` → 403.
+- **Bằng chứng sau khi sửa:** `evidence/network/network-log.md` mục 11 — `Origin: null` → `303 /login?msg=password-reset`; `db/6` — `usedAt` có giá trị, vân tay hash đổi, 0 phiên.
+
+### Lỗi 2 (agent viết sai): curl không cookie gọi CRUD nhận 403 thay vì `303 /login`
+- **Tái hiện:** `POST /admin/dishes` (và `?_method=PATCH|DELETE`, `/admin/chefs`, `/admin/ingredients/…`) không cookie, không `_csrf` → **403**. Đề (bảng nghiệm thu) và CLAUDE.md: chưa đăng nhập gọi CRUD bất kỳ, kể cả gửi thẳng bằng công cụ HTTP → `303 /login`.
+- **Nguyên nhân:** `csrf` đứng trước `app.use("/admin", requireLogin)` nên request không có phiên bị CSRF chặn trước. `check-auth` phần D chỉ thử khi đã có phiên ẩn danh + `_csrf` hợp lệ (mở `/login` trước), nên không thấy.
+- **Sửa:** `src/app.js` — `app.use("/admin", requireLogin)` chuyển lên ngay sau `loadUser`, trước `csrf`. Đã đăng nhập thì vẫn qua `csrf` trước `methodOverride` (plan 6.4 cập nhật).
+- **Kiểm tra thêm:** phần D "9 request ghi KHÔNG cookie, KHÔNG `_csrf` (curl trần) → cũng 303 /login, dữ liệu không đổi".
+- **Bằng chứng sau khi sửa:** `evidence/curl/1-chua-dang-nhap-goi-crud.txt` — 9 request đều 303, 1.200 món, món #1 không đổi.
+
+### Lỗi 3: trang 429 ghi "thử lại sau 6 phút" cho khoá 5 phút
+- **Tái hiện:** sai 10 lần → trang ghi 6 phút; `Retry-After: 301`.
+- **Nguyên nhân:** `lockedUntil` do PostgreSQL tính (`now()` của DB), số giây còn lại tính bằng đồng hồ Node → lệch vài trăm ms → 300–301 giây; 3 chỗ làm tròn **lên** (`Math.ceil`) ra 6.
+- **Sửa:** một hàm `minutesOf` trong `src/auth/pages.js` (làm tròn tới phút gần nhất, tối thiểu 1) dùng cho cả 4 chỗ (trang 429 chung, khoá đăng nhập, khoá kích hoạt, chờ gửi lại mã). `Retry-After` vẫn là số giây chính xác.
+- **Bằng chứng:** ảnh `17-tam-khoa-429-375` ghi "5 phút".
+
+**Đã kiểm tra:** `check-auth.mjs` **94/94 ĐẠT** (thêm 2 ca), `check-ssr.mjs` **48/48 ĐẠT** — output lưu ở `evidence/curl/9`, `10`. Quét mọi file chữ trong `evidence/` và hai output: không có `SEED_USER_PASSWORD`, `SESSION_SECRET`, `OTP_PEPPER`, secret reCAPTCHA, `DATABASE_URL` hay host database, không có chuỗi ≥ 40 ký tự kiểu token. Log server trong lúc thu (`curl/8`) không có mã / mật khẩu / token.
+
+**Cập nhật tài liệu:** CLAUDE.md và plan đổi `check-*.sh` → `check-*.mjs`, `peek.js` → `scripts/lib/outbox.mjs`; plan 6.4 (thứ tự middleware) và 5.8 (ngoại lệ `Origin: null` ở `/reset`).

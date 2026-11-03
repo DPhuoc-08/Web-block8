@@ -1,0 +1,39 @@
+# CSRF, đăng xuất, dùng lại sid cũ (tài khoản seed admin, đăng nhập bằng form)
+
+$ GET /admin/dishes
+  Cookie: sid=<đã che · vân tay b59960ea>
+→ 200  (345 ms)
+  Set-Cookie: sid=<đã che · vân tay b59960ea>; Path=/; Expires=Tue, 03 Nov 2026 06:03:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Quản trị món ăn"
+
+$ POST /admin/ingredients   # thiếu _csrf
+  Cookie: sid=<đã che · vân tay b59960ea>
+  name=csrf+thi%E1%BA%BFu+token
+→ 403  (94 ms)
+  Set-Cookie: sid=<đã che · vân tay b59960ea>; Path=/; Expires=Tue, 03 Nov 2026 06:03:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Yêu cầu bị từ chối"
+
+$ POST /admin/ingredients   # token đúng nhưng Origin trang khác
+  Origin: https://trang-la.example
+  Cookie: sid=<đã che · vân tay b59960ea>
+  _csrf=<đã che>&name=csrf+trang+l%E1%BA%A1
+→ 403  (96 ms)
+  Set-Cookie: sid=<đã che · vân tay b59960ea>; Path=/; Expires=Tue, 03 Nov 2026 06:03:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Yêu cầu bị từ chối"
+
+$ GET /logout   # đăng xuất không nhận GET
+  Cookie: sid=<đã che · vân tay b59960ea>
+→ 404  (95 ms)
+  Set-Cookie: sid=<đã che · vân tay b59960ea>; Path=/; Expires=Tue, 03 Nov 2026 06:03:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Không tìm thấy"
+
+$ POST /logout   # đăng xuất đúng cách
+  Cookie: sid=<đã che · vân tay b59960ea>
+→ 303  Location: /login?msg=logged-out  (99 ms)
+  Set-Cookie: sid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+
+$ GET /admin/dishes   # gửi lại sid cũ sau đăng xuất
+  Cookie: sid=<đã che · vân tay b59960ea>
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (35 ms)
+
+Bản ghi phiên của sid cũ trong DB: 0

@@ -1,0 +1,8 @@
+X-Mail-Kind: reset
+From: Nhà hàng <no-reply@example.com>
+To: minh.anh@demo.example
+Subject: Đặt lại mật khẩu
+
+Mở link sau để đặt mật khẩu mới (hạn 15 phút, dùng một lần):
+http://localhost:3000/reset?token=<đã che>
+Nếu bạn không yêu cầu, hãy bỏ qua thư này — mật khẩu hiện tại vẫn giữ nguyên.

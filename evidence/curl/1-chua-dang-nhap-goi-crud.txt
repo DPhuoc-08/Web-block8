@@ -1,0 +1,42 @@
+# Gọi thẳng cụm CRUD khi CHƯA đăng nhập (không cookie, rồi cookie bịa) → mọi method đều 303 /login, DB không đổi
+
+$ GET /admin/dishes
+  Cookie: (không có)
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (36 ms)
+
+$ GET /admin/dishes/new
+  Cookie: (không có)
+→ 303  Location: /login?next=%2Fadmin%2Fdishes%2Fnew  (11 ms)
+
+$ GET /admin/dishes/1/edit
+  Cookie: (không có)
+→ 303  Location: /login?next=%2Fadmin%2Fdishes%2F1%2Fedit  (6 ms)
+
+$ POST /admin/dishes
+  Cookie: (không có)
+  name=M%C3%B3n+l%E1%BA%A1&price=1000
+→ 303  Location: /login  (41 ms)
+
+$ POST /admin/dishes/1?_method=PATCH
+  Cookie: (không có)
+  name=%C4%90%E1%BB%95i+t%C3%AAn&price=1
+→ 303  Location: /login  (11 ms)
+
+$ POST /admin/dishes/1?_method=DELETE
+  Cookie: (không có)
+→ 303  Location: /login  (4 ms)
+
+$ POST /admin/chefs
+  Cookie: (không có)
+  name=%C4%90%E1%BA%A7u+b%E1%BA%BFp+l%E1%BA%A1
+→ 303  Location: /login  (4 ms)
+
+$ POST /admin/ingredients/1?_method=DELETE
+  Cookie: (không có)
+→ 303  Location: /login  (5 ms)
+
+$ POST /admin/dishes/1?_method=DELETE   # cookie sid bịa
+  Cookie: sid=<đã che · vân tay f196209e>
+→ 303  Location: /login  (4 ms)
+
+DB sau các request: dishes = 1200 (trước 1200); món #1 không đổi

@@ -1,0 +1,10 @@
+## Sau 1 lần nhập mã sai và 1 lần đăng nhập khi pending: attempts=1, user không có phiên nào  (lúc 2026-11-03 04:01:16Z)
+
+users #84  email=minh.anh@demo.example  role=viewer  status=pending  emailVerifiedAt=—
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay ac7c8b93)
+  activation_challenges: purpose=activation otpHash=9b7930…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-03 04:11:07Z) attempts=1 usedAt=— lockedUntil=—
+  sessions của user: 0
+rate_limits:
+  otp-cooldown:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:01:07Z  lockedUntil=—
+  otp-send:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:01:07Z  lockedUntil=—
+

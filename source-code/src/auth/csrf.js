@@ -30,7 +30,12 @@ export function csrf(req, res, next) {
   const origin = req.get("origin");
   const expected = req.session?.csrfToken;
   const sent = req.body?._csrf;
-  const badOrigin = origin !== undefined && origin !== process.env.APP_ORIGIN && origin !== `${req.protocol}://${req.get("host")}`;
+  // Ngoại lệ duy nhất: POST /reset với Origin "null". Trang đặt lại mật khẩu có Referrer-Policy: no-referrer (để token
+  // trong URL không lọt ra ngoài) và theo chuẩn Fetch, trang như vậy gửi form kèm Origin: null — chặn thì Chrome thật
+  // không bao giờ đặt lại được mật khẩu (lỗi phát hiện ở bước 18). Request vẫn phải có _csrf đúng của phiên (dưới đây)
+  // và reset token bí mật; mọi route khác vẫn từ chối Origin "null".
+  const resetNull = origin === "null" && req.path === "/reset";
+  const badOrigin = origin !== undefined && !resetNull && origin !== process.env.APP_ORIGIN && origin !== `${req.protocol}://${req.get("host")}`;
   if (badOrigin || !expected || typeof sent !== "string" || !same(sent, expected)) {
     return res.status(403).render("403", { title: "Yêu cầu bị từ chối" });
   }

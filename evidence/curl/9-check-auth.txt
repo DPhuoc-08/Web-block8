@@ -1,0 +1,108 @@
+
+== A. Đăng ký và kích hoạt ==
+ĐẠT      Đăng ký (kèm role=admin) → 303 /activate, user pending, role viewer
+ĐẠT      Mật khẩu lưu Argon2id; mã lưu HMAC (64 hex), purpose activation
+ĐẠT      Mã 6 số có trong email, KHÔNG có trong response / trang
+ĐẠT      Tài khoản pending đăng nhập đúng mật khẩu → không cấp session
+ĐẠT      Dùng mã kích hoạt làm mật khẩu ở /login → bị từ chối
+ĐẠT      Đăng ký lại email đang pending → cùng 303, KHÔNG ghi đè mật khẩu
+ĐẠT      Đăng ký email đã active → cùng 303, không đổi gì, không gửi thư
+ĐẠT      Trang sau đăng ký giống hệt nhau cho email mới / pending / đã active (chỉ khác số giây đếm ngược)
+ĐẠT      Email sai, mật khẩu ngắn → 200 VALIDATION_FAILED, lỗi cạnh ô, không tạo user
+ĐẠT      Nhập lại mật khẩu không khớp → VALIDATION_FAILED
+ĐẠT      3 lần mã sai (sai số, có chữ, trống) → cùng INVALID_OTP, attempts = 3, vẫn pending
+ĐẠT      Gửi lại mã → mã mới, attempts KHÔNG về 0 (vẫn 3)
+ĐẠT      Mã cũ sau khi gửi lại → bị từ chối (attempts 4)
+ĐẠT      Lần sai thứ 5 → khoá kích hoạt 15 phút
+ĐẠT      Đang khoá: mã ĐÚNG cũng → 429 (Retry-After), vẫn pending
+ĐẠT      Hết khoá, mã mới đúng → 303 /login, active, có emailVerifiedAt, usedAt
+ĐẠT      Kích hoạt xong KHÔNG tự đăng nhập (phiên không có userId, /admin → 303)
+ĐẠT      Dùng lại mã đã dùng → INVALID_OTP, bản ghi không đổi
+ĐẠT      Tài khoản vừa kích hoạt đăng nhập được (bước riêng)
+ĐẠT      2 request cùng mã đúng song song → một 303, một INVALID_OTP — 303 + INVALID_OTP
+ĐẠT      Mã đúng nhưng hết hạn → INVALID_OTP, vẫn pending
+ĐẠT      Gửi lại 2 lần trong 60 giây (có tài khoản pending) → 303 rồi 429
+ĐẠT      Gửi lại 2 lần trong 60 giây (không có tài khoản) → 303 rồi 429
+ĐẠT      Email không có tài khoản: 5 lần sai rồi 429 (như email có tài khoản) — 200,200,200,200,200,429
+ĐẠT      Log server không chứa mã OTP hay mật khẩu
+
+== B. CAPTCHA (đăng ký) và giới hạn đăng ký theo IP ==
+ĐẠT      Đăng ký thiếu CAPTCHA → 200 CAPTCHA_REQUIRED, không tạo user, không gửi mã
+ĐẠT      Gửi kèm captchaPassed=true (tự khai) → vẫn bị từ chối
+ĐẠT      Trang có widget với site key; secret key KHÔNG xuất hiện trong trang
+ĐẠT      CAPTCHA secret sai → Google trả token không hợp lệ → INVALID_CAPTCHA, không tạo user
+ĐẠT      CAPTCHA hostname của token không nằm trong RECAPTCHA_HOSTNAMES → INVALID_CAPTCHA, không tạo user
+ĐẠT      11 lần đăng ký từ một IP trong 1 giờ → lần thứ 11 nhận 429 — 200,200,200,200,200,200,200,200,200,200,429
+
+== C. Chống brute force ở đăng nhập ==
+ĐẠT      2 lần sai: thông báo chung, chưa có CAPTCHA, bộ đếm 2
+ĐẠT      Lần sai thứ 3: form sau có CAPTCHA, bộ đếm 3
+ĐẠT      Mở lại /login: vẫn hiện CAPTCHA (server nhớ email vừa gõ)
+ĐẠT      Đủ ngưỡng, bỏ trường CAPTCHA, mật khẩu ĐÚNG → chặn trước bước so mật khẩu, không đăng nhập, bộ đếm không đổi
+ĐẠT      Giải đúng CAPTCHA nhưng sai mật khẩu → bộ đếm tiếp tục tăng (4)
+ĐẠT      Xoá cookie / phiên ẩn danh mới → vẫn phải CAPTCHA (bộ đếm theo email ở DB)
+ĐẠT      Lần sai thứ 10 → 429 Tạm khoá (Retry-After), khoá 5 phút
+ĐẠT      Đang khoá, gửi mật khẩu ĐÚNG + CAPTCHA đúng → vẫn 429, không có phiên
+ĐẠT      Hết thời gian khoá, cửa sổ đếm còn hiệu lực → vẫn cần CAPTCHA
+ĐẠT      Đăng nhập đúng (có CAPTCHA) → 303, xoá bộ đếm theo email, KHÔNG xoá giới hạn IP
+ĐẠT      Email không tồn tại: 3 lần sai rồi bị đòi CAPTCHA, như email có thật — INVALID_CREDENTIALS,INVALID_CREDENTIALS,INVALID_CREDENTIALS,CAPTCHA_REQUIRED
+ĐẠT      31 lần gửi form từ một IP trong 15 phút → lần 31 nhận 429
+
+== D. Đăng nhập, đăng xuất, chặn CRUD, CSRF ==
+ĐẠT      Khách xem thực đơn: 200, không có Set-Cookie (không tạo phiên)
+ĐẠT      14 route GET của /admin khi chưa đăng nhập → 303 /login?next=<trang>
+ĐẠT      9 request POST / PATCH / DELETE khi chưa đăng nhập → 303 /login, dữ liệu không đổi
+ĐẠT      9 request ghi KHÔNG cookie, KHÔNG _csrf (curl trần) → cũng 303 /login, dữ liệu không đổi
+ĐẠT      Cookie sid bịa → 303 /login (không lỗi 500)
+ĐẠT      Sai mật khẩu / email không có → cùng 200, cùng nội dung
+ĐẠT      Form giữ email, không điền lại mật khẩu
+ĐẠT      Sai mật khẩu → không có phiên đăng nhập
+ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Tue, 03 Nov 2026 05:57:48 GMT; HttpOnly; SameSite=Lax
+ĐẠT      sid trước ≠ sid sau đăng nhập; phiên cũ bị xoá (chống session fixation)
+ĐẠT      Bản ghi phiên mới có userId của tài khoản
+ĐẠT      Vào /admin/dishes: 200, Cache-Control no-store, header có email + Đăng xuất (form POST)
+ĐẠT      Đã đăng nhập mà mở /login → 303
+ĐẠT      next=/admin/chefs?page=2 → về đúng trang đó
+ĐẠT      next trỏ ra ngoài (//host, https://, /\host) → bỏ qua, về /admin/dishes
+ĐẠT      Pending đúng mật khẩu → 200, báo chưa kích hoạt, không có phiên đăng nhập
+ĐẠT      Pending vẫn bị chặn ở /admin
+ĐẠT      Đã đăng nhập, POST thiếu _csrf → 403, không ghi
+ĐẠT      _csrf sai → 403, không ghi
+ĐẠT      Form gửi từ trang khác (Origin lạ) → 403, không ghi
+ĐẠT      Origin: null (trang lạ đặt no-referrer / iframe sandbox) ở route quản trị → 403
+ĐẠT      ?_method=DELETE thiếu _csrf → 403 (kiểm tra trước method-override)
+ĐẠT      Dừng + chạy lại server, dùng lại cookie → vẫn đăng nhập, bản ghi phiên còn trong DB
+ĐẠT      Đăng xuất → 303 /login, Set-Cookie xoá sid
+ĐẠT      Bản ghi phiên đã bị xoá ở server
+ĐẠT      Dùng lại bản sao sid cũ sau khi đăng xuất → 303 /login
+ĐẠT      GET /logout → 404 (đăng xuất chỉ bằng POST)
+
+== E. Quên mật khẩu, đặt lại mật khẩu ==
+ĐẠT      Email có / không có → cùng 303, cùng trang “Kiểm tra email của bạn”
+ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 144ms / 142ms
+ĐẠT      Email chứa link APP_ORIGIN/reset?token=…; DB chỉ lưu SHA-256, hạn 15 phút
+ĐẠT      GET /reset với token hợp lệ: chỉ hiện form, usedAt vẫn rỗng, Referrer-Policy no-referrer
+ĐẠT      Mật khẩu mới không khớp → VALIDATION_FAILED, token chưa bị dùng
+ĐẠT      Tab 1 đã đăng nhập bằng mật khẩu cũ
+ĐẠT      Đặt lại thành công → 303 /login, đổi passwordHash, KHÔNG tự đăng nhập
+ĐẠT      Sid cũ của tab 1 bị từ chối; mọi phiên của user đã bị xoá
+ĐẠT      Có thư báo “Mật khẩu đã được đổi” (không chứa mật khẩu)
+ĐẠT      Mật khẩu cũ bị từ chối, mật khẩu mới đăng nhập được
+ĐẠT      Dùng lại token đã dùng (GET và POST) → “Link không dùng được”, mật khẩu không đổi
+ĐẠT      Token cũ (đã có yêu cầu mới hơn) → bị từ chối, mật khẩu không đổi
+ĐẠT      Token hết hạn → GET / POST đều “Link không dùng được”, mật khẩu không đổi
+ĐẠT      Token bịa → cùng một trang với token hết hạn / đã dùng
+ĐẠT      2 request cùng token song song → một 303, một “Link không dùng được” — 303 + INVALID_RESET_TOKEN
+ĐẠT      Reset token dùng làm mã kích hoạt / mật khẩu / cookie sid → đều bị từ chối
+ĐẠT      Đặt lại mật khẩu tài khoản pending → đổi được mật khẩu nhưng vẫn pending
+ĐẠT      4 yêu cầu /forgot cùng email (có tài khoản) trong 1 giờ → lần 4 nhận 429 — 303,303,303,429
+ĐẠT      4 yêu cầu /forgot cùng email (không có tài khoản) trong 1 giờ → lần 4 nhận 429 — 303,303,303,429
+ĐẠT      Log server không chứa reset token
+
+== F. Hồi quy nhanh: thực đơn, CRUD sau khi đăng nhập ==
+ĐẠT      Khách xem thực đơn, tìm món, chi tiết món không cần đăng nhập
+ĐẠT      Đã đăng nhập: thêm nguyên liệu → 303
+ĐẠT      Đã đăng nhập: xoá nguyên liệu → 303
+ĐẠT      Xoá nguyên liệu đang dùng vẫn bị chặn 409
+
+TỔNG: 94 ĐẠT, 0 CHƯA ĐẠT

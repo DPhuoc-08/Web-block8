@@ -1,0 +1,57 @@
+
+== A. Thực đơn /dishes ==
+ĐẠT      /dishes → 200
+ĐẠT      /dishes?page=999 → 200
+ĐẠT      /dishes?page=0 → 400
+ĐẠT      /dishes?mode=fuzzy → 400
+ĐẠT      /dishes?q=a&q=b → 400
+ĐẠT      /dishes?mode=advanced&tag=999999 → 400
+ĐẠT      /dishes?mode=advanced&minPrice=abc → 400
+ĐẠT      /dishes?mode=xyz → 400
+ĐẠT      /dishes/1 → 200
+ĐẠT      /dishes/abc → 404
+ĐẠT      /dishes/999999 → 404
+ĐẠT      Form GET có ô trống → 302 về URL gọn /dishes
+ĐẠT      (mặc định): 1200 món theo SQL — trang hiển thị 1200 món / 100 trang
+ĐẠT      q=bún: 59 món theo SQL — trang hiển thị 59 món / 5 trang
+ĐẠT      q=100% (ký tự % là chữ thường): 1 món theo SQL — trang hiển thị 1 món / 1 trang
+ĐẠT      q=_ (ký tự _ là chữ thường): 1 món theo SQL — trang hiển thị 1 món / 1 trang
+ĐẠT      nâng cao: Món nước, 0–60.000đ, còn bán: 97 món theo SQL — trang hiển thị 97 món / 9 trang
+ĐẠT      nâng cao: tạm hết: 180 món theo SQL — trang hiển thị 180 món / 15 trang
+ĐẠT      nâng cao: giá 0: 4 món theo SQL — trang hiển thị 4 món / 1 trang
+ĐẠT      theo nguyên liệu “tôm”: 149 món theo SQL — trang hiển thị 149 món / 13 trang
+ĐẠT      theo đầu bếp “Mai”: 122 món theo SQL — trang hiển thị 122 món / 11 trang
+ĐẠT      toàn văn “nước dùng xương”: 62 món theo SQL — trang hiển thị 62 món / 6 trang
+ĐẠT      gần đúng “bò lúc lắt”: 6 món theo SQL — trang hiển thị 6 món / 1 trang
+
+== B. Quản trị món /admin/dishes ==
+ĐẠT      Tìm “lẩu” (tên hoặc tag) = 61 món theo SQL
+ĐẠT      /admin/dishes?page=61 → 200
+ĐẠT      /admin/dishes?mode=fuzzy → 400
+ĐẠT      /admin/dishes?mode=advanced → 400
+ĐẠT      /admin/dishes/abc/edit → 404
+ĐẠT      /admin/dishes/999999/delete → 404
+ĐẠT      Form sai → 400, lỗi cạnh ô, không ghi
+ĐẠT      Thêm món → 303 trang 1 + thông báo — /admin/dishes?msg=dish-created&saved=1203
+ĐẠT      Thêm nhanh tag / nguyên liệu / đầu bếp khi lưu (bỏ trùng hoa thường)
+ĐẠT      Tag mới trùng tag đã có → 400
+ĐẠT      Sửa → 303 về đúng trang, giá 0, bỏ tick còn phục vụ — /admin/dishes?page=3&msg=dish-updated&saved=1203
+ĐẠT      back trỏ ra ngoài → về /admin/dishes
+ĐẠT      GET trang xác nhận xoá không xoá
+ĐẠT      Xoá → 303 về trang 2
+ĐẠT      Xoá lần hai → 404
+
+== C. Quản trị đầu bếp, nguyên liệu ==
+ĐẠT      Tìm đầu bếp “lẩu” (tên hoặc chuyên môn) = 6 theo SQL
+ĐẠT      Tìm nguyên liệu “kg” (tên hoặc đơn vị) = 187 theo SQL
+ĐẠT      Đầu bếp trùng tên (khác hoa thường) → 400
+ĐẠT      Thêm đầu bếp + tag mới → 2 chuyên môn
+ĐẠT      Xoá đầu bếp còn món, chưa chọn người nhận → 409
+ĐẠT      Chuyển 2 món sang người nhận + xoá (một transaction) → 303
+ĐẠT      Nguyên liệu trùng tên → 400
+ĐẠT      Thêm nguyên liệu, đơn vị trống lưu null
+ĐẠT      Xoá nguyên liệu đang dùng → 409
+ĐẠT      Xoá nguyên liệu chưa dùng → 303
+
+Sau khi dọn: 1200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag
+TỔNG: 48 ĐẠT, 0 CHƯA ĐẠT

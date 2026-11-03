@@ -12,7 +12,7 @@ import { photoFor } from "../../auth/photos.js";
 import { one } from "../../forms.js";
 import { hit, peek, reset, limit, retryAfter } from "../../auth/rate-limit.js";
 import { verifyRecaptcha, recaptchaSiteKey } from "../../auth/recaptcha.js";
-import { tooMany, captchaUnavailable } from "../../auth/pages.js";
+import { tooMany, captchaUnavailable, minutesOf } from "../../auth/pages.js";
 
 // Chính sách công bố (plan mục 4).
 const MIN = 60_000;
@@ -45,7 +45,7 @@ const locked = (res, until) =>
   tooMany(res, "login", {
     retryAfter: retryAfter(until),
     heading: "Tạm khoá đăng nhập",
-    text: `Có quá nhiều lần đăng nhập sai với email này. Hãy thử lại sau ${Math.ceil(retryAfter(until) / 60)} phút, hoặc đặt lại mật khẩu nếu bạn quên.`,
+    text: `Có quá nhiều lần đăng nhập sai với email này. Hãy thử lại sau ${minutesOf(retryAfter(until))} phút, hoặc đặt lại mật khẩu nếu bạn quên.`,
     button: { href: "/forgot", label: "Đặt lại mật khẩu" },
   });
 
