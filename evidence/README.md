@@ -50,4 +50,4 @@ Cả hai đã có trong BUILD_LOG bước 18 (tái hiện, nguyên nhân, cách 
 | `curl/` | Request gửi trực tiếp (không qua giao diện) kèm status, header, kết quả DB; log server; output hai script kiểm tra |
 | `db/` | Bản ghi `users`, `activation_challenges`, `password_resets`, `sessions`, `rate_limits` ở từng thời điểm |
 | `mail/` | Ba thư của luồng (kích hoạt, đặt lại, báo đã đổi mật khẩu) |
-| `diagrams/` | Sơ đồ luồng (bước 19) |
+| `diagrams/` | 4 sơ đồ luồng SVG (đăng ký có CAPTCHA + kích hoạt, đăng nhập chống brute force, đăng xuất, quên / đặt lại mật khẩu) vẽ từ code thật, mỗi ô ghi `file:dòng`; `node evidence/diagrams/ve-so-do.mjs` vẽ lại sau khi đổi code. **Bản nháp — chờ nhóm duyệt.** |

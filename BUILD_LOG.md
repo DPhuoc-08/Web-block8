@@ -406,3 +406,12 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 **Đã kiểm tra:** `check-auth.mjs` **94/94 ĐẠT** (thêm 2 ca), `check-ssr.mjs` **48/48 ĐẠT** — output lưu ở `evidence/curl/9`, `10`. Quét mọi file chữ trong `evidence/` và hai output: không có `SEED_USER_PASSWORD`, `SESSION_SECRET`, `OTP_PEPPER`, secret reCAPTCHA, `DATABASE_URL` hay host database, không có chuỗi ≥ 40 ký tự kiểu token. Log server trong lúc thu (`curl/8`) không có mã / mật khẩu / token.
 
 **Cập nhật tài liệu:** CLAUDE.md và plan đổi `check-*.sh` → `check-*.mjs`, `peek.js` → `scripts/lib/outbox.mjs`; plan 6.4 (thứ tự middleware) và 5.8 (ngoại lệ `Origin: null` ở `/reset`).
+
+## Bước 19 — Sơ đồ luồng (bản nháp, chờ nhóm duyệt)
+**Đã làm:** `evidence/diagrams/` — 4 sơ đồ SVG: `1-dang-ky-captcha` (POST /register → POST /activate), `2-dang-nhap-chong-brute-force`, `3-dang-xuat` (gồm request dùng lại sid cũ), `4-quen-mat-khau` (POST /forgot → thư → GET /reset → POST /reset). Mỗi sơ đồ: cột trái là luồng chính theo **đúng thứ tự trong code**, cột phải là nơi request dừng (status + mã lỗi), ô ghi bảng DB bị đọc / ghi.
+- Vẽ bằng script `evidence/diagrams/ve-so-do.mjs` (không thư viện): mỗi ô tìm `file:dòng` bằng một đoạn chữ trong mã nguồn; đoạn chữ không còn thì script báo lỗi → sơ đồ không lặng lẽ lệch khỏi code. Không chép sơ đồ của slide.
+- Màu theo block7 (`#1f5b43`, nền `#f7f6f3`), font Be Vietnam Pro (rơi về font hệ thống khi máy không có).
+
+**Đối chiếu với code:** đọc lại 4 handler (`register.js` POST /register + /activate, `login.js` POST /login + /logout, `password-reset.js`) và `app.js` (thứ tự middleware sau bước 18) trước khi vẽ; mở cả 4 SVG trong Chrome, sửa chữ tràn khung và nhãn mũi tên chồng ô; thêm nhánh 429 theo IP ở `/reset` mà bản đầu bỏ sót.
+
+**Chờ nhóm duyệt:** cách trình bày (cột luồng chính / cột dừng), mức chi tiết, có cần thêm sơ đồ thứ tự middleware hay không.
