@@ -39,6 +39,10 @@ npm start                 # http://localhost:3000  (npm run dev: tự khởi đ�
 
 **Thêm 5 bảng vào database block7 lần đầu** (đã làm ở bước 7, chỉ cần khi dựng lại), trong `source-code/`: in SQL trước bằng `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` (phải chỉ có `CREATE`, không `DROP`), rồi `npx prisma db push`. **Không** chạy `prisma db push` từ thư mục block7 (schema block7 không có 5 bảng này nên sẽ đòi xoá).
 
+**Bật extension tìm kiếm** (đã làm, chỉ cần khi dựng lại): `node scripts/run-sql.js prisma/sql/setup-search.sql` bật `pg_trgm` và `unaccent`. Thiếu `unaccent` thì mọi từ khoá không dấu sẽ lỗi `500`, kể cả tìm cơ bản như `?q=pho`.
+
+**Tìm không dấu:** gõ không dấu (`pho`, `bun bo hue`) thì so với dữ liệu đã bỏ dấu ở mọi kiểu tìm; gõ có dấu (`phở`) thì kết quả giữ nguyên như block7. Lý do và giới hạn: plan mục 12.3, `BUILD_LOG.md`.
+
 ## Kiểm tra
 
 ```bash
@@ -46,7 +50,7 @@ cd source-code
 node scripts/check-auth.mjs        # 94 kiểm tra — tự chạy server riêng ở :3100, thư ghi ra file
 node scripts/check-auth.mjs C D    # chỉ phần C, D
 npm start &                        # check-ssr cần server ở :3000
-node scripts/check-ssr.mjs         # 48 kiểm tra — thực đơn, tìm kiếm, CRUD so với SQL viết tay
+node scripts/check-ssr.mjs         # 80 kiểm tra — thực đơn, tìm kiếm (cả không dấu), CRUD so với SQL viết tay
 node scripts/run-sql.js prisma/sql/auth-state.sql   # trạng thái 5 bảng xác thực (đã che hash, sid)
 ```
 

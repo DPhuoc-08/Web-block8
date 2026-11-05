@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { basicAdvancedWhere, SORTS, TEXT_MODES } from "../validators/list-query.js";
 import { fulltextPage } from "../search/fulltext.js";
 import { fuzzyPage } from "../search/fuzzy.js";
+import { unaccentedDishIds } from "../search/accent.js";
 
 // Bảng dish_tags / chef_tags chỉ có cặp id; template cần mảng tag gọn: tags: [{ id, name }].
 // Sắp theo id tag: id nhỏ là loại món (seed tạo trước), rồi đặc điểm, vùng miền → "Món nước · Miền Bắc".
@@ -36,7 +37,7 @@ export async function listDishes(query) {
   const { page, pageSize } = query;
   if (TEXT_MODES.includes(query.mode)) return textSearch(query);
 
-  const where = basicAdvancedWhere(query);
+  const where = basicAdvancedWhere(query, await unaccentedDishIds(prisma, query));
   // `total` đếm CÙNG điều kiện với `items` (không đếm cả bảng). Hai câu chạy trong một transaction RepeatableRead
   // → cùng một ảnh chụp dữ liệu. Lọc + sắp xếp chạy trong SQL TRƯỚC LIMIT/OFFSET (take/skip) → sort áp dụng cho
   // toàn bộ kết quả, không riêng trang này.

@@ -7,3 +7,6 @@
 -- nên câu truy vấn gọi similarity() / % không cần ghi tên schema.
 -- Full-text (mode=fulltext) dùng to_tsvector/plainto_tsquery có sẵn trong PostgreSQL, không cần extension.
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+-- unaccent (block8, plan 12.3): bỏ dấu tiếng Việt khi người dùng gõ từ khoá không dấu ("pho" → "Phở").
+-- Chỉ thêm hàm, không đổi bảng hay dữ liệu; app block7 không gọi hàm này nên không bị ảnh hưởng.
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;

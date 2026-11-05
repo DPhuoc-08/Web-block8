@@ -57,7 +57,7 @@
 ĐẠT      Sai mật khẩu / email không có → cùng 200, cùng nội dung
 ĐẠT      Form giữ email, không điền lại mật khẩu
 ĐẠT      Sai mật khẩu → không có phiên đăng nhập
-ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Tue, 03 Nov 2026 05:57:48 GMT; HttpOnly; SameSite=Lax
+ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Thu, 05 Nov 2026 17:17:49 GMT; HttpOnly; SameSite=Lax
 ĐẠT      sid trước ≠ sid sau đăng nhập; phiên cũ bị xoá (chống session fixation)
 ĐẠT      Bản ghi phiên mới có userId của tài khoản
 ĐẠT      Vào /admin/dishes: 200, Cache-Control no-store, header có email + Đăng xuất (form POST)
@@ -79,7 +79,7 @@
 
 == E. Quên mật khẩu, đặt lại mật khẩu ==
 ĐẠT      Email có / không có → cùng 303, cùng trang “Kiểm tra email của bạn”
-ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 144ms / 142ms
+ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 134ms / 139ms
 ĐẠT      Email chứa link APP_ORIGIN/reset?token=…; DB chỉ lưu SHA-256, hạn 15 phút
 ĐẠT      GET /reset với token hợp lệ: chỉ hiện form, usedAt vẫn rỗng, Referrer-Policy no-referrer
 ĐẠT      Mật khẩu mới không khớp → VALIDATION_FAILED, token chưa bị dùng

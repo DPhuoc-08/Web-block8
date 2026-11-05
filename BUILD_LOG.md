@@ -441,3 +441,27 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 - **Phương án đã bỏ:** tăng `dnsTimeout` (thư đến càng chậm, không bỏ được phần chờ); yêu cầu đổi DNS của máy (mạng khi demo có thể khác); gửi lại tự động (thêm hàng đợi ngoài plan).
 - **Bằng chứng sau khi sửa:** gửi thật qua `mailer.js` tới Gmail của nhóm → `250 OK` sau 2,5 giây (trước đó khoảng 13 giây); `servername` sai → bị từ chối `Hostname/IP does not match certificate's altnames`, chứng tỏ TLS vẫn xác minh chứng chỉ; `check-auth.mjs` phần A 25/25 (transport `file` không hồi quy).
 - **Chưa chắc:** chưa xác định vì sao riêng lần đó vượt 30 giây trong khi các lần đo còn lại 10–11 giây. `lookup` của hệ điều hành không có giới hạn thời gian riêng; nếu lỗi, `sendLater` vẫn ghi mã lỗi ra log. Luồng đăng ký trên server đã chạy lại code mới và việc thư mã tới hộp thư do người dùng kiểm tra.
+
+## Sau bước 20 — Tìm tiếng Việt không dấu (plan 12.3, người dùng chốt 05/11/2026)
+**Trước khi làm:** chạy thử trên 1.200 món: `pho`, `bun bo hue`, `goi cuon`, `com tam`, `bo luc lac` đều ra 0 kết quả ở cả cơ bản, toàn văn, gần đúng (cấu hình `simple` và `pg_trgm` không bỏ dấu).
+
+**Đã làm:**
+- Bật extension `unaccent` trong schema `extensions` (`prisma/sql/setup-search.sql`, đã in host trước khi chạy). Không thêm bảng, không đổi dữ liệu; `prisma migrate diff` vẫn rỗng.
+- `src/search/accent.js`: `isUnaccented` (tách dấu bằng NFD, kiểm riêng `đ`), `textForm`, và lấy danh sách id khớp bằng SQL cho món, đầu bếp, nguyên liệu.
+- Toàn văn (`fulltext.js`), gần đúng (`fuzzy.js`): từ khoá không dấu so với cột đã `unaccent`; từ khoá có dấu giữ nguyên câu SQL cũ.
+- Cơ bản, nâng cao (`queries/dishes.js`, `routes/admin/list.js`, `validators/list-query.js`): Prisma `contains` không gọi được `unaccent`, nên lấy trước id rồi đưa vào `where` (`id IN …`). Lọc giá / tag, sắp xếp, `total` vẫn trong transaction `RepeatableRead`.
+- `check-ssr.mjs` thêm phần D (32 ca), số kỳ vọng lấy từ SQL viết tay.
+
+**Quyết định và lý do:**
+- **Chỉ bỏ dấu khi từ khoá không dấu:** `phở` vẫn 54 món như block7, `bò` (100 món) không lẫn `bơ`. Gõ `bo` ra 117 món gồm cả bò và bơ.
+- **Danh sách id tính trước transaction, không nằm trong transaction:** `total` và các dòng của trang vẫn đếm cùng một danh sách id trong cùng transaction. Bản ghi đổi tên đúng lúc giữa hai bước có thể lệch trong tích tắc ở lần tìm đó; lần tìm sau tự đúng. Chấp nhận để giữ nguyên câu Prisma của block7 ở nhánh có dấu.
+- **Phương án đã bỏ:** `translate()` với bảng ký tự trong code; thêm cột tên không dấu (đổi bảng block7); luôn bỏ dấu cả hai phía; index GIN trên biểu thức (1.200 món, đo khoảng 59 ms kể cả mạng).
+
+**Giới hạn còn lại:**
+- Từ không dấu gộp nghĩa: `pho` ra 65 món, thêm 11 món "phô mai" so với `phở`. Kết quả chưa ưu tiên món đúng dấu.
+- Từ khoá gõ có dấu nhưng sai dấu (`phỏ`) không được sửa ở cơ bản, toàn văn; chỉ gần đúng mới có thể ra (không đo riêng).
+- Từ khoá có dấu dạng tổ hợp NFD vẫn so như block7, tức so nguyên văn với dữ liệu NFC. Không xử lý vì nằm ngoài phạm vi đã chốt.
+
+**Lỗi phát hiện trong lúc làm (của script):** `menuCount` tính `-12` món khi kết quả đúng là 0 (`totalPages` trả 0). App trả đúng 0 món cho `ph_`. Sửa: chặn dưới bằng 0.
+
+**Đã kiểm tra:** `check-ssr.mjs` **80/80 ĐẠT** (A, B, C giữ nguyên 48 ca, D 32 ca), `check-auth.mjs` **94/94 ĐẠT**; chạy server riêng ở :3200. `unaccent` khớp bảng 134 ký tự tiếng Việt viết tay và khớp trên mọi tên món, mô tả, đầu bếp, nguyên liệu, đơn vị, tag; xử lý được cả NFD. Chrome thật: `bo luc lat` ra Bò lúc lắc đầu tiên (0.667), không cuộn ngang ở 375px (ảnh `18`, `19`, `20`).

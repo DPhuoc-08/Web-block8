@@ -1,9 +1,10 @@
 // Kiểm tra hồi quy thực đơn + quản trị SSR (plan block8 bước 6). Server phải đang chạy (npm start), DB là DB block7.
-//   node scripts/check-ssr.mjs            → chạy cả A, B, C
+//   node scripts/check-ssr.mjs            → chạy cả A, B, C, D
 //   node scripts/check-ssr.mjs A C        → chỉ chạy phần A và C
 // A: thực đơn — mã trạng thái, số trang so với câu SQL viết tay (độc lập với code của app).
 // B: admin món — danh sách so với SQL, thêm / sửa / xoá qua form thật, đọc lại DB.
 // C: admin đầu bếp, nguyên liệu — thêm / sửa, trùng tên, xoá kèm chuyển món, xoá bị chặn 409.
+// D: tìm không dấu (plan 12.3) — mọi kiểu tìm, thực đơn và quản trị; từ khoá có dấu giữ nguyên kết quả như block7.
 // Mọi bản ghi thử có tiền tố "[TEST B8]" và được xoá ở cuối; DB trở lại 1.200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag.
 import { prisma } from "../src/db.js";
 import { client, reporter, savedIdOf } from "./lib/client.mjs";
@@ -16,6 +17,18 @@ const results = [];
 const count = async (sql) => Number((await sql)[0].n);
 const totalPages = (html) => Number(html.match(/Trang \d+\/(\d+)/)?.[1] ?? (html.includes('class="menu-cards"') ? 1 : 0));
 const cards = (html) => (html.split('class="menu-cards"')[1]?.split("</section>")[0] ?? "").match(/class="dish-card/g)?.length ?? 0;
+const cardIds = (html) => [...new Set([...(html.split('class="menu-cards"')[1]?.split("</section>")[0] ?? "").matchAll(/href="\/dishes\/(\d+)/g)].map((m) => Number(m[1])))];
+// Số món hiển thị (qua số trang + trang cuối) phải bằng số đếm bằng SQL viết tay. Trả số món.
+async function menuCount(r, c, label, qs, sql) {
+  const n = await count(sql);
+  const q = new URLSearchParams(qs).toString();
+  const first = await c.get(`/dishes${q ? "?" + q : ""}`);
+  const pages = totalPages(first.text);
+  const last = pages > 1 ? await c.get(`/dishes?${q ? q + "&" : ""}page=${pages}`) : first;
+  const shown = Math.max(pages - 1, 0) * 12 + cards(last.text); // không có kết quả: 0 trang, 0 món
+  r.ok(first.status === 200 && shown === n && pages === Math.ceil(n / 12), `${label}: ${n} món theo SQL`, `trang hiển thị ${shown} món / ${pages} trang`);
+  return n;
+}
 
 if (run("A")) {
   const r = reporter("A. Thực đơn /dishes");
@@ -45,15 +58,7 @@ if (run("A")) {
       prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,'')) @@ plainto_tsquery('simple', 'nước dùng xương')`],
     ["gần đúng “bò lúc lắt”", "mode=fuzzy&q=bò lúc lắt", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE similarity(name, 'bò lúc lắt') > 0.3`],
   ];
-  for (const [label, qs, sql] of cases) {
-    const n = await count(sql);
-    const q = new URLSearchParams(qs).toString();
-    const first = await c.get(`/dishes${q ? "?" + q : ""}`);
-    const pages = totalPages(first.text);
-    const last = pages > 1 ? await c.get(`/dishes?${q ? q + "&" : ""}page=${pages}`) : first;
-    const shown = (pages - 1) * 12 + cards(last.text);
-    r.ok(first.status === 200 && shown === n && pages === Math.ceil(n / 12), `${label}: ${n} món theo SQL`, `trang hiển thị ${shown} món / ${pages} trang`);
-  }
+  for (const [label, qs, sql] of cases) await menuCount(r, c, label, qs, sql);
   results.push(r.counts);
 }
 
@@ -135,6 +140,81 @@ if (run("C")) {
   r.ok(res.status === 409 && Boolean(await prisma.ingredient.findUnique({ where: { id: used.ingredientId } })), "Xoá nguyên liệu đang dùng → 409");
   res = await c.post(`/admin/ingredients/${ing}?_method=DELETE`);
   r.ok(res.status === 303, "Xoá nguyên liệu chưa dùng → 303");
+  results.push(r.counts);
+}
+
+if (run("D")) {
+  const r = reporter("D. Tìm tiếng Việt không dấu (plan 12.3)");
+  const c = client();
+  const seafood = await prisma.tag.findFirst({ where: { name: "Hải sản" } });
+
+  // Thực đơn, cơ bản: không dấu so với tên đã bỏ dấu, có dấu giữ nguyên như block7.
+  const noAccent = await menuCount(r, c, "cơ bản “pho”", "q=pho", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE unaccent(name) ILIKE '%pho%'`);
+  const upper = await menuCount(r, c, "cơ bản “PHO” (không phân biệt hoa thường)", "q=PHO", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE unaccent(name) ILIKE '%pho%'`);
+  const accent = await menuCount(r, c, "cơ bản “phở” (có dấu: như block7)", "q=phở", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE name ILIKE '%phở%'`);
+  r.ok(accent === 54 && noAccent >= accent && upper === noAccent, "“phở” vẫn 54 món như block7; “pho” có ít nhất từng ấy món", `${accent} / ${noAccent}`);
+  const bo = await menuCount(r, c, "cơ bản “bo” (gồm cả bò, bơ…)", "q=bo", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE unaccent(name) ILIKE '%bo%'`);
+  const beef = await menuCount(r, c, "cơ bản “bò” (có dấu: không lẫn bơ)", "q=bò", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE name ILIKE '%bò%'`);
+  const butter = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE name ILIKE '%bơ%' AND name NOT ILIKE '%bò%'`);
+  r.ok(butter > 0 && bo >= beef + butter, "“bo” rộng hơn “bò”: món có “bơ” chỉ ra khi gõ không dấu", `bo ${bo}, bò ${beef}, bơ ${butter}`);
+  const bean = await menuCount(r, c, "cơ bản “dau” (đ → d)", "q=dau", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE unaccent(name) ILIKE '%dau%'`);
+  const beanAccent = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE name ILIKE '%đậu%'`);
+  r.ok(beanAccent > 0 && bean >= beanAccent, "“dau” khớp cả tên có chữ “đậu”", `dau ${bean}, đậu ${beanAccent}`);
+  await menuCount(r, c, "cơ bản “ph_” (_ vẫn là ký tự thường)", "q=ph_", prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE strpos(lower(unaccent(name)), 'ph_') > 0`);
+  const page1 = await prisma.$queryRaw`SELECT id FROM dishes WHERE unaccent(name) ILIKE '%pho%' ORDER BY id LIMIT 12`;
+  r.ok(cardIds((await c.get("/dishes?q=pho")).text).join() === page1.map((x) => x.id).join(), "“pho” trang 1: đúng danh sách id, id tăng dần");
+  const phoExact = await prisma.$queryRaw`SELECT id FROM dishes WHERE name ILIKE '%phở%' ORDER BY id LIMIT 12`;
+  r.ok(cardIds((await c.get(`/dishes?q=${encodeURIComponent("phở")}`)).text).join() === phoExact.map((x) => x.id).join(), "“phở” trang 1: đúng danh sách id như câu ILIKE của block7");
+
+  // Nâng cao: q không dấu kết hợp bộ lọc và sắp xếp.
+  const adv = `mode=advanced&q=goi&tag=${seafood.id}&minPrice=50000&maxPrice=150000&available=true&sort=gia-tang`;
+  await menuCount(r, c, "nâng cao “goi” + Hải sản + 50–150 nghìn + còn bán", adv,
+    prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE unaccent(d.name) ILIKE '%goi%' AND price BETWEEN 50000 AND 150000 AND available AND EXISTS (SELECT 1 FROM dish_tags t WHERE t."dishId" = d.id AND t."tagId" = ${seafood.id})`);
+  const advIds = await prisma.$queryRaw`SELECT d.id FROM dishes d WHERE unaccent(d.name) ILIKE '%goi%' AND price BETWEEN 50000 AND 150000 AND available AND EXISTS (SELECT 1 FROM dish_tags t WHERE t."dishId" = d.id AND t."tagId" = ${seafood.id}) ORDER BY price, d.id LIMIT 12`;
+  r.ok(cardIds((await c.get(`/dishes?${adv}`)).text).join() === advIds.map((x) => x.id).join(), "Nâng cao “goi”: sắp xếp giá tăng dần rồi id, đúng danh sách");
+
+  // Tìm theo nguyên liệu, đầu bếp.
+  await menuCount(r, c, "theo nguyên liệu “tom”", "by=ingredient&q=tom",
+    prisma.$queryRaw`SELECT count(DISTINCT di."dishId") n FROM dish_ingredients di JOIN ingredients i ON i.id = di."ingredientId" WHERE unaccent(i.name) ILIKE '%tom%'`);
+  await menuCount(r, c, "theo đầu bếp “tran thi”", "by=chef&q=tran thi",
+    prisma.$queryRaw`SELECT count(*) n FROM dishes d JOIN chefs c ON c.id = d."chefId" WHERE unaccent(c.name) ILIKE '%tran thi%'`);
+
+  // Toàn văn: document bỏ dấu khi từ khoá không dấu; có dấu như block7.
+  const ft = (q) => prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE to_tsvector('simple', unaccent(coalesce(name,'') || ' ' || coalesce(description,''))) @@ plainto_tsquery('simple', ${q})`;
+  await menuCount(r, c, "toàn văn “pho”", "mode=fulltext&q=pho", ft("pho"));
+  await menuCount(r, c, "toàn văn “nuoc dung xuong”", "mode=fulltext&q=nuoc dung xuong", ft("nuoc dung xuong"));
+  await menuCount(r, c, "toàn văn “phở” (có dấu: như block7)", "mode=fulltext&q=phở",
+    prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,'')) @@ plainto_tsquery('simple', 'phở')`);
+  const hue = await prisma.dish.findFirst({ where: { name: "Bún bò Huế" }, select: { id: true } });
+  r.ok(cardIds((await c.get("/dishes?mode=fulltext&q=bun+bo+hue")).text)[0] === hue.id, "Toàn văn “bun bo hue”: món đầu là Bún bò Huế");
+
+  // Gần đúng: gõ không dấu và sai chữ vẫn ra.
+  const fz = (q) => prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE similarity(unaccent(name), ${q}) >= 0.3`;
+  await menuCount(r, c, "gần đúng “bo luc lat”", "mode=fuzzy&q=bo luc lat", fz("bo luc lat"));
+  const lac = await prisma.dish.findFirst({ where: { name: "Bò lúc lắc" }, select: { id: true } });
+  r.ok(cardIds((await c.get("/dishes?mode=fuzzy&q=bo+luc+lat")).text)[0] === lac.id, "Gần đúng “bo luc lat”: món đầu là Bò lúc lắc");
+  await menuCount(r, c, "gần đúng theo nguyên liệu “tom xu”", "mode=fuzzy&by=ingredient&q=tom xu",
+    prisma.$queryRaw`SELECT count(DISTINCT di."dishId") n FROM dish_ingredients di JOIN ingredients i ON i.id = di."ingredientId" WHERE similarity(unaccent(i.name), 'tom xu') >= 0.3`);
+  await menuCount(r, c, "gần đúng theo đầu bếp “tran thi bit”", "mode=fuzzy&by=chef&q=tran thi bit",
+    prisma.$queryRaw`SELECT count(*) n FROM dishes d JOIN chefs c ON c.id = d."chefId" WHERE similarity(unaccent(c.name), 'tran thi bit') >= 0.3`);
+
+  // Quản trị: trang hiện "trong N …".
+  const a = await adminClient();
+  const adminCount = async (label, url, noun, sql) => {
+    const n = await count(sql);
+    const res = await a.get(url);
+    r.ok(res.status === 200 && res.text.includes(`trong ${n} ${noun}`), `Quản trị ${label}: ${n} ${noun} theo SQL`);
+  };
+  await adminCount("món “lau” (tên hoặc tag)", "/admin/dishes?q=lau", "món",
+    prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE unaccent(d.name) ILIKE '%lau%' OR EXISTS (SELECT 1 FROM dish_tags dt JOIN tags t ON t.id = dt."tagId" WHERE dt."dishId" = d.id AND unaccent(t.name) ILIKE '%lau%')`);
+  await adminCount("món toàn văn “pho”", "/admin/dishes?q=pho&mode=fulltext", "món", ft("pho"));
+  await adminCount("món gần đúng “bo luc lat”", "/admin/dishes?q=bo+luc+lat&mode=fuzzy", "món", fz("bo luc lat"));
+  await adminCount("đầu bếp “tran thi”", "/admin/chefs?q=tran+thi", "đầu bếp", prisma.$queryRaw`SELECT count(*) n FROM chefs WHERE unaccent(name) ILIKE '%tran thi%'`);
+  await adminCount("đầu bếp “lau” (chuyên môn)", "/admin/chefs?q=lau", "đầu bếp",
+    prisma.$queryRaw`SELECT count(*) n FROM chefs c WHERE unaccent(c.name) ILIKE '%lau%' OR EXISTS (SELECT 1 FROM chef_tags ct JOIN tags t ON t.id = ct."tagId" WHERE ct."chefId" = c.id AND unaccent(t.name) ILIKE '%lau%')`);
+  await adminCount("đầu bếp gần đúng “tran thi bit”", "/admin/chefs?q=tran+thi+bit&mode=fuzzy", "đầu bếp", prisma.$queryRaw`SELECT count(*) n FROM chefs WHERE similarity(unaccent(name), 'tran thi bit') >= 0.3`);
+  await adminCount("nguyên liệu “tom”", "/admin/ingredients?q=tom", "nguyên liệu", prisma.$queryRaw`SELECT count(*) n FROM ingredients WHERE unaccent(name) ILIKE '%tom%' OR unaccent(unit) ILIKE '%tom%'`);
+  await adminCount("nguyên liệu gần đúng “tom xu”", "/admin/ingredients?q=tom+xu&mode=fuzzy", "nguyên liệu", prisma.$queryRaw`SELECT count(*) n FROM ingredients WHERE similarity(unaccent(name), 'tom xu') >= 0.3`);
   results.push(r.counts);
 }
 

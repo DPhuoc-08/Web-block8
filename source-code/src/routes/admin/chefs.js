@@ -8,6 +8,7 @@ import { hasErrors } from "../../validators/common.js";
 import { validateChef } from "../../validators/chef.js";
 import { allTagsExist, TAG_MISSING } from "../../validators/tag.js";
 import { containsIn } from "../../validators/list-query.js";
+import { unaccentedChefIds } from "../../search/accent.js";
 import { TAG_SELECT, flatTags } from "../../queries/dishes.js";
 import { one, many, toIdArray, splitNames, safeBack, withFlash } from "../../forms.js";
 import { adminList, ADMIN_LIST_MODES } from "./list.js";
@@ -27,6 +28,7 @@ router.get("/", async (req, res) => {
     modes: ADMIN_LIST_MODES("Tìm theo tên hoặc chuyên môn", "Nguyễn Văn Ann"),
     // Cơ bản: khớp tên HOẶC tên một chuyên môn (như block7).
     matchers: [containsIn("name"), (s) => ({ tags: { some: { tag: containsIn("name")(s) } } })],
+    unaccentedIds: unaccentedChefIds,
     fuzzyMatcher: "chefName",
     delegate: prisma.chef,
     include: withCount,

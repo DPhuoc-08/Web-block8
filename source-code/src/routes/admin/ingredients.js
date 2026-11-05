@@ -6,6 +6,7 @@ import { parseId } from "../../validators/id.js";
 import { hasErrors } from "../../validators/common.js";
 import { validateIngredient } from "../../validators/ingredient.js";
 import { containsIn } from "../../validators/list-query.js";
+import { unaccentedIngredientIds } from "../../search/accent.js";
 import { one, safeBack, withFlash } from "../../forms.js";
 import { adminList, ADMIN_LIST_MODES } from "./list.js";
 
@@ -22,6 +23,7 @@ router.get("/", async (req, res) => {
     noun: "nguyên liệu",
     modes: ADMIN_LIST_MODES("Tìm theo tên hoặc đơn vị", "Nước mắn"),
     matchers: [containsIn("name"), containsIn("unit")],
+    unaccentedIds: unaccentedIngredientIds,
     fuzzyMatcher: "ingredientName",
     delegate: prisma.ingredient,
     include: withCount,

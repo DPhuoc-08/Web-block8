@@ -172,7 +172,8 @@ export const searchWhere = (q, matchers) => (q ? { OR: matchers.map((match) => m
 //   name → tên món (hoặc tên món / tên tag với searchIn của admin)
 //   ingredient → món có ÍT NHẤT MỘT nguyên liệu tên chứa q (EXISTS trên dish_ingredients → mỗi món đếm một lần)
 //   chef → món do đầu bếp tên chứa q phụ trách
-export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice, available }) {
+// `unaccentedIds` (mảng id, search/accent.js): từ khoá không dấu đã được so tại SQL → thay cho điều kiện `q`; null = so như trên.
+export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice, available }, unaccentedIds = null) {
   const nameOrTag = {
     name: (s) => ({ name: { contains: s, mode: "insensitive" } }),
     tag: (s) => ({ tags: { some: { tag: { name: { contains: s, mode: "insensitive" } } } } }),
@@ -183,7 +184,7 @@ export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice,
     chef: (s) => ({ chef: { name: { contains: s, mode: "insensitive" } } }),
   };
   const conditions = [];
-  if (q !== null) conditions.push(textMatch[by](escapeLike(q)));
+  if (q !== null) conditions.push(unaccentedIds ? { id: { in: unaccentedIds } } : textMatch[by](escapeLike(q)));
   if (tagId !== null) conditions.push({ tags: { some: { tagId } } });
   if (minPrice !== null) conditions.push({ price: { gte: minPrice } });
   if (maxPrice !== null) conditions.push({ price: { lte: maxPrice } });

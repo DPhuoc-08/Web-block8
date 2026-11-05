@@ -53,5 +53,39 @@
 ĐẠT      Xoá nguyên liệu đang dùng → 409
 ĐẠT      Xoá nguyên liệu chưa dùng → 303
 
+== D. Tìm tiếng Việt không dấu (plan 12.3) ==
+ĐẠT      cơ bản “pho”: 65 món theo SQL — trang hiển thị 65 món / 6 trang
+ĐẠT      cơ bản “PHO” (không phân biệt hoa thường): 65 món theo SQL — trang hiển thị 65 món / 6 trang
+ĐẠT      cơ bản “phở” (có dấu: như block7): 54 món theo SQL — trang hiển thị 54 món / 5 trang
+ĐẠT      “phở” vẫn 54 món như block7; “pho” có ít nhất từng ấy món — 54 / 65
+ĐẠT      cơ bản “bo” (gồm cả bò, bơ…): 117 món theo SQL — trang hiển thị 117 món / 10 trang
+ĐẠT      cơ bản “bò” (có dấu: không lẫn bơ): 100 món theo SQL — trang hiển thị 100 món / 9 trang
+ĐẠT      “bo” rộng hơn “bò”: món có “bơ” chỉ ra khi gõ không dấu — bo 117, bò 100, bơ 15
+ĐẠT      cơ bản “dau” (đ → d): 55 món theo SQL — trang hiển thị 55 món / 5 trang
+ĐẠT      “dau” khớp cả tên có chữ “đậu” — dau 55, đậu 37
+ĐẠT      cơ bản “ph_” (_ vẫn là ký tự thường): 0 món theo SQL — trang hiển thị 0 món / 0 trang
+ĐẠT      “pho” trang 1: đúng danh sách id, id tăng dần
+ĐẠT      “phở” trang 1: đúng danh sách id như câu ILIKE của block7
+ĐẠT      nâng cao “goi” + Hải sản + 50–150 nghìn + còn bán: 14 món theo SQL — trang hiển thị 14 món / 2 trang
+ĐẠT      Nâng cao “goi”: sắp xếp giá tăng dần rồi id, đúng danh sách
+ĐẠT      theo nguyên liệu “tom”: 149 món theo SQL — trang hiển thị 149 món / 13 trang
+ĐẠT      theo đầu bếp “tran thi”: 21 món theo SQL — trang hiển thị 21 món / 2 trang
+ĐẠT      toàn văn “pho”: 65 món theo SQL — trang hiển thị 65 món / 6 trang
+ĐẠT      toàn văn “nuoc dung xuong”: 62 món theo SQL — trang hiển thị 62 món / 6 trang
+ĐẠT      toàn văn “phở” (có dấu: như block7): 54 món theo SQL — trang hiển thị 54 món / 5 trang
+ĐẠT      Toàn văn “bun bo hue”: món đầu là Bún bò Huế
+ĐẠT      gần đúng “bo luc lat”: 8 món theo SQL — trang hiển thị 8 món / 1 trang
+ĐẠT      Gần đúng “bo luc lat”: món đầu là Bò lúc lắc
+ĐẠT      gần đúng theo nguyên liệu “tom xu”: 136 món theo SQL — trang hiển thị 136 món / 12 trang
+ĐẠT      gần đúng theo đầu bếp “tran thi bit”: 21 món theo SQL — trang hiển thị 21 món / 2 trang
+ĐẠT      Quản trị món “lau” (tên hoặc tag): 61 món theo SQL
+ĐẠT      Quản trị món toàn văn “pho”: 65 món theo SQL
+ĐẠT      Quản trị món gần đúng “bo luc lat”: 8 món theo SQL
+ĐẠT      Quản trị đầu bếp “tran thi”: 1 đầu bếp theo SQL
+ĐẠT      Quản trị đầu bếp “lau” (chuyên môn): 7 đầu bếp theo SQL
+ĐẠT      Quản trị đầu bếp gần đúng “tran thi bit”: 1 đầu bếp theo SQL
+ĐẠT      Quản trị nguyên liệu “tom”: 6 nguyên liệu theo SQL
+ĐẠT      Quản trị nguyên liệu gần đúng “tom xu”: 5 nguyên liệu theo SQL
+
 Sau khi dọn: 1200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag
-TỔNG: 48 ĐẠT, 0 CHƯA ĐẠT
+TỔNG: 80 ĐẠT, 0 CHƯA ĐẠT

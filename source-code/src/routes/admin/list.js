@@ -1,6 +1,6 @@
 // Phần chung của danh sách quản trị đầu bếp / nguyên liệu (chuyển từ AdminChefListPage / AdminIngredientListPage
 // của block7): ?q= &mode=basic|fuzzy &page=, 20 dòng/trang, id tăng dần; gần đúng xếp điểm rồi id.
-import { findPage, findFuzzyPage } from "../../db.js";
+import { prisma, findPage, findFuzzyPage } from "../../db.js";
 import { hasErrors } from "../../validators/common.js";
 import { parseAdminListQuery, searchWhere } from "../../validators/list-query.js";
 import { pageWindow } from "../../list-query.js";
@@ -24,7 +24,7 @@ const urlOf = (base, state) => {
 };
 
 // Đọc URL → validate → (chuyển về URL gọn) → truy vấn một trang. Trả null khi đã redirect.
-// opts: { base, noun, modes, matchers (cột tìm ở kiểu cơ bản), fuzzyMatcher, delegate, include }
+// opts: { base, noun, modes, matchers (cột tìm ở kiểu cơ bản), unaccentedIds (cùng các cột, từ khoá không dấu), fuzzyMatcher, delegate, include }
 export async function adminList(req, res, opts) {
   const { base, noun, modes } = opts;
   const state = { q: one(req.query.q).trim(), mode: one(req.query.mode).trim() || "basic", page: one(req.query.page).trim() };
@@ -45,10 +45,15 @@ export async function adminList(req, res, opts) {
   let result = null;
   if (!invalid) {
     // `total` đếm cùng điều kiện với các dòng của trang (findPage: một transaction RepeatableRead, như block7).
-    const { rows, ...meta } =
-      query.mode === "fuzzy"
-        ? await findFuzzyPage(opts.delegate, opts.fuzzyMatcher, { include: opts.include }, query)
-        : await findPage(opts.delegate, { where: searchWhere(query.q, opts.matchers), include: opts.include }, query);
+    let page;
+    if (query.mode === "fuzzy") {
+      page = await findFuzzyPage(opts.delegate, opts.fuzzyMatcher, { include: opts.include }, query);
+    } else {
+      const ids = await opts.unaccentedIds(prisma, query.q);
+      const where = ids ? { id: { in: ids } } : searchWhere(query.q, opts.matchers);
+      page = await findPage(opts.delegate, { where, include: opts.include }, query);
+    }
+    const { rows, ...meta } = page;
     result = { items: rows, ...meta };
   }
   const totalPages = result ? Math.ceil(result.total / result.pageSize) : 0;

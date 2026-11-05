@@ -166,7 +166,7 @@
       <h3>Kết quả</h3>
       <ul>
         <li><code>check-auth.mjs</code>: <strong>94/94 ĐẠT</strong> — A đăng ký 25, B CAPTCHA 6, C brute force 12, D phiên + CRUD + CSRF 27, E quên mật khẩu 20, F hồi quy 4 (<a href="evidence/curl/9-check-auth.txt">output</a>)</li>
-        <li><code>check-ssr.mjs</code>: <strong>48/48 ĐẠT</strong> — thực đơn, tìm kiếm, CRUD như block7 (<a href="evidence/curl/10-check-ssr.txt">output</a>)</li>
+        <li><code>check-ssr.mjs</code>: <strong>80/80 ĐẠT</strong> — thực đơn, tìm kiếm, CRUD như block7, thêm tìm không dấu (<a href="evidence/curl/10-check-ssr.txt">output</a>)</li>
         <li>Bằng chứng Chrome thật, request trực tiếp, bản ghi DB, thư: <a href="evidence/README.md">evidence/README.md</a></li>
         <li>Phần chỉ làm được bằng tay (key reCAPTCHA thật, Gmail thật): checklist trong <code>BUILD_LOG.md</code> bước 16</li>
       </ul>
@@ -188,6 +188,7 @@
     <li><strong>Block 9 vẫn còn việc:</strong> đề block 9 yêu cầu “SSR đã có authentication của Block 8, rồi thêm bản SPA dùng cùng backend” — phân quyền theo role, MFA, API JSON + JWT đều chưa làm ở đây.</li>
   </ul>
   <div class="callout warn"><strong>Lệch chữ của đề:</strong> đề viết “dùng lại database và cụm CRUD của Block 5”. Nhóm dùng database và CRUD của block 7 — bản kế tiếp của chính ứng dụng đó (5 → 6 → 7). Cơ chế, hành vi và bảng nghiệm thu của block 8 giữ nguyên; cùng một URL tìm kiếm cho ra cùng danh sách món như API block 7 (đã so 19 ca thực đơn, 21 ca quản trị).</div>
+  <div class="callout"><strong>Mở rộng do nhóm chốt, ngoài yêu cầu của đề — tìm không dấu:</strong> block 7 gõ <code>pho</code> ra 0 món. Nay từ khoá không dấu được so với dữ liệu đã bỏ dấu bằng extension <code>unaccent</code> của PostgreSQL, ở mọi kiểu tìm: <code>pho</code> ra 65 món, <code>bun bo hue</code> ra Bún bò Huế. Từ khoá có dấu vẫn ra đúng như block 7 (<code>phở</code> 54 món), nên đây là chỗ duy nhất kết quả tìm kiếm khác block 7. Không thêm bảng, không đổi 7 bảng cũ.</div>
 </section>
 
 <section class="card" id="chinh-sach">
@@ -241,6 +242,7 @@
     <li><strong>Cookie <code>Secure</code></strong> chỉ bật khi <code>NODE_ENV=production</code>; demo chạy <code>http://localhost</code> nên ảnh Application không có dấu Secure.</li>
     <li><strong>Origin:</strong> trang đặt lại mật khẩu có <code>Referrer-Policy: no-referrer</code> nên Chrome gửi <code>Origin: null</code>; server chỉ chấp nhận <code>null</code> ở đúng route <code>POST /reset</code>, request đó vẫn phải có <code>_csrf</code> và reset token.</li>
     <li><strong>Gmail:</strong> khoảng 500 thư / ngày, thư có thể vào Spam. Script kiểm tra ghi thư ra file thay vì gửi thật.</li>
+    <li><strong>Tìm không dấu:</strong> chữ không dấu gộp nhiều nghĩa — <code>bo</code> ra cả “bò” lẫn “bơ”, <code>pho</code> ra thêm 11 món “phô mai”, và chưa ưu tiên món đúng dấu lên trước. Ai cần chính xác thì gõ có dấu.</li>
     <li><strong>Đăng xuất</strong> chỉ huỷ phiên đang dùng; các thiết bị khác vẫn đăng nhập (đặt lại mật khẩu thì xoá hết).</li>
   </ul>
 </section>
@@ -297,6 +299,7 @@
       <tr><td>Express</td><td>5.3.0</td><td>Server SSR; lỗi của handler async tự về error handler</td></tr>
       <tr><td>EJS</td><td>7.0.1</td><td>Trang HTML; chỉ dùng <code>&lt;%= %&gt;</code> (tự escape) cho dữ liệu người dùng / DB</td></tr>
       <tr><td>Prisma + <code>@prisma/adapter-pg</code></td><td>7.10.0</td><td>Truy vấn DB block 7 + 5 bảng mới; raw SQL chỉ qua tagged template</td></tr>
+      <tr><td><code>pg_trgm</code>, <code>unaccent</code></td><td>extension PostgreSQL</td><td>Tìm gần đúng; bỏ dấu tại database khi từ khoá không dấu</td></tr>
       <tr><td>express-session</td><td>1.19.0</td><td>Cookie <code>sid</code> có chữ ký, regenerate / destroy; store tự viết trên Prisma</td></tr>
       <tr><td>argon2</td><td>0.45.1</td><td>Băm mật khẩu Argon2id (hash giả khi email không có)</td></tr>
       <tr><td>nodemailer</td><td>10.3.1</td><td>Gửi thư qua Gmail SMTP (App Password); transport <code>file</code> cho script</td></tr>
