@@ -430,3 +430,14 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 **Đã kiểm tra:** hai trang không cuộn ngang ở 375 và 320px (Chrome giả lập thiết bị, `scrollWidth` = bề rộng). Seed lại (in host trước): 1.200 món / 60 / 250 / 16, 2 tài khoản active; `auth-state.sql`: 0 mã, 0 token, 0 phiên đăng nhập, 0 bộ đếm.
 
 **Chưa làm (chờ nhóm):** đóng gói xoá `node_modules/`, `generated/`, `.mail-outbox/` — để lại vì nhóm còn chạy demo và checklist tay (cần key reCAPTCHA thật, Gmail App Password). Sơ đồ luồng chờ nhóm duyệt.
+
+## Sau bước 20 — Chạy thật với Gmail: thư mã kích hoạt không tới (lỗi `EDNS`)
+
+### Lỗi: nodemailer hết thời gian phân giải DNS, thư bị mất
+- **Phát hiện:** người dùng thử đăng ký bằng key reCAPTCHA và Gmail thật, không nhận được mã; terminal server in `[mail] Gửi thư "activation" thất bại lúc 2026-11-05T14:44:10.242Z: EDNS`.
+- **Nguyên nhân:** `mailer.js` đưa tên `smtp.gmail.com` cho nodemailer. Bộ phân giải riêng của nodemailer hỏi thẳng máy chủ DNS, không dùng cache của hệ điều hành, và phải chờ đủ cả A lẫn AAAA trong giới hạn 30 giây. Lần đăng ký lúc 14:43:39Z thất bại sau khoảng 30 giây. Đo trên mạng này, cùng kiểu bộ phân giải: mỗi câu A mất 10–11 giây ở mọi lần, còn `dns.lookup` của hệ điều hành chỉ chậm lần đầu (6,3 giây), các lần sau 1–9 ms. Script kiểm tra dùng transport `file` nên không thấy lỗi này.
+- **Tái hiện:** phụ thuộc mạng, không tái hiện được theo ý muốn. Với cấu hình cũ, các lần thử gửi và đăng nhập SMTP từ script vẫn thành công sau 11–13 giây; đặt `connectionTimeout: 10000` thì DNS luôn báo `EDNS` (nodemailer lấy số nhỏ hơn làm giới hạn).
+- **Sửa:** `src/auth/mailer.js` tự gọi `lookup` của `node:dns/promises` (DNS hệ điều hành, IPv4) mỗi lần gửi rồi đưa IP cho nodemailer, kèm `tls.servername = smtp.gmail.com`. Vẫn cổng 465, vẫn xác minh chứng chỉ theo tên. Không thêm thư viện.
+- **Phương án đã bỏ:** tăng `dnsTimeout` (thư đến càng chậm, không bỏ được phần chờ); yêu cầu đổi DNS của máy (mạng khi demo có thể khác); gửi lại tự động (thêm hàng đợi ngoài plan).
+- **Bằng chứng sau khi sửa:** gửi thật qua `mailer.js` tới Gmail của nhóm → `250 OK` sau 2,5 giây (trước đó khoảng 13 giây); `servername` sai → bị từ chối `Hostname/IP does not match certificate's altnames`, chứng tỏ TLS vẫn xác minh chứng chỉ; `check-auth.mjs` phần A 25/25 (transport `file` không hồi quy).
+- **Chưa chắc:** chưa xác định vì sao riêng lần đó vượt 30 giây trong khi các lần đo còn lại 10–11 giây. `lookup` của hệ điều hành không có giới hạn thời gian riêng; nếu lỗi, `sendLater` vẫn ghi mã lỗi ra log. Luồng đăng ký trên server đã chạy lại code mới và việc thư mã tới hộp thư do người dùng kiểm tra.

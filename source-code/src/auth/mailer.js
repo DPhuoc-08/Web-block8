@@ -4,37 +4,43 @@
 // Gửi BẤT ĐỒNG BỘ (sendLater): request trả về ngay, không chờ máy chủ thư → thời gian phản hồi của email có tài khoản
 // và không có tài khoản gần như nhau. Lỗi gửi chỉ ghi { loại thư, thời điểm, mã lỗi } — KHÔNG ghi địa chỉ, mã, link.
 import nodemailer from "nodemailer";
+import { lookup } from "node:dns/promises";
 import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 
 export const OUTBOX = fileURLToPath(new URL("../../.mail-outbox/", import.meta.url));
 
-let transport = null;
-function getTransport() {
-  if (transport) return transport;
+const SMTP_HOST = "smtp.gmail.com";
+
+let fileTransport = null;
+async function getTransport() {
   if (process.env.MAIL_TRANSPORT === "smtp") {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) throw new Error("MAIL_TRANSPORT=smtp cần SMTP_USER và SMTP_PASS (Gmail App Password) trong .env.");
-    transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
-  } else {
-    // Dựng thư MIME đầy đủ như khi gửi thật, nhưng ghi ra file thay vì gửi.
-    const stream = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "unix" });
-    transport = {
-      async sendMail(message) {
-        const info = await stream.sendMail(message);
-        await mkdir(OUTBOX, { recursive: true });
-        await writeFile(`${OUTBOX}${Date.now()}-${message.headers["X-Mail-Kind"]}-${randomBytes(4).toString("hex")}.eml`, info.message);
-      },
-    };
+    // Tự hỏi địa chỉ qua DNS của hệ điều hành rồi đưa IP cho nodemailer: bộ phân giải riêng của nodemailer hỏi thẳng máy
+    // chủ DNS, không dùng cache của hệ điều hành; ở mạng DNS chậm nó vượt giới hạn 30 giây → lỗi EDNS, mất thư (lỗi sau bước 20).
+    // Hỏi lại mỗi lần gửi để không giữ IP cũ. servername: TLS vẫn xác minh chứng chỉ theo tên smtp.gmail.com, không theo IP.
+    const { address } = await lookup(SMTP_HOST, { family: 4 });
+    return nodemailer.createTransport({ host: address, port: 465, secure: true, tls: { servername: SMTP_HOST }, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
   }
-  return transport;
+  if (fileTransport) return fileTransport;
+  // Dựng thư MIME đầy đủ như khi gửi thật, nhưng ghi ra file thay vì gửi.
+  const stream = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "unix" });
+  fileTransport = {
+    async sendMail(message) {
+      const info = await stream.sendMail(message);
+      await mkdir(OUTBOX, { recursive: true });
+      await writeFile(`${OUTBOX}${Date.now()}-${message.headers["X-Mail-Kind"]}-${randomBytes(4).toString("hex")}.eml`, info.message);
+    },
+  };
+  return fileTransport;
 }
 
 const from = () => process.env.MAIL_FROM || process.env.SMTP_USER;
 
 // async: lỗi cấu hình (thiếu SMTP_PASS…) thành promise bị từ chối, không ném đồng bộ làm sập server trong sendLater.
 export async function sendMail({ to, kind, subject, text, html }) {
-  return getTransport().sendMail({ from: from(), to, subject, text, html, headers: { "X-Mail-Kind": kind } });
+  return (await getTransport()).sendMail({ from: from(), to, subject, text, html, headers: { "X-Mail-Kind": kind } });
 }
 
 export function sendLater(mail) {

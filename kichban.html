@@ -264,6 +264,7 @@
       <tr><td>curl không cookie gọi CRUD nhận <code>403</code> thay vì <code>303 /login</code> — bước 18</td><td>Thu bằng chứng bằng request trần</td><td><code>requireLogin</code> đặt trước <code>csrf</code></td><td><code>curl/1</code> (9 request đều 303)</td></tr>
       <tr><td>Header quản trị tràn ngang ở điện thoại khi đã đăng nhập — bước 17</td><td>Chrome 375px: trang rộng 525px</td><td>Header có khu tài khoản được xuống dòng</td><td>ảnh 09 (375px)</td></tr>
       <tr><td>Trang <code>429</code> ghi “6 phút” cho khoá 5 phút — bước 18</td><td>Ảnh chụp trang khoá</td><td>Làm tròn tới phút gần nhất (một hàm chung)</td><td>ảnh 17</td></tr>
+      <tr><td>Thư mã kích hoạt không tới, log báo <code>EDNS</code> — sau bước 20</td><td>Chạy thật với Gmail: bộ phân giải của nodemailer hết 30 giây chờ DNS</td><td>Hỏi địa chỉ qua DNS hệ điều hành, kết nối bằng IP, TLS vẫn xác minh tên <code>smtp.gmail.com</code></td><td>Gửi thật <code>250 OK</code> sau 2,5 giây; tên sai bị từ chối</td></tr>
     </tbody>
   </table></div>
 </section>
