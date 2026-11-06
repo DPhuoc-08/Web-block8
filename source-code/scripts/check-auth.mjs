@@ -531,7 +531,7 @@ async function partG() {
   const u = await mk("hoso"), other = await mk("khac", "Người khác");
   const c = await loggedIn(u.email);
   let page = await c.get("/admin/profile");
-  r.ok(page.status === 200 && page.headers.get("cache-control") === "no-store" && page.text.includes(u.email) && page.text.includes("Viewer") && page.text.includes("Đang hoạt động"), "Hồ sơ: 200, no-store, có email, vai trò, trạng thái");
+  r.ok(page.status === 200 && page.headers.get("cache-control") === "no-store" && page.text.includes(u.email) && page.text.includes("Đang hoạt động") && !page.text.includes("Vai trò"), "Hồ sơ: 200, no-store, có email, trạng thái, không hiện vai trò");
   r.ok(!page.text.includes("$argon2") && !page.text.includes("Người khác") && !page.text.includes(other.email), "Hồ sơ không có hash mật khẩu, không có dữ liệu người khác");
   r.ok(page.text.includes(`<a class="account-email" href="/admin/profile" title="${u.email}">${u.email}</a>`), "Chưa có tên: header hiện email, là link tới hồ sơ");
   r.ok((await c.get(`/admin/profile/${other.id}`)).status === 404 && !(await c.get(`/admin/profile?id=${other.id}`)).text.includes(other.email), "Không có đường xem hồ sơ người khác qua URL");

@@ -15,18 +15,18 @@
     </select>
   </label>
 <% } -%>
-<%# Bộ lọc của danh sách món (chỉ trang đó truyền availabilityOptions, chefOptions). -%>
+<%# Bộ lọc của danh sách món (chỉ trang đó truyền availabilityOptions, chefOptions). Chọn xong tự gửi form GET (ui.js); tắt JS thì bấm Tìm. -%>
 <% if (locals.availabilityOptions) { -%>
   <label class="admin-mode">
     <span class="sr-only">Lọc theo tình trạng</span>
-    <select name="available"<% if (errors.available) { %> aria-invalid="true"<% } %>>
+    <select name="available" data-autosubmit<% if (errors.available) { %> aria-invalid="true"<% } %>>
 <% for (const a of availabilityOptions) { %>      <option value="<%= a.value %>"<% if (a.value === state.available) { %> selected<% } %>><%= a.label %></option>
 <% } -%>
     </select>
   </label>
   <label class="admin-mode">
     <span class="sr-only">Lọc theo đầu bếp</span>
-    <select name="chef"<% if (errors.chef) { %> aria-invalid="true"<% } %>>
+    <select name="chef" data-autosubmit<% if (errors.chef) { %> aria-invalid="true"<% } %>>
       <option value="">Mọi đầu bếp</option>
 <% for (const c of chefOptions) { %>      <option value="<%= c.id %>"<% if (String(c.id) === state.chef) { %> selected<% } %>><%= c.name %></option>
 <% } -%>

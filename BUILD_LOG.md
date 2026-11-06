@@ -520,7 +520,7 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Đã làm:**
 - `users` thêm cột `username TEXT NULL`. Người dùng đã xem SQL (`ALTER TABLE "users" ADD COLUMN "username" TEXT;`, host `aws-0-ap-southeast-1.pooler.supabase.com`) và cho chạy `db push`. 7 bảng cũ không đổi.
 - Đăng ký thêm ô Tên hiển thị (bắt buộc, kiểm tra sau CAPTCHA). `src/auth/username.js`: cắt khoảng trắng, chuẩn NFC, 2–50 ký tự, không nhận ký tự điều khiển hay ký tự vô hình.
-- `/admin/profile`: xem tên, email, vai trò, trạng thái, ngày xác minh, ngày tạo; sửa tên. Tên ở header là link tới hồ sơ; chưa có tên thì hiện email.
+- `/admin/profile`: xem tên, email, trạng thái, ngày xác minh, ngày tạo; sửa tên. Tên ở header là link tới hồ sơ; chưa có tên thì hiện email.
 - `/admin/profile/password`: đổi mật khẩu. Sau khi đổi, thiết bị này vẫn đăng nhập với `sid` mới, thiết bị khác bị đăng xuất, có thư báo.
 - Seed thêm tên cho 2 tài khoản; câu chữ thư "đã đổi mật khẩu" đúng cho cả đặt lại và đổi.
 
@@ -554,3 +554,11 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Đã làm:** cập nhật `README.md`, `hotrotrinhbay.html`, `kichban.html` (Phần 5 của kịch bản demo), `evidence/README.md`, output `evidence/curl/9-check-auth.txt`, `10-check-ssr.txt` (đã dò không có mật khẩu, email seed, secret, chuỗi kết nối). Sơ đồ đăng ký và đăng xuất vẽ lại từ code; sơ đồ đăng xuất thêm bước "Còn phiên đăng nhập?". Plan 12.4 ghi các điểm đã chốt.
 
 **Chưa làm:** ảnh trong `evidence/screens/` và các file `evidence/curl/` khác chưa thu lại, nên ảnh form đăng ký chưa có ô tên. `collect-evidence.mjs` đã sửa để điền ô tên nhưng chưa chạy lại.
+
+### 6. Chỉnh theo phản hồi của người dùng
+
+**Đã làm:**
+- Bỏ dòng Vai trò khỏi hồ sơ, route không đọc cột `role` nữa. Cột `role` trong DB giữ nguyên vì đề yêu cầu và phân quyền sau này cần.
+- Hai ô lọc của danh sách món chọn xong tự gửi form GET, dùng lại `data-autosubmit` của ô sắp xếp thực đơn (không `fetch`, trình duyệt tải lại trang như gửi form thường). Nút Tìm giữ lại cho ô từ khoá và khi tắt JavaScript. Ô Kiểu tìm không tự gửi: Toàn văn, Gần đúng bắt buộc có từ khoá, tự gửi ngay sẽ báo lỗi khi người dùng chưa kịp gõ.
+
+**Đã kiểm tra:** Chrome thật: mở `/admin/dishes?q=lẩu&page=2`, chọn Tạm hết → URL tự thành `?q=lẩu&available=false` (giữ từ khoá, về trang 1), chọn đầu bếp → thêm `chef=`, bỏ lọc tình trạng → bỏ `available`. Hồ sơ không còn chữ Vai trò, không cuộn ngang ở 1280 / 820 / 375 / 320px. `check-ssr.mjs F` 26/26, `check-auth.mjs G` 38/38.

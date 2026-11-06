@@ -21,7 +21,6 @@ const FAIL_LOCK_AT = 5;
 const FAIL_LOCK_FOR = 15 * MIN;
 const failKey = (userId) => `password-change-fail:user:${userId}`;
 
-const ROLE_LABEL = { viewer: "Viewer", editor: "Editor", admin: "Admin" };
 const STATUS_LABEL = { pending: "Chờ kích hoạt", active: "Đang hoạt động" };
 // Múi giờ cố định: server chạy ở đâu thì người dùng vẫn đọc giờ Việt Nam.
 const formatDate = (d) => (d ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Ho_Chi_Minh" }).format(d) : "Chưa có");
@@ -30,11 +29,11 @@ async function renderProfile(res, { status = 200, values = null, errors = {} } =
   // Chỉ chọn cột cần hiện: passwordHash không bao giờ tới template.
   const user = await prisma.user.findUnique({
     where: { id: res.locals.currentUser.id },
-    select: { email: true, username: true, role: true, status: true, emailVerifiedAt: true, createdAt: true },
+    select: { email: true, username: true, status: true, emailVerifiedAt: true, createdAt: true },
   });
   res.status(status).render("admin/profile/index", {
     title: "Hồ sơ tài khoản",
-    profile: { ...user, roleLabel: ROLE_LABEL[user.role], statusLabel: STATUS_LABEL[user.status], verifiedAt: formatDate(user.emailVerifiedAt), joinedAt: formatDate(user.createdAt) },
+    profile: { ...user, statusLabel: STATUS_LABEL[user.status], verifiedAt: formatDate(user.emailVerifiedAt), joinedAt: formatDate(user.createdAt) },
     values: values ?? { username: user.username ?? "" },
     errors,
   });
