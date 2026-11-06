@@ -72,6 +72,8 @@ RECAPTCHA_HOSTNAMES=localhost,testkey.google.com
 ```
 Key thử cho mọi token qua → chỉ dùng cho script, không dùng khi demo, không làm bằng chứng chặn bot. Script tự xoá tài khoản thử, nhưng **seed lại sau khi test** để bảng phiên / bộ đếm sạch.
 
+**Bằng chứng cần người làm** (key reCAPTCHA thật, ảnh DevTools): tắt `npm start`, rồi `node scripts/captcha-key-that.mjs` và làm theo từng bước.
+
 **Thu lại bằng chứng:** tắt `npm start`, rồi `node scripts/collect-evidence.mjs` (Chrome thật + request trực tiếp, ghi vào `evidence/`, từ chối ghi nếu còn sót bí mật). **Vẽ lại sơ đồ** sau khi sửa code: `node evidence/diagrams/ve-so-do.mjs` (từ thư mục `block8/`).
 
 ## Route
@@ -97,7 +99,7 @@ block8/
 └── source-code/
     ├── prisma/               ← schema (7 bảng block7 + 5 bảng auth), seed, sql/
     ├── public/               ← css/style.css (của block7 + phần auth), js/ui.js (chỉ để tiện dùng)
-    ├── scripts/              ← check-auth, check-ssr, collect-evidence, run-sql, lib/
+    ├── scripts/              ← check-auth, check-ssr, collect-evidence, captcha-key-that, run-sql, lib/
     └── src/
         ├── app.js            ← thứ tự middleware
         ├── auth/             ← session store, loadUser, requireLogin, csrf, mật khẩu, mã / token, bộ đếm, reCAPTCHA, thư

@@ -264,7 +264,7 @@
     <div class="box">
       <h3>1. Cookie <code>sid</code> khác session thế nào?</h3>
       <p>Cookie là chìa khoá, dữ liệu nằm ở bảng <code>sessions</code>. Xoá cookie không huỷ phiên; phải xoá bản ghi ở server.</p>
-      <p class="muted"><a href="evidence/curl/2-csrf-va-dang-xuat.txt">curl/2</a></p>
+      <p class="muted"><a href="evidence/curl/14-xoa-cookie-khong-huy-phien.txt">curl/14</a>, <a href="evidence/curl/2-csrf-va-dang-xuat.txt">curl/2</a></p>
     </div>
     <div class="box">
       <h3>2. Session lưu ở đâu?</h3>
@@ -274,12 +274,12 @@
     <div class="box">
       <h3>3. CAPTCHA chặn được gì?</h3>
       <p>Chặn script hàng loạt, không chặn người đoán tay hay dịch vụ giải thuê. Nên cần thêm bộ đếm ở DB và thời gian khoá.</p>
-      <p class="muted"><a href="evidence/curl/7-tam-khoa-dung-mat-khau.txt">curl/7</a></p>
+      <p class="muted"><a href="evidence/curl/12-dem-sai-dang-nhap.txt">curl/12</a>, <a href="evidence/curl/7-tam-khoa-dung-mat-khau.txt">curl/7</a></p>
     </div>
     <div class="box">
       <h3>4. Pending bị chặn ở đâu?</h3>
       <p>Trong <code>POST /login</code>, trước khi cấp phiên. Gửi lại mã không đặt lại số lần thử.</p>
-      <p class="muted"><a href="evidence/db/2-ma-sai-va-dang-nhap-pending.txt">db/2</a></p>
+      <p class="muted"><a href="evidence/db/2-ma-sai-va-dang-nhap-pending.txt">db/2</a>, <a href="evidence/db/8-khoa-kich-hoat.txt">db/8</a></p>
     </div>
     <div class="box">
       <h3>5. Route nào công khai?</h3>
@@ -289,7 +289,7 @@
     <div class="box">
       <h3>6. Reset token lưu thế nào?</h3>
       <p>DB chỉ giữ SHA-256, hạn 15 phút, dùng một lần. Đặt lại xong, phiên cũ bị xoá hết.</p>
-      <p class="muted"><a href="evidence/db/6-sau-dat-lai.txt">db/6</a></p>
+      <p class="muted"><a href="evidence/curl/13-quen-mat-khau.txt">curl/13</a>, <a href="evidence/db/6-sau-dat-lai.txt">db/6</a></p>
     </div>
   </div>
   <div class="callout"><strong>Lỗi của agent:</strong> <code>LOG_SQL=1</code> in <code>sid</code> ra log. Sửa: câu SQL chạm bảng xác thực không in tham số. Lỗi khác: <a href="kichban.html#loi">kichban.html</a>.</div>

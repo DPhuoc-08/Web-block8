@@ -1,0 +1,9 @@
+## Bộ đếm theo email ở rate_limits, kể cả email không có tài khoản; không có phiên nào  (lúc 2026-11-06 12:08:06Z)
+
+users #167  email=dem.sai@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-06 12:08:00Z
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 6841be9b)
+  sessions của user: 0
+rate_limits:
+  login-fail:email:dem.sai@demo.example  count=10  windowStart=2026-11-06 12:08:00Z  lockedUntil=2026-11-06 12:13:05Z
+  login-fail:email:khong.ton.tai@demo.example  count=3  windowStart=2026-11-06 12:08:06Z  lockedUntil=—
+

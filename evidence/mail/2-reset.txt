@@ -1,5 +1,5 @@
 X-Mail-Kind: reset
-From: Nhà hàng <no-reply@example.com>
+From: Nhà hàng <<email nhóm đã che>>
 To: minh.anh@demo.example
 Subject: Đặt lại mật khẩu
 

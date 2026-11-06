@@ -1,0 +1,190 @@
+# /forgot vượt giới hạn; token cũ / hết hạn / đã dùng bị từ chối; sid cũ bị từ chối sau reset; reset token dùng ở route khác; reset tài khoản pending
+
+## Vượt giới hạn /forgot: 3 yêu cầu / giờ theo email, email có và không có giống nhau
+
+$ POST /forgot   # yêu cầu 1
+  Cookie: sid=<đã che · vân tay 3c1180fd>
+  _csrf=<đã che>&email=quen.nhieu%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (207 ms)
+  Set-Cookie: sid=<đã che · vân tay 3c1180fd>; Path=/; Expires=Fri, 06 Nov 2026 14:08:07 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 2
+  Cookie: sid=<đã che · vân tay a0a60261>
+  _csrf=<đã che>&email=quen.nhieu%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (198 ms)
+  Set-Cookie: sid=<đã che · vân tay a0a60261>; Path=/; Expires=Fri, 06 Nov 2026 14:08:07 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 3
+  Cookie: sid=<đã che · vân tay cca5a856>
+  _csrf=<đã che>&email=quen.nhieu%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (207 ms)
+  Set-Cookie: sid=<đã che · vân tay cca5a856>; Path=/; Expires=Fri, 06 Nov 2026 14:08:08 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 4
+  Cookie: sid=<đã che · vân tay 84367f2a>
+  _csrf=<đã che>&email=quen.nhieu%40demo.example
+→ 429  Retry-After: 3600  (254 ms)
+  Set-Cookie: sid=<đã che · vân tay 84367f2a>; Path=/; Expires=Fri, 06 Nov 2026 14:08:08 GMT; HttpOnly; SameSite=Lax
+  Trang: "Thao tác quá nhiều lần"  data-error-code="RATE_LIMITED"
+
+$ POST /forgot   # yêu cầu 1
+  Cookie: sid=<đã che · vân tay eee47d8d>
+  _csrf=<đã che>&email=quen.khong.co%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (206 ms)
+  Set-Cookie: sid=<đã che · vân tay eee47d8d>; Path=/; Expires=Fri, 06 Nov 2026 14:08:08 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 2
+  Cookie: sid=<đã che · vân tay 8890eb2b>
+  _csrf=<đã che>&email=quen.khong.co%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (204 ms)
+  Set-Cookie: sid=<đã che · vân tay 8890eb2b>; Path=/; Expires=Fri, 06 Nov 2026 14:08:08 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 3
+  Cookie: sid=<đã che · vân tay 25fc9f3a>
+  _csrf=<đã che>&email=quen.khong.co%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (195 ms)
+  Set-Cookie: sid=<đã che · vân tay 25fc9f3a>; Path=/; Expires=Fri, 06 Nov 2026 14:08:09 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 4
+  Cookie: sid=<đã che · vân tay 91450d37>
+  _csrf=<đã che>&email=quen.khong.co%40demo.example
+→ 429  Retry-After: 3600  (256 ms)
+  Set-Cookie: sid=<đã che · vân tay 91450d37>; Path=/; Expires=Fri, 06 Nov 2026 14:08:09 GMT; HttpOnly; SameSite=Lax
+  Trang: "Thao tác quá nhiều lần"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Email có: 303,303,303,429; email không có: 303,303,303,429
+
+## Token cũ, hết hạn, đã dùng; session cũ bị huỷ
+
+$ GET /admin/dishes   # jar 1 đã đăng nhập trước khi reset
+  Cookie: sid=<đã che · vân tay 92803f80>
+→ 200  (616 ms)
+  Set-Cookie: sid=<đã che · vân tay 92803f80>; Path=/; Expires=Fri, 06 Nov 2026 14:08:11 GMT; HttpOnly; SameSite=Lax
+  Trang: "Quản trị món ăn"
+
+$ POST /forgot   # yêu cầu 1
+  Cookie: sid=<đã che · vân tay b5b13993>
+  _csrf=<đã che>&email=dat.lai%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (183 ms)
+  Set-Cookie: sid=<đã che · vân tay b5b13993>; Path=/; Expires=Fri, 06 Nov 2026 14:08:11 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # yêu cầu 2: token 1 trở thành token cũ
+  Cookie: sid=<đã che · vân tay 28851689>
+  _csrf=<đã che>&email=dat.lai%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (187 ms)
+  Set-Cookie: sid=<đã che · vân tay 28851689>; Path=/; Expires=Fri, 06 Nov 2026 14:08:11 GMT; HttpOnly; SameSite=Lax
+
+$ POST /reset   # token CŨ
+  Cookie: sid=<đã che · vân tay c810efde>
+  _csrf=<đã che>&token=<đã che>&password=<đã che>&passwordConfirm=<đã che>
+→ 200  (196 ms)
+  Set-Cookie: sid=<đã che · vân tay c810efde>; Path=/; Expires=Fri, 06 Nov 2026 14:08:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Link không dùng được"  data-error-code="INVALID_RESET_TOKEN"
+
+ĐẠT: Token cũ bị từ chối, passwordHash không đổi
+
+(UPDATE password_resets SET expiresAt = quá khứ)
+
+$ POST /reset   # token HẾT HẠN
+  Cookie: sid=<đã che · vân tay 7b50f1a2>
+  _csrf=<đã che>&token=<đã che>&password=<đã che>&passwordConfirm=<đã che>
+→ 200  (179 ms)
+  Set-Cookie: sid=<đã che · vân tay 7b50f1a2>; Path=/; Expires=Fri, 06 Nov 2026 14:08:12 GMT; HttpOnly; SameSite=Lax
+  Trang: "Link không dùng được"  data-error-code="INVALID_RESET_TOKEN"
+
+ĐẠT: Token hết hạn bị từ chối, passwordHash không đổi
+
+$ POST /forgot   # yêu cầu 3: token dùng được
+  Cookie: sid=<đã che · vân tay 2c41124c>
+  _csrf=<đã che>&email=dat.lai%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (193 ms)
+  Set-Cookie: sid=<đã che · vân tay 2c41124c>; Path=/; Expires=Fri, 06 Nov 2026 14:08:13 GMT; HttpOnly; SameSite=Lax
+
+$ POST /reset   # token hợp lệ, đặt mật khẩu mới
+  Cookie: sid=<đã che · vân tay ad0f18e7>
+  _csrf=<đã che>&token=<đã che>&password=<đã che>&passwordConfirm=<đã che>
+→ 303  Location: /login?msg=password-reset  (471 ms)
+  Set-Cookie: sid=<đã che · vân tay ad0f18e7>; Path=/; Expires=Fri, 06 Nov 2026 14:08:13 GMT; HttpOnly; SameSite=Lax
+
+ĐẠT: Reset thành công → 303 /login, passwordHash đổi
+
+ĐẠT: Bản ghi sessions của user: trước 1, sau 0
+
+$ GET /admin/dishes   # dùng lại sid của jar 1 sau reset
+  Cookie: sid=<đã che · vân tay 92803f80>
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (43 ms)
+
+ĐẠT: sid cũ bị từ chối sau reset
+
+$ POST /reset   # dùng lại token ĐÃ DÙNG
+  Cookie: sid=<đã che · vân tay c34d2781>
+  _csrf=<đã che>&token=<đã che>&password=<đã che>&passwordConfirm=<đã che>
+→ 200  (162 ms)
+  Set-Cookie: sid=<đã che · vân tay c34d2781>; Path=/; Expires=Fri, 06 Nov 2026 14:08:14 GMT; HttpOnly; SameSite=Lax
+  Trang: "Link không dùng được"  data-error-code="INVALID_RESET_TOKEN"
+
+ĐẠT: Token đã dùng bị từ chối, passwordHash không đổi
+
+ĐẠT: Token cũ, hết hạn, đã dùng → cùng một trang
+
+## Dùng reset token ở route khác
+
+$ POST /forgot   # lấy token
+  Cookie: sid=<đã che · vân tay aa84f7a4>
+  _csrf=<đã che>&email=token.khac%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (169 ms)
+  Set-Cookie: sid=<đã che · vân tay aa84f7a4>; Path=/; Expires=Fri, 06 Nov 2026 14:08:14 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # token làm mã kích hoạt
+  Cookie: sid=<đã che · vân tay 10ab9a0c>
+  _csrf=<đã che>&email=token.khac%40demo.example&otp=<đã che>
+→ 200  (341 ms)
+  Set-Cookie: sid=<đã che · vân tay 10ab9a0c>; Path=/; Expires=Fri, 06 Nov 2026 14:08:15 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+$ POST /login   # token làm mật khẩu
+  Cookie: sid=<đã che · vân tay 598a5dfa>
+  _csrf=<đã che>&email=token.khac%40demo.example&password=<đã che>
+→ 200  (346 ms)
+  Set-Cookie: sid=<đã che · vân tay 598a5dfa>; Path=/; Expires=Fri, 06 Nov 2026 14:08:15 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ GET /admin/dishes   # token làm giá trị cookie sid
+  Cookie: sid=<đã che · vân tay 9272db48>
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (1 ms)
+
+ĐẠT: Reset token ở /activate, /login, cookie sid → đều bị từ chối
+
+ĐẠT: passwordHash không đổi, token chưa bị tiêu thụ
+
+## Reset tài khoản pending: vẫn pending
+
+$ POST /register   # tài khoản pending
+  Cookie: sid=<đã che · vân tay de359fd4>
+  _csrf=<đã che>&username=Ng%C6%B0%E1%BB%9Di+th%E1%BB%AD&email=reset.pending%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (751 ms)
+  Set-Cookie: sid=<đã che · vân tay de359fd4>; Path=/; Expires=Fri, 06 Nov 2026 14:08:16 GMT; HttpOnly; SameSite=Lax
+
+$ POST /forgot   # quên mật khẩu khi đang pending
+  Cookie: sid=<đã che · vân tay 0f076bf6>
+  _csrf=<đã che>&email=reset.pending%40demo.example
+→ 303  Location: /forgot?msg=forgot-sent  (220 ms)
+  Set-Cookie: sid=<đã che · vân tay 0f076bf6>; Path=/; Expires=Fri, 06 Nov 2026 14:08:16 GMT; HttpOnly; SameSite=Lax
+
+$ POST /reset   # đặt lại mật khẩu
+  Cookie: sid=<đã che · vân tay b5d12818>
+  _csrf=<đã che>&token=<đã che>&password=<đã che>&passwordConfirm=<đã che>
+→ 303  Location: /login?msg=password-reset  (480 ms)
+  Set-Cookie: sid=<đã che · vân tay b5d12818>; Path=/; Expires=Fri, 06 Nov 2026 14:08:17 GMT; HttpOnly; SameSite=Lax
+
+ĐẠT: Reset xong vẫn pending, emailVerifiedAt rỗng
+
+$ POST /login   # đăng nhập bằng mật khẩu mới
+  Cookie: sid=<đã che · vân tay af1dc824>
+  _csrf=<đã che>&email=reset.pending%40demo.example&password=<đã che>
+→ 200  (253 ms)
+  Set-Cookie: sid=<đã che · vân tay af1dc824>; Path=/; Expires=Fri, 06 Nov 2026 14:08:18 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="ACCOUNT_NOT_ACTIVATED"
+
+ĐẠT: Đăng nhập bằng mật khẩu mới → ACCOUNT_NOT_ACTIVATED, không có phiên
+

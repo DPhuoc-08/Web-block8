@@ -1,0 +1,40 @@
+# Server chạy với key reCAPTCHA THẬT trong .env, backend gọi siteverify của Google. Tick thật, dùng lại, quá hạn: curl/16 (làm tay).
+
+$ POST /register   # không gửi token
+  Cookie: sid=<đã che · vân tay 5bb5b58d>
+  _csrf=<đã che>&email=bot.key.that%40demo.example&password=<đã che>&passwordConfirm=<đã che>
+→ 200  (190 ms)
+  Set-Cookie: sid=<đã che · vân tay 5bb5b58d>; Path=/; Expires=Fri, 06 Nov 2026 14:10:14 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="CAPTCHA_REQUIRED"
+
+ĐẠT: Trang đăng ký dùng site key thật; secret không có trong trang
+
+$ POST /register   # token bịa: Google trả success=false
+  Cookie: sid=<đã che · vân tay bd414fb1>
+  _csrf=<đã che>&email=bot.key.that%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (585 ms)
+  Set-Cookie: sid=<đã che · vân tay bd414fb1>; Path=/; Expires=Fri, 06 Nov 2026 14:10:15 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="INVALID_CAPTCHA"
+
+$ POST /register   # tự khai đã qua, token rỗng
+  Cookie: sid=<đã che · vân tay 99b9b2b6>
+  _csrf=<đã che>&email=bot.key.that%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>&captchaPassed=true&recaptchaScore=1
+→ 200  (123 ms)
+  Set-Cookie: sid=<đã che · vân tay 99b9b2b6>; Path=/; Expires=Fri, 06 Nov 2026 14:10:15 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="CAPTCHA_REQUIRED"
+
+ĐẠT: Từ chối cả ba: CAPTCHA_REQUIRED, INVALID_CAPTCHA, CAPTCHA_REQUIRED
+
+ĐẠT: Không tạo user (0), không gửi thư (0)
+
+## Hostname không thuộc RECAPTCHA_HOSTNAMES (key thử của Google trả success=true, server đặt danh sách hostname khác)
+
+$ POST /register   # success=true nhưng hostname sai
+  Cookie: sid=<đã che · vân tay e0768ff2>
+  _csrf=<đã che>&email=bot.key.that%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (421 ms)
+  Set-Cookie: sid=<đã che · vân tay e0768ff2>; Path=/; Expires=Fri, 06 Nov 2026 14:10:17 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạo tài khoản"  data-error-code="INVALID_CAPTCHA"
+
+ĐẠT: success=true nhưng hostname sai → INVALID_CAPTCHA, không tạo user
+

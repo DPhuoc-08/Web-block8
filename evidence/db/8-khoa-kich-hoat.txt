@@ -1,0 +1,20 @@
+## Sau 3 lần sai rồi gửi lại mã: otpHash mới, attempts vẫn 3 (gửi lại không đặt lại số lần thử)  (lúc 2026-11-06 12:07:53Z)
+
+users #164  email=gui.lai@demo.example  role=viewer  status=pending  emailVerifiedAt=—
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 1bc724c2)
+  activation_challenges: purpose=activation otpHash=27b706…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-06 12:17:53Z) attempts=3 usedAt=— lockedUntil=—
+  sessions của user: 0
+rate_limits:
+  otp-cooldown:email:gui.lai@demo.example  count=1  windowStart=2026-11-06 12:07:53Z  lockedUntil=—
+  otp-send:email:gui.lai@demo.example  count=2  windowStart=2026-11-06 12:07:51Z  lockedUntil=—
+
+## Thêm 2 lần sai, đủ 5: lockedUntil = +15 phút, vẫn pending. attempts về 0 lúc đặt khoá là theo chính sách (plan mục 4: lượt thử mới sau khi hết khoá), không phải do gửi lại  (lúc 2026-11-06 12:07:55Z)
+
+users #164  email=gui.lai@demo.example  role=viewer  status=pending  emailVerifiedAt=—
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 1bc724c2)
+  activation_challenges: purpose=activation otpHash=27b706…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-06 12:17:53Z) attempts=0 usedAt=— lockedUntil=2026-11-06 12:22:54Z
+  sessions của user: 0
+rate_limits:
+  otp-cooldown:email:gui.lai@demo.example  count=1  windowStart=2026-11-06 12:07:53Z  lockedUntil=—
+  otp-send:email:gui.lai@demo.example  count=2  windowStart=2026-11-06 12:07:51Z  lockedUntil=—
+

@@ -1,12 +1,12 @@
-## Sau đặt lại: token usedAt có giá trị, passwordHash mới, mọi phiên của user bị xoá, status không đổi  (lúc 2026-11-03 04:13:37Z)
+## Sau đặt lại: token usedAt có giá trị, passwordHash mới, mọi phiên của user bị xoá, status không đổi  (lúc 2026-11-06 12:06:02Z)
 
-users #87  email=minh.anh@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-03 04:13:25Z
-  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay dd46ff4f)
-  activation_challenges: purpose=activation otpHash=390b13…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-03 04:23:16Z) attempts=1 usedAt=2026-11-03 04:13:25Z lockedUntil=—
-  password_resets #67: tokenHash=af86fb…(64 ký tự) hạn=15 phút (2026-11-03 04:28:34Z) usedAt=2026-11-03 04:13:36Z
+users #159  email=minh.anh@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-06 12:05:51Z
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 5c3c1b59)
+  activation_challenges: purpose=activation otpHash=81c338…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-06 12:15:44Z) attempts=1 usedAt=2026-11-06 12:05:51Z lockedUntil=—
+  password_resets #83: tokenHash=3692ff…(64 ký tự) hạn=15 phút (2026-11-06 12:20:59Z) usedAt=2026-11-06 12:06:01Z
   sessions của user: 0
 rate_limits:
-  forgot:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:13:34Z  lockedUntil=—
-  otp-cooldown:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:13:16Z  lockedUntil=—
-  otp-send:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:13:16Z  lockedUntil=—
+  forgot:email:minh.anh@demo.example  count=1  windowStart=2026-11-06 12:05:59Z  lockedUntil=—
+  otp-cooldown:email:minh.anh@demo.example  count=1  windowStart=2026-11-06 12:05:45Z  lockedUntil=—
+  otp-send:email:minh.anh@demo.example  count=1  windowStart=2026-11-06 12:05:45Z  lockedUntil=—
 

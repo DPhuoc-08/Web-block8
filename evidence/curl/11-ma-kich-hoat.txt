@@ -1,0 +1,180 @@
+# OTP sai / hết hạn / đã dùng cùng một thông báo; gửi lại không đặt lại số lần thử; khoá 429; hai request đồng thời; kích hoạt xong không có phiên; OTP không dùng được làm mật khẩu
+# Dời expiresAt, thời gian chờ 60 giây và lockedUntil bằng UPDATE trực tiếp trên tài khoản thử để không phải chờ thật.
+
+$ POST /register   # tài khoản cho ca mã sai + hết hạn
+  Cookie: sid=<đã che · vân tay d90ef53a>
+  _csrf=<đã che>&username=Ng%C6%B0%E1%BB%9Di+th%E1%BB%AD&email=sai.het.han%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (720 ms)
+  Set-Cookie: sid=<đã che · vân tay d90ef53a>; Path=/; Expires=Fri, 06 Nov 2026 14:07:47 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # mã SAI
+  Cookie: sid=<đã che · vân tay 5ff42bec>
+  _csrf=<đã che>&email=sai.het.han%40demo.example&otp=<đã che>
+→ 200  (298 ms)
+  Set-Cookie: sid=<đã che · vân tay 5ff42bec>; Path=/; Expires=Fri, 06 Nov 2026 14:07:47 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+(UPDATE activation_challenges SET expiresAt = quá khứ)
+
+$ POST /activate   # mã ĐÚNG nhưng đã HẾT HẠN
+  Cookie: sid=<đã che · vân tay 7dd0a6bf>
+  _csrf=<đã che>&email=sai.het.han%40demo.example&otp=<đã che>
+→ 200  (453 ms)
+  Set-Cookie: sid=<đã che · vân tay 7dd0a6bf>; Path=/; Expires=Fri, 06 Nov 2026 14:07:48 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+$ POST /register   # tài khoản cho ca mã đã dùng
+  Cookie: sid=<đã che · vân tay 253eec76>
+  _csrf=<đã che>&username=Ng%C6%B0%E1%BB%9Di+th%E1%BB%AD&email=da.dung%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (751 ms)
+  Set-Cookie: sid=<đã che · vân tay 253eec76>; Path=/; Expires=Fri, 06 Nov 2026 14:07:49 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # dùng mã lần đầu
+  Cookie: sid=<đã che · vân tay 284cb828>
+  _csrf=<đã che>&email=da.dung%40demo.example&otp=<đã che>
+→ 303  Location: /login?msg=activated  (508 ms)
+  Set-Cookie: sid=<đã che · vân tay 284cb828>; Path=/; Expires=Fri, 06 Nov 2026 14:07:49 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # dùng lại mã đã dùng
+  Cookie: sid=<đã che · vân tay feb3a1f3>
+  _csrf=<đã che>&email=da.dung%40demo.example&otp=<đã che>
+→ 200  (384 ms)
+  Set-Cookie: sid=<đã che · vân tay feb3a1f3>; Path=/; Expires=Fri, 06 Nov 2026 14:07:50 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+ĐẠT: Mã sai, hết hạn, đã dùng → cùng status, cùng trang, cùng INVALID_OTP
+
+ĐẠT: sai.het.han@demo.example vẫn pending
+
+ĐẠT: da.dung@demo.example: emailVerifiedAt không đổi khi dùng lại mã
+
+## Gửi lại mã: mã cũ bị từ chối, attempts không về 0, mã đúng vẫn bị 429 khi đang khoá
+
+$ POST /register   # tài khoản cho ca gửi lại
+  Cookie: sid=<đã che · vân tay 95773ed2>
+  _csrf=<đã che>&username=Ng%C6%B0%E1%BB%9Di+th%E1%BB%AD&email=gui.lai%40demo.example&password=<đã che>&passwordConfirm=<đã che>&g-recaptcha-response=<đã che>
+→ 303  Location: /activate?msg=registered  (654 ms)
+  Set-Cookie: sid=<đã che · vân tay 95773ed2>; Path=/; Expires=Fri, 06 Nov 2026 14:07:51 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # sai lần 1
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 200  (347 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:51 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+$ POST /activate   # sai lần 2
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 200  (300 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:52 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+$ POST /activate   # sai lần 3
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 200  (273 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:52 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+(dời thời gian chờ gửi lại 60 giây)
+
+$ POST /activate/resend   # gửi lại mã
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example
+→ 303  Location: /activate?msg=otp-sent  (448 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:53 GMT; HttpOnly; SameSite=Lax
+
+ĐẠT: Gửi lại xong có mã mới, attempts vẫn 3 (trước khi gửi lại: 3)
+
+$ POST /activate   # mã CŨ sau khi gửi lại
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 200  (287 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:54 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+ĐẠT: Mã cũ bị từ chối, attempts = 4
+
+$ POST /activate   # sai lần 5 → khoá
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 200  (299 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:54 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+$ POST /activate   # mã MỚI ĐÚNG khi đang khoá
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 429  Retry-After: 900  (200 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:55 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạm khoá kích hoạt"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Đang khoá: mã đúng vẫn 429 + Retry-After, lockedUntil có giá trị, vẫn pending
+
+(UPDATE lockedUntil = quá khứ, thay cho chờ 15 phút)
+
+$ POST /activate   # hết khoá, mã mới dùng được
+  Cookie: sid=<đã che · vân tay 36f5b954>
+  _csrf=<đã che>&email=gui.lai%40demo.example&otp=<đã che>
+→ 303  Location: /login?msg=activated  (408 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:55 GMT; HttpOnly; SameSite=Lax
+
+ĐẠT: Hết khoá, mã mới đúng → 303, active
+
+## Kích hoạt xong không có phiên; OTP không dùng được làm mật khẩu
+
+$ GET /admin/dishes   # cùng cookie của lần kích hoạt
+  Cookie: sid=<đã che · vân tay 36f5b954>
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (89 ms)
+  Set-Cookie: sid=<đã che · vân tay 36f5b954>; Path=/; Expires=Fri, 06 Nov 2026 14:07:56 GMT; HttpOnly; SameSite=Lax
+
+ĐẠT: Kích hoạt xong: /admin → 303 /login, bản ghi phiên không có userId
+
+$ POST /login   # dùng mã kích hoạt làm mật khẩu
+  Cookie: sid=<đã che · vân tay b3f2cac1>
+  _csrf=<đã che>&email=gui.lai%40demo.example&password=<đã che>
+→ 200  (420 ms)
+  Set-Cookie: sid=<đã che · vân tay b3f2cac1>; Path=/; Expires=Fri, 06 Nov 2026 14:07:56 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+ĐẠT: Dùng mã kích hoạt làm mật khẩu → INVALID_CREDENTIALS
+
+## Giới hạn gửi lại; hai request cùng mã đúng gửi đồng thời
+
+$ POST /activate/resend   # gửi lại lần 1
+  Cookie: sid=<đã che · vân tay d84ee918>
+  _csrf=<đã che>&email=gui.nhanh%40demo.example
+→ 303  Location: /activate?msg=otp-sent  (354 ms)
+  Set-Cookie: sid=<đã che · vân tay d84ee918>; Path=/; Expires=Fri, 06 Nov 2026 14:07:57 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate/resend   # gửi lại ngay lần 2
+  Cookie: sid=<đã che · vân tay d84ee918>
+  _csrf=<đã che>&email=gui.nhanh%40demo.example
+→ 429  Retry-After: 60  (176 ms)
+  Set-Cookie: sid=<đã che · vân tay d84ee918>; Path=/; Expires=Fri, 06 Nov 2026 14:07:58 GMT; HttpOnly; SameSite=Lax
+  Trang: "Chưa gửi được mã mới"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Gửi lại 2 lần trong 60 giây → 303 rồi 429 + Retry-After
+
+$ POST /activate   # request đồng thời 2
+  Cookie: sid=<đã che · vân tay 7ed99c13>
+  _csrf=<đã che>&email=song.song%40demo.example&otp=<đã che>
+→ 303  Location: /login?msg=activated  (406 ms)
+  Set-Cookie: sid=<đã che · vân tay 7ed99c13>; Path=/; Expires=Fri, 06 Nov 2026 14:07:59 GMT; HttpOnly; SameSite=Lax
+
+$ POST /activate   # request đồng thời 1
+  Cookie: sid=<đã che · vân tay 29dd07e3>
+  _csrf=<đã che>&email=song.song%40demo.example&otp=<đã che>
+→ 200  (512 ms)
+  Set-Cookie: sid=<đã che · vân tay 29dd07e3>; Path=/; Expires=Fri, 06 Nov 2026 14:07:59 GMT; HttpOnly; SameSite=Lax
+  Trang: "Nhập mã kích hoạt"  data-error-code="INVALID_OTP"
+
+ĐẠT: Hai request đồng thời cùng mã đúng → đúng một 303, một INVALID_OTP
+
+$ POST /activate   # chuẩn bị ảnh 22: dùng mã lần đầu
+  Cookie: sid=<đã che · vân tay e8955127>
+  _csrf=<đã che>&email=da.dung.chrome%40demo.example&otp=<đã che>
+→ 303  Location: /login?msg=activated  (379 ms)
+  Set-Cookie: sid=<đã che · vân tay e8955127>; Path=/; Expires=Fri, 06 Nov 2026 14:08:37 GMT; HttpOnly; SameSite=Lax
+

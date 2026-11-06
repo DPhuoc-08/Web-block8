@@ -1,11 +1,11 @@
-## Sau đăng nhập: một bản ghi sessions gắn userId (dữ liệu phiên ở DB, cookie chỉ có sid ký HMAC)  (lúc 2026-11-03 04:13:32Z)
+## Sau đăng nhập: một bản ghi sessions gắn userId (dữ liệu phiên ở DB, cookie chỉ có sid ký HMAC)  (lúc 2026-11-06 12:05:57Z)
 
-users #87  email=minh.anh@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-03 04:13:25Z
-  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 568f5d95)
-  activation_challenges: purpose=activation otpHash=390b13…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-03 04:23:16Z) attempts=1 usedAt=2026-11-03 04:13:25Z lockedUntil=—
+users #159  email=minh.anh@demo.example  role=viewer  status=active  emailVerifiedAt=2026-11-06 12:05:51Z
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 1f7c4c40)
+  activation_challenges: purpose=activation otpHash=81c338…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-06 12:15:44Z) attempts=1 usedAt=2026-11-06 12:05:51Z lockedUntil=—
   sessions của user: 1
-    sid vân tay 9e5770ff  expiresAt=2026-11-03 06:13:30Z  data có khoá: cookie, userId, loginAt, csrfToken
+    sid vân tay fe6c9d08  expiresAt=2026-11-06 14:05:54Z  data có khoá: cookie, userId, loginAt, csrfToken
 rate_limits:
-  otp-cooldown:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:13:16Z  lockedUntil=—
-  otp-send:email:minh.anh@demo.example  count=1  windowStart=2026-11-03 04:13:16Z  lockedUntil=—
+  otp-cooldown:email:minh.anh@demo.example  count=1  windowStart=2026-11-06 12:05:45Z  lockedUntil=—
+  otp-send:email:minh.anh@demo.example  count=1  windowStart=2026-11-06 12:05:45Z  lockedUntil=—
 

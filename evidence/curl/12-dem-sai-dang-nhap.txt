@@ -1,0 +1,142 @@
+# Sai đến ngưỡng → đòi CAPTCHA trước khi so mật khẩu; CAPTCHA đúng mật khẩu sai → vẫn đếm; xoá cookie không né được; đủ 10 lần → 429 dù mật khẩu đúng; email không có cùng quy tắc
+# CAPTCHA ở đây dùng key thử (chỉ để đi qua bước CAPTCHA). Bằng chứng key thật: curl/15, curl/16.
+
+$ POST /login   # sai lần 1
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>
+→ 200  (352 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:00 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 2
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>
+→ 200  (365 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:00 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 3
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>
+→ 200  (422 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:01 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+ĐẠT: Sau 3 lần sai: bộ đếm = 3, form có CAPTCHA
+
+$ POST /login   # mật khẩu ĐÚNG, bỏ trường CAPTCHA
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>
+→ 200  (233 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:01 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="CAPTCHA_REQUIRED"
+
+ĐẠT: Bỏ CAPTCHA → CAPTCHA_REQUIRED trước bước so mật khẩu: bộ đếm vẫn 3, không có phiên
+
+$ POST /login   # CAPTCHA đúng, mật khẩu sai
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (484 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:02 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+ĐẠT: CAPTCHA đúng + mật khẩu sai → bộ đếm tăng lên 4
+
+$ POST /login   # xoá cookie (cookie jar mới), mật khẩu ĐÚNG, không CAPTCHA
+  Cookie: sid=<đã che · vân tay 9d87f5ba>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>
+→ 200  (208 ms)
+  Set-Cookie: sid=<đã che · vân tay 9d87f5ba>; Path=/; Expires=Fri, 06 Nov 2026 14:08:02 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="CAPTCHA_REQUIRED"
+
+ĐẠT: Xoá cookie: vẫn CAPTCHA_REQUIRED, bộ đếm vẫn 4 (đếm ở DB theo email)
+
+$ POST /login   # sai lần 5
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (417 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:02 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 6
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (415 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:03 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 7
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (412 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:03 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 8
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (453 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:04 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 9
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 200  (695 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:04 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # sai lần 10
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 429  Retry-After: 301  (393 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:05 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạm khoá đăng nhập"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Lần sai thứ 10 → 429 + Retry-After
+
+$ POST /login   # đang khoá: mật khẩu ĐÚNG + CAPTCHA đúng
+  Cookie: sid=<đã che · vân tay ee4d8426>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 429  Retry-After: 300  (200 ms)
+  Set-Cookie: sid=<đã che · vân tay ee4d8426>; Path=/; Expires=Fri, 06 Nov 2026 14:08:05 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạm khoá đăng nhập"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Đang khoá, mật khẩu và CAPTCHA đều đúng → 429, không có phiên
+
+$ POST /login   # đang khoá, cookie jar mới
+  Cookie: sid=<đã che · vân tay c05abe0b>
+  _csrf=<đã che>&email=dem.sai%40demo.example&password=<đã che>&g-recaptcha-response=<đã che>
+→ 429  Retry-After: 300  (191 ms)
+  Set-Cookie: sid=<đã che · vân tay c05abe0b>; Path=/; Expires=Fri, 06 Nov 2026 14:08:05 GMT; HttpOnly; SameSite=Lax
+  Trang: "Tạm khoá đăng nhập"  data-error-code="RATE_LIMITED"
+
+ĐẠT: Xoá cookie khi đang khoá → vẫn 429
+
+## Email không có tài khoản: cùng thông báo, cùng ngưỡng CAPTCHA
+
+$ POST /login   # email không có, sai lần 1
+  Cookie: sid=<đã che · vân tay f69cbf29>
+  _csrf=<đã che>&email=khong.ton.tai%40demo.example&password=<đã che>
+→ 200  (329 ms)
+  Set-Cookie: sid=<đã che · vân tay f69cbf29>; Path=/; Expires=Fri, 06 Nov 2026 14:08:06 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # email không có, sai lần 2
+  Cookie: sid=<đã che · vân tay f69cbf29>
+  _csrf=<đã che>&email=khong.ton.tai%40demo.example&password=<đã che>
+→ 200  (334 ms)
+  Set-Cookie: sid=<đã che · vân tay f69cbf29>; Path=/; Expires=Fri, 06 Nov 2026 14:08:06 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+$ POST /login   # email không có, sai lần 3
+  Cookie: sid=<đã che · vân tay f69cbf29>
+  _csrf=<đã che>&email=khong.ton.tai%40demo.example&password=<đã che>
+→ 200  (342 ms)
+  Set-Cookie: sid=<đã che · vân tay f69cbf29>; Path=/; Expires=Fri, 06 Nov 2026 14:08:06 GMT; HttpOnly; SameSite=Lax
+  Trang: "Đăng nhập"  data-error-code="INVALID_CREDENTIALS"
+
+ĐẠT: Sai mật khẩu (email có) và email không có → cùng status, cùng trang
+
+ĐẠT: Email không có: 3 lần sai cũng đếm và đòi CAPTCHA
+

@@ -199,7 +199,7 @@
       <tr><td>Đăng nhập ngay bằng tài khoản đó</td><td>Trang “chưa kích hoạt”, không có phiên đăng nhập</td><td>ảnh 06, <code>db/2</code></td></tr>
       <tr><td>Nhập mã sai một lần, rồi mã đúng trong Gmail</td><td><code>INVALID_OTP</code>, <code>attempts=1</code>; rồi <code>303 /login?msg=activated</code>, không tự đăng nhập; <code>usedAt</code> có giá trị</td><td>ảnh 05, 07; <code>db/3</code></td></tr>
       <tr><td>Đăng ký lại cùng Gmail, kèm <code>role=admin</code> (sửa form bằng DevTools)</td><td>Cùng trang; DB không đổi, role vẫn <code>viewer</code>, không có thư mới</td><td><code>curl/4</code></td></tr>
-      <tr><td>Gửi form đăng ký mà không tick; tick xong chờ quá 2 phút mới gửi; chép <code>g-recaptcha-response</code> từ Network gửi lại bằng curl</td><td>Ba lần đều bị từ chối, không tạo user (CAPTCHA thiếu / hết hạn / dùng lại)</td><td>ảnh 02; <code>curl/5</code> (bản tự động)</td></tr>
+      <tr><td>Gửi form đăng ký mà không tick; tick xong chờ quá 2 phút mới gửi; chép <code>g-recaptcha-response</code> từ Network gửi lại bằng curl</td><td>Ba lần đều bị từ chối, không tạo user (CAPTCHA thiếu / hết hạn / dùng lại)</td><td>ảnh 02; <code>curl/15</code> (key thật: thiếu, token bịa), <code>curl/16</code> (tick thật, dùng lại, quá hạn), <code>curl/5</code></td></tr>
     </tbody>
   </table></div>
 

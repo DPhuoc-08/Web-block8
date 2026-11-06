@@ -1,0 +1,24 @@
+# Trình duyệt thật (Chrome headless), không phải curl. Back gọi bằng history.back().
+
+ĐẠT: Chrome: mã hết hạn → INVALID_OTP
+
+ĐẠT: Chrome: mã đã dùng → INVALID_OTP
+
+## Trang ở http://127.0.0.1:5500 tự gửi form xoá món #1 tới http://localhost:3000 khi đang đăng nhập
+
+ĐẠT: Đăng nhập trong Chrome → /admin/dishes
+
+POST /admin/dishes/1?_method=DELETE → 303, Origin: http://127.0.0.1:5500, có gửi Cookie: không
+
+ĐẠT: Chrome không kèm cookie sid vào POST từ trang khác, server trả 303
+
+ĐẠT: Món #1 không đổi
+
+ĐẠT: Mở lại /admin/dishes vẫn đăng nhập: bị từ chối không phải vì đã mất phiên
+
+## Bấm Back sau khi đăng xuất
+
+Sau đăng xuất: /login. Sau khi bấm Back: /login
+
+ĐẠT: Sau Back, mở trang quản trị tiếp theo → /login: dữ liệu không còn truy cập được
+

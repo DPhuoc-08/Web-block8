@@ -32,10 +32,10 @@
 ĐẠT      /admin/dishes/abc/edit → 404
 ĐẠT      /admin/dishes/999999/delete → 404
 ĐẠT      Form sai → 400, lỗi cạnh ô, không ghi
-ĐẠT      Thêm món → 303 trang 1 + thông báo — /admin/dishes?msg=dish-created&saved=1215
+ĐẠT      Thêm món → 303 trang 1 + thông báo — /admin/dishes?msg=dish-created&saved=1219
 ĐẠT      Thêm nhanh tag / nguyên liệu / đầu bếp khi lưu (bỏ trùng hoa thường)
 ĐẠT      Tag mới trùng tag đã có → 400
-ĐẠT      Sửa → 303 về đúng trang, giá 0, bỏ tick còn phục vụ — /admin/dishes?page=3&msg=dish-updated&saved=1215
+ĐẠT      Sửa → 303 về đúng trang, giá 0, bỏ tick còn phục vụ — /admin/dishes?page=3&msg=dish-updated&saved=1219
 ĐẠT      back trỏ ra ngoài → về /admin/dishes
 ĐẠT      GET trang xác nhận xoá không xoá
 ĐẠT      Xoá → 303 về trang 2
@@ -61,7 +61,7 @@
 ĐẠT      Danh sách có nút đổi nhanh dạng form POST
 ĐẠT      Thiếu _csrf → 403, không đổi
 ĐẠT      Giá trị sai → 400, không đổi
-ĐẠT      Đặt tạm hết → 303 về đúng danh sách, DB đổi — /admin/dishes?q=%5BTEST+B8%5D&msg=dish-availability&saved=1217
+ĐẠT      Đặt tạm hết → 303 về đúng danh sách, DB đổi — /admin/dishes?q=%5BTEST+B8%5D&msg=dish-availability&saved=1221
 ĐẠT      Chỉ đổi tình trạng, các cột và liên kết khác giữ nguyên
 ĐẠT      Trang sau khi đổi: có thông báo, tô dòng, nút thành Mở phục vụ
 ĐẠT      Gửi lại cùng giá trị (hai tab) → vẫn Tạm hết, không bị đảo
@@ -89,7 +89,7 @@
 ĐẠT      /admin/tags/999999/delete → 404
 ĐẠT      Tên trống → 400, lỗi cạnh ô
 ĐẠT      Trùng tên (khác hoa thường) → 400, giữ giá trị đã gõ
-ĐẠT      Thêm tag → 303 + thông báo — /admin/tags?msg=tag-created&saved=33
+ĐẠT      Thêm tag → 303 + thông báo — /admin/tags?msg=tag-created&saved=36
 ĐẠT      Tên có thẻ HTML được escape; dòng vừa lưu được tô
 ĐẠT      Sửa tên → 303, DB đổi
 ĐẠT      Đổi hoa thường của chính tag đó → 303 (không tự trùng với mình)

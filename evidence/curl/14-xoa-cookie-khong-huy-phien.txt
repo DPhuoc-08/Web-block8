@@ -1,0 +1,22 @@
+# Câu hỏi trình bày 1: xoá cookie ở trình duyệt không huỷ bản ghi session; chỉ huỷ ở server mới làm sid mất hiệu lực
+
+$ GET /admin/dishes   # đang đăng nhập
+  Cookie: sid=<đã che · vân tay e597a7dc>
+→ 200  (485 ms)
+  Set-Cookie: sid=<đã che · vân tay e597a7dc>; Path=/; Expires=Fri, 06 Nov 2026 14:08:19 GMT; HttpOnly; SameSite=Lax
+  Trang: "Quản trị món ăn"
+
+$ GET /admin/dishes   # đã xoá cookie
+  Cookie: (không có)
+→ 303  Location: /login?next=%2Fadmin%2Fdishes  (3 ms)
+
+ĐẠT: Không cookie → 303; bản ghi sessions của user vẫn còn: 1
+
+$ GET /admin/dishes   # gửi lại đúng cookie đã lưu
+  Cookie: sid=<đã che · vân tay e597a7dc>
+→ 200  (504 ms)
+  Set-Cookie: sid=<đã che · vân tay e597a7dc>; Path=/; Expires=Fri, 06 Nov 2026 14:08:20 GMT; HttpOnly; SameSite=Lax
+  Trang: "Quản trị món ăn"
+
+ĐẠT: Cookie đã lưu vẫn dùng được: xoá cookie không huỷ phiên
+

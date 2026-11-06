@@ -348,8 +348,8 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 - [ ] reCAPTCHA thật: tạo key v2 checkbox cho `localhost`, điền `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`, `RECAPTCHA_HOSTNAMES=localhost` → đăng ký với tick thật (đi tiếp); chép giá trị `g-recaptcha-response` từ Network rồi gửi lại bằng curl → bị từ chối (dùng lại); chờ quá 2 phút rồi bấm gửi → bị từ chối (hết hạn).
 - [ ] DevTools → Application → Cookies: `sid` có HttpOnly, SameSite=Lax, Path=/; so giá trị trước / sau đăng nhập.
 - [ ] Network: `POST /login` → 303 + `Set-Cookie`; request sau có `Cookie: sid=…`.
-- [ ] Trang khác gửi form: mở một file HTML ở `http://127.0.0.1:5500` có form tự gửi `POST http://localhost:3000/admin/dishes/1?_method=DELETE` khi đang đăng nhập → bị từ chối (SameSite không gửi cookie → 303 `/login`, hoặc thiếu `_csrf` → 403), món #1 còn.
-- [ ] Bấm Back sau khi đăng xuất: trang cũ có thể hiện lại, nhưng thao tác tiếp theo bị đưa về `/login`.
+- [x] (06/11/2026, Chrome headless qua `collect-evidence.mjs`: `network` mục 16, `curl/17`, ảnh 26) Trang khác gửi form: mở một file HTML ở `http://127.0.0.1:5500` có form tự gửi `POST http://localhost:3000/admin/dishes/1?_method=DELETE` khi đang đăng nhập → bị từ chối (SameSite không gửi cookie → 303 `/login`, hoặc thiếu `_csrf` → 403), món #1 còn.
+- [x] (06/11/2026, Chrome headless, `history.back()`: `curl/17`, ảnh 27; trang cũ không hiện lại) Bấm Back sau khi đăng xuất: trang cũ có thể hiện lại, nhưng thao tác tiếp theo bị đưa về `/login`.
 
 ## Bước 17 — Giao diện xác thực theo Figma đã duyệt: đối chiếu trên Chrome thật, 320–1280px
 **Đã làm:** mở từng trạng thái trên Chrome headless (điều khiển qua DevTools Protocol, script tạm, đã xoá sau khi dùng) ở 375 / 820 / 1280px và kiểm 320px, so với khung Figma vòng 2 (hướng A): đăng nhập sai, đăng nhập phải giải CAPTCHA, chưa kích hoạt, trang 429; đăng ký có lỗi nhập; kích hoạt ngay sau đăng ký (6 ô mã, đếm ngược gửi lại), mã sai; quên mật khẩu "đã gửi"; link đặt lại không dùng được; trang quản trị khi đã đăng nhập.
@@ -553,7 +553,7 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 
 **Đã làm:** cập nhật `README.md`, `hotrotrinhbay.html`, `kichban.html` (Phần 5 của kịch bản demo), `evidence/README.md`, output `evidence/curl/9-check-auth.txt`, `10-check-ssr.txt` (đã dò không có mật khẩu, email seed, secret, chuỗi kết nối). Sơ đồ đăng ký và đăng xuất vẽ lại từ code; sơ đồ đăng xuất thêm bước "Còn phiên đăng nhập?". Plan 12.4 ghi các điểm đã chốt.
 
-**Chưa làm:** ảnh trong `evidence/screens/` và các file `evidence/curl/` khác chưa thu lại, nên ảnh form đăng ký chưa có ô tên. `collect-evidence.mjs` đã sửa để điền ô tên nhưng chưa chạy lại.
+**Đã xử lý ngày 06/11/2026** (mục "Bằng chứng cho các case còn thiếu" cuối file): ảnh và các file `evidence/` đã thu lại sau plan 12.4.
 
 ### 6. Chỉnh theo phản hồi của người dùng
 
@@ -570,3 +570,38 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Quyết định:** bỏ phiên bản thư viện khỏi bảng công nghệ (đã ghim trong `package-lock.json`); giới hạn còn lại giữ 5 ý quan trọng nhất, bỏ các ý về `Origin: null`, Gmail, pending.
 
 **Đã kiểm tra:** mọi link nội bộ trỏ tới file có thật; Chrome 1280 / 820 / 375 / 320px không cuộn ngang.
+
+## Bằng chứng cho các case còn thiếu (06/11/2026, plan mục 11)
+**Đã làm:** đối chiếu bảng nghiệm thu của đề với `evidence/`: nhiều kịch bản chỉ có một dòng ĐẠT trong `curl/9`, không có request hay bản ghi để xem lại. `collect-evidence.mjs` thêm các case đó, thu lại toàn bộ sau plan 12.4 (32 ảnh, 28 file chữ):
+- `curl/11` + `db/8`: OTP sai / hết hạn / đã dùng cùng một trang; gửi lại (`attempts` 3 → 3 → 4); khoá `429` kể cả mã đúng; hai request đồng thời; kích hoạt xong không có phiên; OTP làm mật khẩu.
+- `curl/12` + `db/9`: bỏ CAPTCHA khi đủ ngưỡng, CAPTCHA đúng mật khẩu sai, xoá cookie, khoá `429`, email không có cùng quy tắc.
+- `curl/13` + `db/10`: `/forgot` `429`; token cũ / hết hạn / đã dùng (so `passwordHash`); `sid` cũ sau reset; reset token ở route khác; reset tài khoản pending.
+- `curl/14`: xoá cookie không huỷ phiên (câu hỏi trình bày 1).
+- `curl/15`: **key reCAPTCHA thật**, Google xác minh thật: thiếu token, token bịa, tự khai → từ chối; hostname sai (key thử) → từ chối.
+- `curl/17`, ảnh 21–27, `network` mục 13–16: Chrome thật: trang lỗi, form từ `127.0.0.1:5500` (POST không kèm cookie), Back sau đăng xuất. Ảnh 18–20 đưa vào script.
+- `scripts/captcha-key-that.mjs`: dẫn người làm phần máy không làm được: tick thật, gửi lại token, quá hạn, chụp DevTools; chỉ ghi `curl/16` khi cả ba bước đúng, token không ra file.
+
+**Quyết định:** mở rộng script có sẵn (một lệnh ra đủ bằng chứng) thay vì viết script riêng cho từng nhóm case. Không dựng ảnh giả của DevTools: Chrome headless không có giao diện DevTools, nên ảnh thật phải do người chụp. Không tìm cách lách Google để tự tick.
+
+### Lỗi (agent viết sai) phát hiện khi thu bằng chứng
+1. **Script sẽ in email thật ra bằng chứng.**
+   - Tái hiện: `.env` đặt email seed và `MAIL_FROM` là email thật của nhóm, chạy script cũ → `curl/2`, `curl/4`, `curl/6`, `mail/` có email đó. Bản cũ không dính chỉ vì lúc thu `.env` có giá trị khác.
+   - Nguyên nhân: hàm `mask` chỉ che mật khẩu, mã, token, sid; đề yêu cầu che cả email.
+   - Sửa: `mask` thay email trong `.env` (cả dạng URL-encode) bằng `<email nhóm đã che>`.
+   - Bằng chứng: quét toàn bộ file chữ trong `evidence/` với 13 giá trị từ `.env`, `.env.test`: không có.
+2. **Tiêu đề bằng chứng nói sai so với dữ liệu.**
+   - Tái hiện: `db/8` bản đầu ghi "attempts không về 0" ngay trên dòng `attempts=0`.
+   - Nguyên nhân: mình chụp bản ghi sau lúc đặt khoá; code về 0 lúc đó là theo plan mục 4 (lượt mới sau khi hết khoá), không phải do gửi lại.
+   - Sửa: chụp thêm bản ghi ngay sau khi gửi lại (`attempts=3`), sửa tiêu đề.
+3. **Script giả định Google luôn trả lời.**
+   - Tái hiện: một lần chạy, `siteverify` quá 5 giây ở "sai lần 6" → `503`, bộ đếm chỉ tới 9, ba ca `curl/12` CHƯA ĐẠT.
+   - Nguyên nhân: `503` không so mật khẩu, không tăng bộ đếm là đúng hợp đồng; lỗi ở script đếm cố định 10 request. Mật khẩu đúng đăng nhập được vì tài khoản chưa khoá.
+   - Sửa: `call` giữ dòng `503` trong bằng chứng rồi gửi lại (tối đa 3 lần).
+   - Bằng chứng: chạy lại 0 ca CHƯA ĐẠT; lần này Google trả lời đủ nên không có dòng `503`, tức nhánh gửi lại **chưa được chạy lại thật**.
+
+**Đã kiểm tra:** `collect-evidence.mjs` 0 ca CHƯA ĐẠT; `check-auth` 135/135; `check-ssr` 124/124; quét secret như trên (file PNG không quét được, đã mở xem một phần ảnh, chưa xem hết 32). Tài khoản `@demo.example` bị xoá sau mỗi lần chạy.
+
+**Chưa làm / chưa chắc:**
+- `curl/16` và `evidence/devtools/`: cần người tick và chụp. `captcha-key-that.mjs` mới thử bằng token bịa và dữ liệu giả (file thử đã xoá), **chưa chạy với tick thật**.
+- Plan 12.4 (hồ sơ, tag, lọc) chưa có ảnh riêng; không thuộc bảng nghiệm thu của đề.
+- Sơ đồ luồng vẫn chờ nhóm duyệt.

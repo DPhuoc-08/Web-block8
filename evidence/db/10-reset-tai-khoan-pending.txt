@@ -1,0 +1,12 @@
+## Sau khi reset tài khoản pending: token đã dùng, status vẫn pending  (lúc 2026-11-06 12:08:18Z)
+
+users #171  email=reset.pending@demo.example  role=viewer  status=pending  emailVerifiedAt=—
+  passwordHash = $argon2id$v=19$m=65536,p=4,t=3$<salt + hash đã che>  (vân tay 33541691)
+  activation_challenges: purpose=activation otpHash=bddc3e…(64 ký tự) hạn=10 phút sau lastSentAt (2026-11-06 12:18:16Z) attempts=0 usedAt=— lockedUntil=—
+  password_resets #92: tokenHash=da9bb1…(64 ký tự) hạn=15 phút (2026-11-06 12:23:17Z) usedAt=2026-11-06 12:08:17Z
+  sessions của user: 0
+rate_limits:
+  forgot:email:reset.pending@demo.example  count=1  windowStart=2026-11-06 12:08:17Z  lockedUntil=—
+  otp-cooldown:email:reset.pending@demo.example  count=1  windowStart=2026-11-06 12:08:16Z  lockedUntil=—
+  otp-send:email:reset.pending@demo.example  count=1  windowStart=2026-11-06 12:08:16Z  lockedUntil=—
+

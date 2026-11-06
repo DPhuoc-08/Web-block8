@@ -57,7 +57,7 @@
 ĐẠT      Sai mật khẩu / email không có → cùng 200, cùng nội dung
 ĐẠT      Form giữ email, không điền lại mật khẩu
 ĐẠT      Sai mật khẩu → không có phiên đăng nhập
-ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Fri, 06 Nov 2026 03:57:20 GMT; HttpOnly; SameSite=Lax
+ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Fri, 06 Nov 2026 14:02:36 GMT; HttpOnly; SameSite=Lax
 ĐẠT      sid trước ≠ sid sau đăng nhập; phiên cũ bị xoá (chống session fixation)
 ĐẠT      Bản ghi phiên mới có userId của tài khoản
 ĐẠT      Vào /admin/dishes: 200, Cache-Control no-store, header có email + Đăng xuất (form POST)
@@ -82,7 +82,7 @@
 
 == E. Quên mật khẩu, đặt lại mật khẩu ==
 ĐẠT      Email có / không có → cùng 303, cùng trang “Kiểm tra email của bạn”
-ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 209ms / 203ms
+ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 185ms / 218ms
 ĐẠT      Email chứa link APP_ORIGIN/reset?token=…; DB chỉ lưu SHA-256, hạn 15 phút
 ĐẠT      GET /reset với token hợp lệ: chỉ hiện form, usedAt vẫn rỗng, Referrer-Policy no-referrer
 ĐẠT      Mật khẩu mới không khớp → VALIDATION_FAILED, token chưa bị dùng
@@ -114,7 +114,7 @@
 ĐẠT      Đăng ký: lưu tên đã cắt khoảng trắng — Nguyễn Văn An
 ĐẠT      Đăng ký lại khi pending: tên và mật khẩu không bị ghi đè
 ĐẠT      Đăng ký lại email đã active: bản ghi không đổi
-ĐẠT      Hồ sơ: 200, no-store, có email, vai trò, trạng thái
+ĐẠT      Hồ sơ: 200, no-store, có email, trạng thái, không hiện vai trò
 ĐẠT      Hồ sơ không có hash mật khẩu, không có dữ liệu người khác
 ĐẠT      Chưa có tên: header hiện email, là link tới hồ sơ
 ĐẠT      Không có đường xem hồ sơ người khác qua URL
