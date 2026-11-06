@@ -1,5 +1,6 @@
 // Truy vấn món cho thực đơn (và sau này bảng admin). Chuyển từ api/src/routes/dishes.js của block7: GIỮ NGUYÊN câu
 // truy vấn, chỉ bỏ phần trả JSON — route SSR gọi các hàm này rồi res.render.
+import { Prisma } from "../../generated/prisma/client.ts";
 import { prisma } from "../db.js";
 import { basicAdvancedWhere, SORTS, TEXT_MODES } from "../validators/list-query.js";
 import { fulltextPage } from "../search/fulltext.js";
@@ -58,10 +59,20 @@ export async function listDishes(query) {
 // Fuzzy chọn câu SQL theo `by` (tên món / nguyên liệu / đầu bếp); fulltext luôn là tên + mô tả món.
 const FUZZY_BY = { name: "dishName", ingredient: "dishIngredient", chef: "dishChef" };
 
-async function textSearch({ mode, q, by, page, pageSize }) {
+// Bộ lọc của danh sách quản trị (tình trạng, đầu bếp) áp cho cả toàn văn, gần đúng: lọc NGAY trong câu SQL xếp điểm để
+// `total` và số trang đúng. Thực đơn ở hai chế độ này không có bộ lọc → không thêm gì, câu SQL như cũ.
+function dishFilterSql({ available, chefId }) {
+  const parts = [];
+  if (typeof available === "boolean") parts.push(Prisma.sql`AND d.available = ${available}`);
+  if (chefId != null) parts.push(Prisma.sql`AND d."chefId" = ${chefId}`);
+  return parts.length ? Prisma.join(parts, " ") : Prisma.empty;
+}
+
+async function textSearch({ mode, q, by, page, pageSize, available, chefId }) {
   const skip = (page - 1) * pageSize;
+  const filter = dishFilterSql({ available, chefId });
   const { total, hits } =
-    mode === "fulltext" ? await fulltextPage(prisma, q, skip, pageSize) : await fuzzyPage(prisma, FUZZY_BY[by], q, skip, pageSize);
+    mode === "fulltext" ? await fulltextPage(prisma, q, skip, pageSize, filter) : await fuzzyPage(prisma, FUZZY_BY[by], q, skip, pageSize, filter);
   const rows = hits.length ? await prisma.dish.findMany({ where: { id: { in: hits.map((h) => h.id) } }, include: listInclude }) : [];
   const byId = new Map(rows.map((row) => [row.id, row]));
   // Món vừa bị xoá giữa hai câu truy vấn → bỏ qua, không làm hỏng cả trang.

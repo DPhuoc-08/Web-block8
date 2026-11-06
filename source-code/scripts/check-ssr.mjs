@@ -1,10 +1,11 @@
 // Kiểm tra hồi quy thực đơn + quản trị SSR (plan block8 bước 6). Server phải đang chạy (npm start), DB là DB block7.
-//   node scripts/check-ssr.mjs            → chạy cả A, B, C, D
+//   node scripts/check-ssr.mjs            → chạy mọi phần
 //   node scripts/check-ssr.mjs A C        → chỉ chạy phần A và C
 // A: thực đơn — mã trạng thái, số trang so với câu SQL viết tay (độc lập với code của app).
 // B: admin món — danh sách so với SQL, thêm / sửa / xoá qua form thật, đọc lại DB.
 // C: admin đầu bếp, nguyên liệu — thêm / sửa, trùng tên, xoá kèm chuyển món, xoá bị chặn 409.
 // D: tìm không dấu (plan 12.3) — mọi kiểu tìm, thực đơn và quản trị; từ khoá có dấu giữ nguyên kết quả như block7.
+// E: quản trị tag (plan 12.4). F: lọc danh sách món + đổi nhanh tình trạng (plan 12.4).
 // Mọi bản ghi thử có tiền tố "[TEST B8]" và được xoá ở cuối; DB trở lại 1.200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag.
 import { prisma } from "../src/db.js";
 import { client, reporter, savedIdOf } from "./lib/client.mjs";
@@ -98,6 +99,74 @@ if (run("B")) {
   res = await c.post(`/admin/dishes/${id}?_method=DELETE`, [["back", "/admin/dishes?page=2"]]);
   r.ok(res.status === 303 && res.location === "/admin/dishes?page=2&msg=dish-deleted" && !(await prisma.dish.findUnique({ where: { id } })), "Xoá → 303 về trang 2");
   r.ok((await c.post(`/admin/dishes/${id}?_method=DELETE`)).status === 404, "Xoá lần hai → 404");
+  results.push(r.counts);
+}
+
+if (run("F")) {
+  const r = reporter("F. Danh sách món: lọc + đổi nhanh tình trạng (plan 12.4)");
+  const c = await adminClient();
+  const chef = await prisma.chef.findFirst({ where: { dishes: { some: { available: false } } }, orderBy: { id: "asc" } });
+  const nOff = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE NOT available`);
+  const nChef = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE "chefId" = ${chef.id}`);
+  const nBoth = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes WHERE NOT available AND "chefId" = ${chef.id}`);
+  const nLau = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE NOT available AND (d.name ILIKE '%lẩu%' OR EXISTS (SELECT 1 FROM dish_tags dt JOIN tags t ON t.id = dt."tagId" WHERE dt."dishId" = d.id AND t.name ILIKE '%lẩu%'))`);
+  const has = async (url, n, label) => {
+    const res = await c.get(url);
+    // Không có kết quả thì trang không có dòng "trong N món" mà báo không khớp.
+    const shown = n === 0 ? res.text.includes("Không có món nào khớp") : res.text.includes(`trong ${n} món`);
+    r.ok(res.status === 200 && shown, `${label}: ${n} món theo SQL`);
+    return res;
+  };
+  await has("/admin/dishes?available=false", nOff, "Tạm hết");
+  await has(`/admin/dishes?chef=${chef.id}`, nChef, `Đầu bếp #${chef.id}`);
+  const both = await has(`/admin/dishes?available=false&chef=${chef.id}`, nBoth, "Tạm hết + đầu bếp");
+  await has(`/admin/dishes?q=${encodeURIComponent("lẩu")}&available=false`, nLau, "Từ khoá “lẩu” + Tạm hết");
+  r.ok(both.text.includes(`<option value="${chef.id}" selected>`) && both.text.includes('<option value="false" selected>'), "Ô lọc giữ giá trị đang chọn");
+  // Toàn văn, gần đúng: bộ lọc nằm trong câu SQL xếp điểm nên total đúng.
+  const ftOff = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE NOT d.available AND to_tsvector('simple', unaccent(coalesce(d.name,'') || ' ' || coalesce(d.description,''))) @@ plainto_tsquery('simple', 'pho')`);
+  await has("/admin/dishes?q=pho&mode=fulltext&available=false", ftOff, "Toàn văn “pho” + Tạm hết");
+  const fzOff = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE NOT d.available AND similarity(unaccent(d.name), 'bun bo') >= 0.3`);
+  const fzAll = await count(prisma.$queryRaw`SELECT count(*) n FROM dishes d WHERE similarity(unaccent(d.name), 'bun bo') >= 0.3`);
+  await has("/admin/dishes?q=bun+bo&mode=fuzzy&available=false", fzOff, "Gần đúng “bun bo” + Tạm hết");
+  await has("/admin/dishes?q=bun+bo&mode=fuzzy", fzAll, "Gần đúng “bun bo”, không lọc");
+  r.ok(fzAll > fzOff, "Bộ lọc thật sự thu hẹp kết quả gần đúng", `${fzAll} → ${fzOff}`);
+  const injected = await c.get(`/admin/dishes?chef=${encodeURIComponent("1 OR 1=1")}`);
+  r.ok(injected.status === 400 && injected.text.includes("Đầu bếp lọc không tồn tại."), "chef=1 OR 1=1 → 400, không chạm SQL");
+  for (const [url, label] of [["/admin/dishes?available=abc", "available sai"], ["/admin/dishes?available=true&available=false", "available lặp"], ["/admin/dishes?chef=999999", "đầu bếp không có"], ["/admin/dishes?chef=1&chef=2", "chef lặp"]]) {
+    r.ok((await c.get(url)).status === 400, `${label} → 400`);
+  }
+  const clean = await c.get("/admin/dishes?q=&mode=basic&available=&chef=");
+  r.ok(clean.status === 302 && clean.location === "/admin/dishes", "Form GET có ô trống → 302 về URL gọn");
+  // Số trang giữ bộ lọc.
+  const off = await c.get("/admin/dishes?available=false");
+  if (nOff > 20) r.ok(off.text.includes('href="/admin/dishes?available=false&amp;page=2'), "Link số trang giữ bộ lọc");
+
+  // Đổi nhanh: dùng món thử để không chạm dữ liệu seed.
+  const [ing] = await prisma.ingredient.findMany({ take: 1, orderBy: { id: "asc" } });
+  const tag = await prisma.tag.findFirst({ orderBy: { id: "asc" } });
+  const d = await prisma.dish.create({ data: { name: `${P} đổi nhanh`, price: 1000, available: true, chefId: chef.id, tags: { create: [{ tagId: tag.id }] }, ingredients: { create: [{ ingredientId: ing.id }] } } });
+  const listUrl = `/admin/dishes?${new URLSearchParams({ q: P })}`; // đúng dạng URL gọn, không bị 302
+  const page = await c.get(listUrl);
+  r.ok(page.text.includes(`/admin/dishes/${d.id}/availability?_method=PATCH`) && page.text.includes("Đặt tạm hết"), "Danh sách có nút đổi nhanh dạng form POST");
+  let res = await c.post(`/admin/dishes/${d.id}/availability?_method=PATCH`, [["available", "false"], ["back", listUrl]], { csrf: false });
+  r.ok(res.status === 403 && (await prisma.dish.findUnique({ where: { id: d.id } })).available === true, "Thiếu _csrf → 403, không đổi");
+  res = await c.post(`/admin/dishes/${d.id}/availability?_method=PATCH`, [["available", "abc"]]);
+  r.ok(res.status === 400 && (await prisma.dish.findUnique({ where: { id: d.id } })).available === true, "Giá trị sai → 400, không đổi");
+  await c.get(listUrl);
+  res = await c.post(`/admin/dishes/${d.id}/availability?_method=PATCH`, [["available", "false"], ["back", listUrl]]);
+  const after = await prisma.dish.findUnique({ where: { id: d.id } });
+  r.ok(res.status === 303 && res.location.includes("msg=dish-availability") && res.location.includes(`saved=${d.id}`) && res.location.startsWith("/admin/dishes?q=") && after.available === false, "Đặt tạm hết → 303 về đúng danh sách, DB đổi", res.location);
+  r.ok(after.name === d.name && after.price === d.price && after.chefId === d.chefId && (await prisma.dishIngredient.count({ where: { dishId: d.id } })) === 1, "Chỉ đổi tình trạng, các cột và liên kết khác giữ nguyên");
+  const shown = await c.get(res.location);
+  r.ok(shown.text.includes("Đã đổi tình trạng của món.") && shown.text.includes("just-saved") && shown.text.includes("Mở phục vụ"), "Trang sau khi đổi: có thông báo, tô dòng, nút thành Mở phục vụ");
+  await c.get(listUrl);
+  res = await c.post(`/admin/dishes/${d.id}/availability?_method=PATCH`, [["available", "false"], ["back", listUrl]]);
+  r.ok(res.status === 303 && (await prisma.dish.findUnique({ where: { id: d.id } })).available === false, "Gửi lại cùng giá trị (hai tab) → vẫn Tạm hết, không bị đảo");
+  res = await c.post(`/admin/dishes/${d.id}/availability?_method=PATCH`, [["available", "true"], ["back", "https://evil.example/"]]);
+  r.ok(res.location?.startsWith("/admin/dishes?msg=") && (await prisma.dish.findUnique({ where: { id: d.id } })).available === true, "back trỏ ra ngoài → về /admin/dishes");
+  r.ok((await c.post("/admin/dishes/999999/availability?_method=PATCH", [["available", "true"]])).status === 404, "Món không có → 404");
+  r.ok((await c.get(`/dishes/${d.id}`)).text.includes("Đang phục vụ"), "Trang khách thấy tình trạng mới");
+  await prisma.dish.delete({ where: { id: d.id } });
   results.push(r.counts);
 }
 

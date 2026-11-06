@@ -21,9 +21,10 @@ const NAME = {
 // không bao giờ lấy từ input; chỉ q là tham số bind. Mỗi câu trả đúng một dòng cho mỗi id.
 export const FUZZY_MATCHERS = {
   // Món theo tên món (như trước bước 28).
-  dishName: (q, form) => Prisma.sql`
+  // `filter`: điều kiện thêm của danh sách quản trị (Prisma.sql viết sẵn); thực đơn không truyền.
+  dishName: (q, form, filter) => Prisma.sql`
     SELECT d.id, round(similarity(${NAME.dish[form]}, ${q})::numeric, 3) AS score
-    FROM dishes d WHERE ${NAME.dish[form]} % ${q}`,
+    FROM dishes d WHERE ${NAME.dish[form]} % ${q} ${filter}`,
   // Món theo nguyên liệu: một món có thể có nhiều nguyên liệu khớp ("Tôm xú" ~ Tôm sú, Tôm thẻ…) →
   // GROUP BY món, điểm = nguyên liệu giống nhất. Không GROUP BY thì một món xuất hiện nhiều lần, total sai.
   dishIngredient: (q, form) => Prisma.sql`
@@ -46,12 +47,12 @@ export const FUZZY_MATCHERS = {
 };
 
 // Một câu SQL trả cả `total` và id + điểm của trang (cùng ảnh chụp dữ liệu, một vòng mạng), như fulltext.js.
-export async function fuzzyPage(prisma, matcher, q, skip, take) {
+export async function fuzzyPage(prisma, matcher, q, skip, take, filter = Prisma.empty) {
   return prisma.$transaction(
     async (tx) => {
       await tx.$queryRaw`SELECT set_config('pg_trgm.similarity_threshold', ${String(FUZZY_THRESHOLD)}, true)`;
       const [row] = await tx.$queryRaw`
-        WITH matched AS (${FUZZY_MATCHERS[matcher](q, textForm(q))})
+        WITH matched AS (${FUZZY_MATCHERS[matcher](q, textForm(q), filter)})
         SELECT (SELECT count(*) FROM matched)::int AS total,
                coalesce((
                  SELECT json_agg(json_build_object('id', p.id, 'score', p.score) ORDER BY p.score DESC, p.id ASC)

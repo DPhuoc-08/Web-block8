@@ -150,6 +150,7 @@ tbody tr:hover { background: #faf9f7; }
 td.num { color: var(--muted); width: 48px; }
 td.actions { text-align: right; }
 td.actions .btn + .btn { margin-left: 6px; }
+.row-form { display: inline-block; margin: 0 2px 0 0; }
 .table-thumb { width: 56px; min-width: 56px; height: 42px; object-fit: cover; border-radius: 6px; background: var(--surface-2); }
 
 .form-panel { max-width: 640px; padding: 24px; }
@@ -226,7 +227,10 @@ td.actions .btn + .btn { margin-left: 6px; }
   .table-wrap td.title::before, .table-wrap td.actions::before { content: none; }
   .table-wrap td.num { width: auto; }
   .table-wrap td.actions { justify-content: flex-end; padding-top: 10px; margin-top: 6px; border-top: 1px solid var(--border); }
-  .table-wrap td.actions .btn { min-height: 44px; flex: 1 1 0; }
+  .table-wrap td.actions { flex-wrap: wrap; gap: 6px; }
+  .table-wrap td.actions .btn { min-height: 44px; flex: 1 1 0; margin-left: 0; }
+  .table-wrap td.actions .row-form { flex: 1 1 100%; display: flex; margin: 0; }
+  .table-wrap td.actions .row-form .btn { width: 100%; }
   /* Thẻ có ảnh (món ăn): ảnh nhỏ nằm cạnh tên ở hàng đầu, các hàng còn lại trải hết chiều ngang */
   .table-wrap tr:has(td.thumb) { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 12px; }
   .table-wrap tr:has(td.thumb) td { grid-column: 1 / -1; }
@@ -248,7 +252,7 @@ td.actions .btn + .btn { margin-left: 6px; }
 
   /* Admin: tab cuộn ngang thay vì xuống dòng; ô tìm và nút Tìm cùng một hàng */
   .admin-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .admin-nav a { flex: none; }
+  .admin-nav a { flex: none; padding: 10px; } /* 4 mục: giảm đệm để cả 4 cùng thấy ở 375px, không phải cuộn mới thấy "Tag" */
   .admin-search input { flex: 1 1 0; min-width: 0; max-width: none; }
   /* Có ô kiểu tìm: ô chữ chiếm cả hàng, kiểu tìm + Tìm xuống hàng dưới */
   .admin-search:has(.admin-mode) input { flex-basis: 100%; }

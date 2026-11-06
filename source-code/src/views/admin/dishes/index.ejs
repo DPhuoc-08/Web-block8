@@ -22,7 +22,7 @@
   <a class="btn" href="/admin/dishes">Về trang 1</a>
 </div>
 <% } else if (result.total === 0) { -%>
-<div class="panel empty"><%= state.q ? "Không có món nào khớp từ khoá." : "Chưa có món nào." %></div>
+<div class="panel empty"><%= state.q ? "Không có món nào khớp từ khoá." : filtered ? "Không có món nào khớp bộ lọc." : "Chưa có món nào." %></div>
 <% } else if (result.items.length === 0) { -%>
 <%# Trang vượt phạm vi (sửa tay URL, hoặc vừa xoá món cuối của trang cuối). -%>
 <div class="panel empty">
@@ -60,6 +60,13 @@
 <% if (scored) { %>        <td class="num" data-label="Điểm"><%= d.score.toFixed(3) %></td>
 <% } -%>
         <td class="actions">
+<%# Đổi nhanh tình trạng: form POST thật, gửi giá trị đích và URL danh sách đang xem. -%>
+          <form class="row-form" method="post" action="/admin/dishes/<%= d.id %>/availability?_method=PATCH" data-once>
+            <input type="hidden" name="_csrf" value="<%= csrf() %>">
+            <input type="hidden" name="back" value="<%= listUrl %>">
+            <input type="hidden" name="available" value="<%= d.available ? "false" : "true" %>">
+            <button type="submit" class="btn btn-sm" data-busy-label="Đang đổi…"><%= d.available ? "Đặt tạm hết" : "Mở phục vụ" %></button>
+          </form>
           <a class="btn btn-sm" href="<%= editHref(d.id) %>">Sửa</a>
           <a class="btn btn-sm danger-text" href="<%= deleteHref(d.id) %>">Xoá</a>
         </td>

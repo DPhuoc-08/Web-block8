@@ -24,11 +24,20 @@ const MODES = [
 const notFound = (res, text = "Món cần sửa không tồn tại hoặc đã bị xoá.") =>
   res.status(404).render("404", { title: "Không tìm thấy món", heading: "Không tìm thấy món", text });
 
-// URL danh sách gọn: q, mode (khác cơ bản), page (khác 1) — như AdminSearch của block7.
-function listParams({ q, mode, page }) {
+// Bộ lọc tình trạng (plan 12.4). Giá trị là hợp đồng trên URL, form GET gửi đúng các giá trị này.
+const AVAILABILITY = [
+  { value: "", label: "Mọi tình trạng" },
+  { value: "true", label: "Đang phục vụ" },
+  { value: "false", label: "Tạm hết" },
+];
+
+// URL danh sách gọn: q, mode (khác cơ bản), bộ lọc, page (khác 1) — như AdminSearch của block7.
+function listParams({ q, mode, available, chef, page }) {
   const p = {};
   if (q) p.q = q;
   if (mode !== "basic") p.mode = mode;
+  if (available) p.available = available;
+  if (chef) p.chef = chef;
   if (page && page !== "1") p.page = page;
   return p;
 }
@@ -38,9 +47,12 @@ const listUrlOf = (state) => {
 };
 
 // ---------- Danh sách ----------
-// /admin/dishes?q=&mode=&page= — 20 món/trang, id tăng dần (block7 plan 12); toàn văn / gần đúng xếp điểm rồi id.
+// /admin/dishes?q=&mode=&available=&chef=&page= — 20 món/trang, id tăng dần (block7 plan 12); toàn văn / gần đúng xếp điểm rồi id.
 router.get("/", async (req, res) => {
-  const state = { q: one(req.query.q).trim(), mode: one(req.query.mode).trim() || "basic", page: one(req.query.page).trim() };
+  const state = {
+    q: one(req.query.q).trim(), mode: one(req.query.mode).trim() || "basic", page: one(req.query.page).trim(),
+    available: one(req.query.available).trim(), chef: one(req.query.chef).trim(),
+  };
   const modeKnown = MODES.some((m) => m.value === state.mode);
   // Dùng lại validator của thực đơn: cùng quy tắc page, q bắt buộc ở toàn văn / gần đúng, escape % _ \.
   // Cơ bản tìm cả tên tag (searchIn), không sort → id tăng dần.
@@ -52,6 +64,21 @@ router.get("/", async (req, res) => {
     searchIn: state.mode === "basic" ? "name,tag" : undefined,
   });
   if (!modeKnown) query.errors.mode = "Kiểu tìm phải là một trong: Cơ bản, Toàn văn, Gần đúng.";
+
+  // Bộ lọc nằm ngoài parseListQuery (của thực đơn chỉ đọc available ở chế độ nâng cao). Query chỉ nhận khi là chuỗi;
+  // giá trị sai báo lỗi thay vì âm thầm bỏ qua, để người xem biết điều kiện của mình chưa được áp dụng.
+  const chefs = await prisma.chef.findMany({ select: { id: true, name: true }, orderBy: [{ name: "asc" }, { id: "asc" }] });
+  if (req.query.available !== undefined && (typeof req.query.available !== "string" || !AVAILABILITY.some((a) => a.value === state.available))) {
+    query.errors.available = "Tình trạng lọc không hợp lệ.";
+  } else {
+    query.available = state.available === "" ? null : state.available === "true";
+  }
+  if (req.query.chef !== undefined && typeof req.query.chef !== "string") {
+    query.errors.chef = "Đầu bếp lọc không hợp lệ.";
+  } else if (state.chef) {
+    query.chefId = parseId(state.chef);
+    if (query.chefId === null || !chefs.some((c) => c.id === query.chefId)) query.errors.chef = "Đầu bếp lọc không tồn tại.";
+  }
 
   // URL gọn (form GET gửi cả mode=basic, q rỗng): như thực đơn, chỉ khi điều kiện hợp lệ.
   if (!hasErrors(query.errors)) {
@@ -83,6 +110,10 @@ router.get("/", async (req, res) => {
     pages: result && totalPages > 1 ? pageWindow(Math.min(result.page, totalPages), totalPages) : [],
     pageHref: (n) => listUrlOf({ ...state, page: n > 1 ? String(n) : "" }),
     savedId,
+    listUrl,
+    availabilityOptions: AVAILABILITY,
+    chefOptions: chefs,
+    filtered: Boolean(state.available || state.chef),
     newHref: withBack(`${BASE}/new`, listUrl, BASE),
     editHref: (id) => withBack(`${BASE}/${id}/edit`, listUrl, BASE),
     deleteHref: (id) => withBack(`${BASE}/${id}/delete`, listUrl, BASE),
@@ -277,6 +308,25 @@ router.patch("/:id", async (req, res) => {
   const id = parseId(req.params.id);
   if (id === null) return notFound(res);
   return submit(req, res, id);
+});
+
+// ---------- Đổi nhanh tình trạng (plan 12.4) ----------
+// Việc hằng ngày của nhà hàng: một nút ngay trên danh sách, không phải mở cả form sửa. Vẫn là form POST có _csrf, không
+// cần JavaScript. Form gửi giá trị ĐÍCH (không phải "đảo trạng thái") → bấm hai lần hay hai tab cùng bấm vẫn ra đúng ý.
+router.patch("/:id/availability", async (req, res) => {
+  const id = parseId(req.params.id);
+  if (id === null) return notFound(res);
+  const raw = one(req.body.available);
+  if (raw !== "true" && raw !== "false") {
+    return res.status(400).render("404", { code: 400, title: "Yêu cầu không hợp lệ", heading: "Yêu cầu không hợp lệ", text: "Tình trạng món phải là Đang phục vụ hoặc Tạm hết." });
+  }
+  try {
+    await prisma.dish.update({ where: { id }, data: { available: raw === "true" } });
+  } catch (err) {
+    if (isNotFound(err)) return notFound(res, "Món này không còn tồn tại (có thể vừa bị xoá ở nơi khác).");
+    throw err;
+  }
+  res.redirect(303, withFlash(safeBack(one(req.body.back), BASE), { msg: "dish-availability", saved: id }));
 });
 
 // ---------- Xoá ----------

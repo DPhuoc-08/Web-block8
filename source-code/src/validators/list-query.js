@@ -173,7 +173,8 @@ export const searchWhere = (q, matchers) => (q ? { OR: matchers.map((match) => m
 //   ingredient → món có ÍT NHẤT MỘT nguyên liệu tên chứa q (EXISTS trên dish_ingredients → mỗi món đếm một lần)
 //   chef → món do đầu bếp tên chứa q phụ trách
 // `unaccentedIds` (mảng id, search/accent.js): từ khoá không dấu đã được so tại SQL → thay cho điều kiện `q`; null = so như trên.
-export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice, available }, unaccentedIds = null) {
+// `chefId`: chỉ danh sách quản trị đặt (lọc theo đầu bếp, plan 12.4); parseListQuery của thực đơn không có khoá này.
+export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice, available, chefId }, unaccentedIds = null) {
   const nameOrTag = {
     name: (s) => ({ name: { contains: s, mode: "insensitive" } }),
     tag: (s) => ({ tags: { some: { tag: { name: { contains: s, mode: "insensitive" } } } } }),
@@ -189,5 +190,6 @@ export function basicAdvancedWhere({ q, by, searchIn, tagId, minPrice, maxPrice,
   if (minPrice !== null) conditions.push({ price: { gte: minPrice } });
   if (maxPrice !== null) conditions.push({ price: { lte: maxPrice } });
   if (available !== null) conditions.push({ available });
+  if (chefId != null) conditions.push({ chefId });
   return conditions.length ? { AND: conditions } : {};
 }

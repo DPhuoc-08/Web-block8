@@ -84,6 +84,7 @@ const FLASH = {
   "dish-created": "Đã thêm món mới.",
   "dish-updated": "Đã lưu thay đổi của món.",
   "dish-deleted": "Đã xoá món.",
+  "dish-availability": "Đã đổi tình trạng của món.",
   "chef-created": "Đã thêm đầu bếp.",
   "chef-updated": "Đã lưu thay đổi của đầu bếp.",
   "chef-deleted": "Đã xoá đầu bếp.",

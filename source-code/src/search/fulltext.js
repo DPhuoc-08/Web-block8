@@ -22,12 +22,14 @@ const DOCUMENT = {
     setweight(to_tsvector('simple', unaccent(coalesce(d.description, ''))), 'D')`,
 };
 
-export async function fulltextPage(prisma, q, skip, take) {
+// `filter`: điều kiện thêm của danh sách quản trị (Prisma.sql viết sẵn, giá trị là tham số bind); thực đơn không truyền.
+export async function fulltextPage(prisma, q, skip, take, filter = Prisma.empty) {
   const [row] = await prisma.$queryRaw`
     WITH input AS (SELECT plainto_tsquery('simple', ${q}) AS query),
     docs AS (
       SELECT d.id, ${DOCUMENT[textForm(q)]} AS document
       FROM dishes d
+      WHERE TRUE ${filter}
     ),
     matched AS (
       SELECT docs.id, round(ts_rank(docs.document, input.query)::numeric, 3) AS score

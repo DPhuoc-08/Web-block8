@@ -497,3 +497,20 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Giới hạn còn lại:** thêm tag loại món mới vẫn dùng hình chung, vì bảng hình nằm trong code.
 
 **Đã kiểm tra:** `check-ssr.mjs E` 18/18 ĐẠT (đếm so với SQL, trùng tên khác hoa thường, tên có thẻ HTML được escape, xoá bị chặn `409` và liên kết còn nguyên, GET xác nhận không xoá); `check-auth.mjs D` 30/30, phần chặn route mở rộng thành 18 GET và 12 lệnh ghi. Sau khi dọn: 1200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag.
+
+### 3. Đổi nhanh Tạm hết và lọc danh sách món
+
+**Đã làm:** nút Đặt tạm hết / Mở phục vụ trên từng dòng (`PATCH /admin/dishes/:id/availability`), ô lọc tình trạng và đầu bếp trong form tìm của `/admin/dishes`.
+
+**Quyết định:**
+- **Form gửi giá trị đích, không gửi "đảo trạng thái":** hai tab cùng bấm vẫn ra đúng ý, không bị đảo ngược.
+- **Bộ lọc áp cho cả ba kiểu tìm:** toàn văn và gần đúng xếp điểm trong SQL nên điều kiện phải nằm ngay trong câu SQL đó (`dishFilterSql`, viết bằng `Prisma.sql`, giá trị là tham số bind). Lọc sau khi lấy trang thì `total` và số trang sai. Thực đơn không truyền bộ lọc, câu SQL giữ nguyên.
+- **Giá trị lọc sai → `400`:** cùng quy ước với tham số URL khác, người xem biết điều kiện chưa được áp dụng.
+
+**Phương án đã bỏ:** chỉ lọc ở kiểu Cơ bản (chọn Toàn văn + Tạm hết sẽ âm thầm ra kết quả không lọc); đổi `parseListQuery` của thực đơn (trang khách không cần `chef`).
+
+**Lỗi phát hiện trong lúc làm:**
+- *Của giao diện:* thêm mục thứ tư làm "Tag" bị che ở 375px vì thanh quản trị cuộn ngang và ẩn thanh cuộn. Sửa: giảm đệm ở điện thoại. Ở 320px vẫn phải cuộn trong thanh.
+- *Của script:* ca gần đúng ra 0 món không có dòng "trong N món"; ca đổi nhanh dùng URL bị `302` về dạng gọn nên trang rỗng. App trả đúng, đã sửa script.
+
+**Đã kiểm tra:** `check-ssr.mjs` toàn bộ **124/124 ĐẠT** (A–E cũ + F 26 ca: đếm so với SQL ở cả ba kiểu tìm, `chef=1 OR 1=1` → `400`, thiếu `_csrf` → `403`, chỉ cột `available` đổi, `back` trỏ ra ngoài bị bỏ qua). Chrome 1280 / 820 / 375px: không cuộn ngang trang, bảng không tràn ở 1280px.
