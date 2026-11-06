@@ -4,6 +4,7 @@
 import { Router } from "express";
 import { prisma, isUniqueViolation } from "../../db.js";
 import { checkEmail } from "../../auth/email.js";
+import { checkUsername } from "../../auth/username.js";
 import { hashPassword, checkNewPassword } from "../../auth/password.js";
 import { generateOtp, hashOtp, sameHex } from "../../auth/secrets.js";
 import { sendLater, activationMail } from "../../auth/mailer.js";
@@ -45,7 +46,7 @@ async function issueOtp(userId, email) {
 }
 
 // ---------- Đăng ký ----------
-async function renderRegister(res, { values = { email: "" }, errors = {}, banner = null, code = null } = {}) {
+async function renderRegister(res, { values = { email: "", username: "" }, errors = {}, banner = null, code = null } = {}) {
   res.status(200).render("auth/register", { title: "Tạo tài khoản", photo: await photoFor("register"), recaptcha: true, siteKey: recaptchaSiteKey(), values, errors, banner, code });
 }
 
@@ -55,7 +56,7 @@ router.get("/register", async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const values = { email: one(req.body.email) };
+  const values = { email: one(req.body.email), username: one(req.body.username) };
   // 1. Giới hạn theo IP (bot tạo hàng loạt tài khoản / gửi hàng loạt thư).
   const ipLimit = await limit(`register:ip:${req.ip}`, { windowMs: 60 * MIN, max: REGISTER_PER_HOUR });
   if (ipLimit.limited) return tooMany(res, "register", { retryAfter: ipLimit.retryAfter, link: { href: "/login", text: "Về đăng nhập" } });
@@ -75,6 +76,7 @@ router.post("/register", async (req, res) => {
 
   // 3. Kiểm tra dữ liệu. role (nếu ai đó gửi kèm) bị bỏ qua: không đọc trường này, server gán viewer.
   const errors = {};
+  const username = checkUsername(values.username, errors);
   const email = checkEmail(values.email, errors);
   const password = one(req.body.password);
   checkNewPassword(password, one(req.body.passwordConfirm), errors);
@@ -93,6 +95,7 @@ router.post("/register", async (req, res) => {
         data: {
           email,
           emailInput: values.email.trim(),
+          username,
           passwordHash,
           activation: { create: { otpHash: hashOtp(code), expiresAt: expiresIn(OTP_TTL), lastSentAt: new Date() } },
         },
@@ -105,7 +108,7 @@ router.post("/register", async (req, res) => {
       if (!isUniqueViolation(err)) throw err;
     }
   } else if (existing.status === "pending") {
-    // Đang chờ kích hoạt: KHÔNG ghi đè mật khẩu (người đăng ký sau không được chọn mật khẩu cho tài khoản mà chủ
+    // Đang chờ kích hoạt: KHÔNG ghi đè mật khẩu, tên (người đăng ký sau không được chọn mật khẩu cho tài khoản mà chủ
     // hộp thư sẽ kích hoạt). Coi như yêu cầu gửi lại mã, theo giới hạn gửi; quá giới hạn thì lặng lẽ bỏ qua.
     if (!(await sendBudget(email)).limited) await issueOtp(existing.id, email);
   }

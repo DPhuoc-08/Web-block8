@@ -22,9 +22,9 @@
         <a href="/admin/dishes"<%- isAdmin ? ' aria-current="page"' : "" %>>Quản trị</a>
       </nav>
 <% if (locals.currentUser) { -%>
-<%# Đã đăng nhập (Figma hàng 7): email + nút Đăng xuất. Đăng xuất là form POST có _csrf, không phải link GET. -%>
+<%# Đã đăng nhập: tên (chưa có tên thì email) là link tới hồ sơ + nút Đăng xuất. Đăng xuất là form POST có _csrf, không phải link GET. -%>
       <div class="account">
-        <span class="account-email"><%= currentUser.email %></span>
+        <a class="account-email" href="/admin/profile" title="<%= currentUser.email %>"><%= currentUser.username ?? currentUser.email %></a>
         <form method="post" action="/logout">
           <input type="hidden" name="_csrf" value="<%= csrf() %>">
           <button type="submit" class="btn btn-sm">Đăng xuất</button>

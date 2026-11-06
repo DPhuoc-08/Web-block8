@@ -188,6 +188,22 @@ td.actions .btn + .btn { margin-left: 6px; }
 .confirm { max-width: 560px; padding: 24px; }
 .confirm h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
 .confirm { max-width: 640px; }
+/* Hồ sơ tài khoản: 2 cột ở màn rộng, 1 cột khi hẹp (tự xuống hàng theo chiều ngang, không cần điểm chuyển riêng). */
+.profile { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; padding-bottom: 32px; }
+.profile > .profile-card { flex: 1 1 340px; min-width: 0; }
+.profile-side { flex: 1 1 340px; min-width: 0; display: grid; gap: 16px; }
+.profile-card { padding: 24px; }
+.profile-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+.profile-card .form { margin-top: 12px; }
+.profile-card > .muted { margin: 0 0 12px; }
+.profile-head { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.profile-avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: #fff; font-size: 1.4rem; font-weight: 700; }
+.profile-name { min-width: 0; }
+.profile-name h1 { font-size: 1.4rem; font-weight: 700; overflow-wrap: anywhere; }
+.profile-name p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.profile-card .facts { margin-top: 20px; }
+.profile-card .facts dd { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .profile-card { padding: 18px; } }
 .related-list { list-style: none; padding: 0; margin: 12px 0 16px; border: 1px solid var(--border); border-radius: 8px; }
 .related-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--border); }
 .related-list li:last-child { border-bottom: 0; }
@@ -572,7 +588,8 @@ html:not(.js) .js-only { display: none; }
 
 /* ===== Khu tài khoản trên header (Figma vòng 2, hàng 7) ===== */
 .account { display: flex; align-items: center; gap: 12px; padding-left: 16px; border-left: 1px solid var(--border); }
-.account-email { color: var(--muted); font-size: .9rem; font-weight: 500; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-email { display: block; line-height: 44px; color: var(--muted); font-size: .9rem; font-weight: 500; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-email:hover { color: var(--text); }
 .account form { margin: 0; }
 .account .btn { min-height: 44px; }
 @media (max-width: 600px) {
@@ -580,8 +597,10 @@ html:not(.js) .js-only { display: none; }
      Header điện thoại đặt nowrap (logo + nav một dòng) → phải cho xuống dòng lại khi có khu tài khoản,
      nếu không hàng tài khoản bị ép cùng dòng và đẩy trang cuộn ngang (lỗi bước 17). */
   .site-header .container:has(.account) { flex-wrap: wrap; row-gap: 0; }
-  .account { flex-basis: calc(100% + 32px); margin: 0 -16px; padding: 6px 16px 8px; border-left: 0; background: var(--surface-2); justify-content: space-between; }
-  .account-email { max-width: none; min-width: 0; flex: 1 1 auto; }
+  /* min-width: 0 + flex: 1 1 0 trên ô email: địa chỉ dài cắt "…" thay vì đẩy nút Đăng xuất ra ngoài màn hình 320px. */
+  .account { flex-basis: calc(100% + 32px); min-width: 0; margin: 0 -16px; padding: 6px 16px 8px; border-left: 0; background: var(--surface-2); justify-content: space-between; }
+  .account-email { max-width: none; min-width: 0; flex: 1 1 0; }
+  .account form { flex: none; }
 }
 
 /* ===== Trang tài khoản: đăng nhập, đăng ký, mã kích hoạt, quên / đặt lại mật khẩu (Figma vòng 2, hướng A) ===== */

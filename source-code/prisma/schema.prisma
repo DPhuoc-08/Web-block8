@@ -139,6 +139,8 @@ model User {
   email           String     @unique
   // Email đúng như người dùng gõ khi đăng ký — chỉ để hiển thị.
   emailInput      String
+  // Tên hiển thị (plan 12.4): được trùng nhau, không dùng để đăng nhập. Rỗng ở tài khoản tạo trước khi có cột này → hiện email.
+  username        String?
   // Chuỗi Argon2id (gồm thuật toán, tham số, salt, giá trị băm). Không bao giờ lưu password.
   passwordHash    String
   role            Role       @default(viewer)

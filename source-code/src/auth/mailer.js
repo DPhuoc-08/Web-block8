@@ -80,6 +80,6 @@ export const passwordChangedMail = (to) => ({
   to,
   kind: "password-changed",
   subject: "Mật khẩu của bạn vừa được đổi",
-  text: "Mật khẩu tài khoản Nhà hàng của bạn vừa được đặt lại. Mọi phiên đăng nhập cũ đã bị đăng xuất.\nNếu không phải bạn, hãy dùng chức năng Quên mật khẩu ngay.",
-  html: wrap("Mật khẩu đã được đổi", `<p style="margin:0">Mật khẩu tài khoản của bạn vừa được đặt lại; mọi phiên đăng nhập cũ đã bị đăng xuất. Nếu không phải bạn, hãy dùng chức năng <strong>Quên mật khẩu</strong> ngay.</p>`),
+  text: "Mật khẩu tài khoản Nhà hàng của bạn vừa được đổi. Các phiên đăng nhập cũ đã bị đăng xuất.\nNếu không phải bạn, hãy dùng chức năng Quên mật khẩu ngay.",
+  html: wrap("Mật khẩu đã được đổi", `<p style="margin:0">Mật khẩu tài khoản của bạn vừa được đổi; các phiên đăng nhập cũ đã bị đăng xuất. Nếu không phải bạn, hãy dùng chức năng <strong>Quên mật khẩu</strong> ngay.</p>`),
 });

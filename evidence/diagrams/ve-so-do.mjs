@@ -113,6 +113,7 @@ diagram("2-dang-nhap-chong-brute-force.svg", "Đăng nhập chống brute force"
 // ---------- 3. Đăng xuất ----------
 diagram("3-dang-xuat.svg", "Đăng xuất và request sau đó", "POST /logout (nút trên header, form có _csrf) · không có GET /logout", [
   { kind: "req", title: "Trình duyệt gửi form POST /logout", lines: ["Cookie: sid=… · _csrf"] },
+  { kind: "check", title: "Còn phiên đăng nhập?", lines: ["Không còn (đã đăng xuất ở tab khác, phiên hết hạn): 303 /login?msg=logged-out,", "không có gì để huỷ nên không cần _csrf"], tag: ref("app.js", 'app.post("/logout"') },
   { kind: "check", title: "CSRF: _csrf đúng của phiên, Origin là site này", lines: ["Trang khác không đăng xuất hộ được"], tag: ref("auth/csrf.js", "export function csrf"), fails: [CSRF(), { label: "GET /logout", title: "404 — không route nào đổi trạng thái bằng GET" }] },
   { kind: "act", title: "① Huỷ bản ghi phiên ở server TRƯỚC", lines: ["req.session.destroy → DELETE khỏi bảng sessions", "Mọi bản sao của cookie sid cũ thành vô dụng"], tag: `${ref("routes/auth/login.js", "req.session.destroy")} · DB sessions` },
   { kind: "act", title: "② Rồi mới xoá cookie ở trình duyệt", lines: ["Set-Cookie: sid=; Expires=1970 (cùng Path, HttpOnly, SameSite)"], tag: ref("routes/auth/login.js", 'res.clearCookie("sid"') },

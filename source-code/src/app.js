@@ -17,6 +17,7 @@ import adminDishesRouter from "./routes/admin/dishes.js";
 import adminChefsRouter from "./routes/admin/chefs.js";
 import adminIngredientsRouter from "./routes/admin/ingredients.js";
 import adminTagsRouter from "./routes/admin/tags.js";
+import adminProfileRouter from "./routes/admin/profile.js";
 import { formatPrice, formatMenuPrice, tagNames } from "./format.js";
 import { artFor, artShape } from "./dish-art.js";
 
@@ -95,6 +96,8 @@ const FLASH = {
   "tag-created": "Đã thêm tag.",
   "tag-updated": "Đã lưu tên tag.",
   "tag-deleted": "Đã xoá tag.",
+  "profile-updated": "Đã lưu tên hiển thị.",
+  "password-changed": "Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.",
 };
 app.use((req, res, next) => {
   const code = typeof req.query.msg === "string" ? req.query.msg : "";
@@ -123,6 +126,7 @@ app.use("/admin/dishes", adminDishesRouter);
 app.use("/admin/chefs", adminChefsRouter);
 app.use("/admin/ingredients", adminIngredientsRouter);
 app.use("/admin/tags", adminTagsRouter);
+app.use("/admin/profile", adminProfileRouter);
 
 // Không route nào khớp → 404.
 app.use((req, res) => {

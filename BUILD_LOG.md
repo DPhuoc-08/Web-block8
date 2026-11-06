@@ -514,3 +514,37 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 - *Của script:* ca gần đúng ra 0 món không có dòng "trong N món"; ca đổi nhanh dùng URL bị `302` về dạng gọn nên trang rỗng. App trả đúng, đã sửa script.
 
 **Đã kiểm tra:** `check-ssr.mjs` toàn bộ **124/124 ĐẠT** (A–E cũ + F 26 ca: đếm so với SQL ở cả ba kiểu tìm, `chef=1 OR 1=1` → `400`, thiếu `_csrf` → `403`, chỉ cột `available` đổi, `back` trỏ ra ngoài bị bỏ qua). Chrome 1280 / 820 / 375px: không cuộn ngang trang, bảng không tràn ở 1280px.
+
+### 4. Tên hiển thị, hồ sơ, đổi mật khẩu
+
+**Đã làm:**
+- `users` thêm cột `username TEXT NULL`. Người dùng đã xem SQL (`ALTER TABLE "users" ADD COLUMN "username" TEXT;`, host `aws-0-ap-southeast-1.pooler.supabase.com`) và cho chạy `db push`. 7 bảng cũ không đổi.
+- Đăng ký thêm ô Tên hiển thị (bắt buộc, kiểm tra sau CAPTCHA). `src/auth/username.js`: cắt khoảng trắng, chuẩn NFC, 2–50 ký tự, không nhận ký tự điều khiển hay ký tự vô hình.
+- `/admin/profile`: xem tên, email, vai trò, trạng thái, ngày xác minh, ngày tạo; sửa tên. Tên ở header là link tới hồ sơ; chưa có tên thì hiện email.
+- `/admin/profile/password`: đổi mật khẩu. Sau khi đổi, thiết bị này vẫn đăng nhập với `sid` mới, thiết bị khác bị đăng xuất, có thư báo.
+- Seed thêm tên cho 2 tài khoản; câu chữ thư "đã đổi mật khẩu" đúng cho cả đặt lại và đổi.
+
+**Quyết định:**
+- **Tên được trùng, không dùng để đăng nhập:** không phải báo "tên đã có" nên không mở thêm đường dò tài khoản; đăng nhập, bộ đếm, CAPTCHA theo email giữ nguyên.
+- **Đăng ký lại khi pending không ghi đè tên,** cùng lý do với mật khẩu.
+- **Danh tính chỉ lấy từ `currentUser`:** route không nhận id từ URL hay body, nên không có đường xem, sửa hồ sơ người khác; `role`, `email`, `status` gửi kèm bị bỏ qua.
+- **Thứ tự đổi mật khẩu:** đang khoá → validate → so mật khẩu hiện tại → một transaction (đổi hash có điều kiện hash cũ, vô hiệu link đặt lại chưa dùng, xoá phiên khác) → `regenerate`. Lỗi gõ mật khẩu mới không tốn một lần băm, không tính vào bộ đếm sai.
+- **Giới hạn đoán mật khẩu hiện tại:** 5 lần sai / 15 phút theo user → khoá 15 phút, `429` dù gửi đúng. Bộ đếm ở DB (`password-change-fail:user:<id>`), phòng trường hợp phiên bị chiếm.
+- **Giữ `loginAt` khi `regenerate`:** đổi mật khẩu không kéo dài hạn tối đa 12 giờ của phiên.
+- **Lỗi nhập ở hai form này trả `400`** như form trong `/admin`; ô đăng ký vẫn `200` theo quy ước form auth.
+- **Trang hồ sơ không vẽ Figma** (người dùng chốt): dùng khung trang quản trị. Ô tên trên form đăng ký dùng thành phần ô nhập đã duyệt.
+
+**Phương án đã bỏ:** tên đăng nhập duy nhất (đổi luồng đăng nhập và bộ đếm); hỏi mật khẩu rồi mới cho sửa tên (tên không nhạy cảm); giữ `sid` cũ sau khi đổi mật khẩu.
+
+**Giới hạn còn lại:**
+- Tài khoản tạo trước khi có cột `username` để trống tên, hiện email cho tới khi tự điền. Không chạy seed vì seed `TRUNCATE` sẽ xoá 2 tài khoản không phải seed đang có trong DB.
+- Một request đang chạy dở trên phiên khác có thể ghi lại bản ghi phiên vừa bị xoá nếu đúng lúc đó nó sửa dữ liệu phiên (`set` là upsert). Luồng đặt lại mật khẩu có cùng giới hạn, chưa xử lý vì khoảng thời gian rất ngắn.
+- Thư báo đã đổi mật khẩu mới kiểm tra qua hộp thư file, chưa gửi qua Gmail thật ở bước này.
+
+**Lỗi phát hiện trong lúc làm:**
+- *Của giao diện (có từ trước):* header tràn ngang 20px ở 320px với email dài, nút Đăng xuất bị đẩy ra ngoài màn hình. Tái hiện bằng tài khoản `…+admin@gmail.com` ở 320px. Sửa: ô email `flex: 1 1 0; min-width: 0`, nút không co. Sau khi sửa: 0px ở cả 4 cỡ.
+- *Của giao diện:* tài khoản chưa có tên hiện email hai lần ở đầu hồ sơ; ngày giờ dạng "lúc 07:00 1 tháng 11, 2026" khó đọc. Đã sửa.
+- *Của script:* ca đồng thời ra `303,303` ở một lần chạy. Request thua có phiên vừa bị request thắng xoá nên nhận `303 /login`, mật khẩu không bị đổi hai lần. Sửa ca kiểm tra: đếm theo `Location` và đối chiếu hash cuối với mật khẩu của request thắng. Chạy 4 lần liên tiếp đều đạt, có lần ra đúng `303 /login`.
+- *Của script:* phần G hết lượt 10 lần / giờ theo IP khi chạy sau A, B. Sửa: xoá bộ đếm đó đầu phần G.
+
+**Đã kiểm tra:** `check-auth.mjs` toàn bộ **135/135 ĐẠT** (A 25, B 6, C 12, D 30, E 20, F 4, G 38), `check-ssr.mjs` **124/124 ĐẠT**. Log server không chứa mật khẩu. Chrome 1280 / 820 / 375 / 320px: hồ sơ, đổi mật khẩu, danh sách món không cuộn ngang trang.

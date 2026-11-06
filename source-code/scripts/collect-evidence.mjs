@@ -161,7 +161,7 @@ try {
   await shot("02-dang-ky-loi-nhap-375");
   await b.viewport(1280);
   await b.goto(`${BASE}/register`);
-  await b.fill("form.auth-form", { email: "  Minh.Anh@Demo.Example ", password: USER_PW, passwordConfirm: USER_PW });
+  await b.fill("form.auth-form", { username: "Minh Anh", email: "  Minh.Anh@Demo.Example ", password: USER_PW, passwordConfirm: USER_PW });
   await b.fillTestCaptcha();
   await shot("03-dang-ky-da-dien-1280");
   b.takeNetwork();
@@ -310,7 +310,7 @@ try {
   for (const [email, pw, note] of [[`moi@${D}`, "mat-khau-thu-123", "email mới, kèm role=admin"], [`moi@${D}`, "mat-khau-khac-456", "cùng email lần 2 (đang pending), mật khẩu KHÁC"], [ADMIN, "mat-khau-thu-123", "email đã active"]]) {
     const r = client();
     await r.get("/register");
-    await call(K4, r, "POST", "/register", [["email", email], ["password", pw], ["passwordConfirm", pw], ["role", "admin"], ["g-recaptcha-response", "token-thu"]], { note });
+    await call(K4, r, "POST", "/register", [["username", "Người thử"], ["email", email], ["password", pw], ["passwordConfirm", pw], ["role", "admin"], ["g-recaptcha-response", "token-thu"]], { note });
     firstHash ??= (await prisma.user.findUnique({ where: { email: `moi@${D}` } })).passwordHash;
   }
   const moi = await prisma.user.findUnique({ where: { email: `moi@${D}` } });

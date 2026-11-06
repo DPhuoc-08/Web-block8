@@ -19,8 +19,8 @@ function seedAccounts() {
   if (viewer && viewer === admin) errors.SEED_ADMIN_EMAIL = "phải khác SEED_VIEWER_EMAIL";
   if (Object.keys(errors).length) throw new Error(`Thiếu / sai biến trong .env: ${Object.entries(errors).map(([k, v]) => `${k} (${v})`).join("; ")}`);
   return [
-    { email: viewer, emailInput: process.env.SEED_VIEWER_EMAIL.trim(), role: "viewer" },
-    { email: admin, emailInput: process.env.SEED_ADMIN_EMAIL.trim(), role: "admin" },
+    { email: viewer, emailInput: process.env.SEED_VIEWER_EMAIL.trim(), username: "Tài khoản xem thử", role: "viewer" },
+    { email: admin, emailInput: process.env.SEED_ADMIN_EMAIL.trim(), username: "Quản trị viên", role: "admin" },
   ];
 }
 

@@ -4,10 +4,11 @@
 //   node scripts/check-auth.mjs D        → chỉ phần D
 // A: đăng ký + mã kích hoạt + gửi lại. B: CAPTCHA ở đăng ký + giới hạn IP. C: chống brute force ở đăng nhập.
 // D: session + đăng nhập + đăng xuất + chặn CRUD + CSRF. E: quên / đặt lại mật khẩu. F: hồi quy nhanh (thực đơn, CRUD sau đăng nhập).
+// G: hồ sơ, tên hiển thị, đổi mật khẩu (plan 12.4).
 // Bản ghi thử (tài khoản *@check.example, "[TEST B8]") được xoá ở cuối; bộ đếm giới hạn của tài khoản thử cũng xoá.
 import "./lib/test-env.mjs"; // .env + key thử reCAPTCHA từ .env.test
 import { prisma } from "../src/db.js";
-import { hashPassword } from "../src/auth/password.js";
+import { hashPassword, verifyPassword } from "../src/auth/password.js";
 import { client, reporter } from "./lib/client.mjs";
 import { login } from "./lib/auth.mjs";
 import { startServer, stopServer, serverLog } from "./lib/server.mjs";
@@ -30,7 +31,7 @@ const newEmail = (tag) => `${tag}-${Date.now()}-${++seq}@${T}`;
 const TOKEN = [["g-recaptcha-response", "token-thu"]]; // key thử của Google: mọi token đều hợp lệ (chỉ dùng cho script)
 async function register(c, email, password = "mat-khau-thu-123", extra = []) {
   await c.get("/register");
-  return c.post("/register", [["email", email], ["password", password], ["passwordConfirm", password], ...TOKEN, ...extra]);
+  return c.post("/register", [["username", "Người thử"], ["email", email], ["password", password], ["passwordConfirm", password], ...TOKEN, ...extra]);
 }
 async function activate(c, email, otp) {
   await c.get("/activate");
@@ -57,6 +58,7 @@ try {
   if (run("D")) await partD();
   if (run("E")) await partE();
   if (run("F")) await partF();
+  if (run("G")) await partG();
 } finally {
   await stopServer();
   await prisma.user.deleteMany({ where: { email: { endsWith: `@${T}` } } });
@@ -78,7 +80,7 @@ async function partD() {
   const guest = await anon.get("/dishes");
   r.ok(guest.status === 200 && !guest.headers.get("set-cookie"), "Khách xem thực đơn: 200, không có Set-Cookie (không tạo phiên)");
   const before = await counts();
-  const gets = ["/admin", "/admin/dishes", "/admin/dishes?page=2", "/admin/dishes/new", "/admin/dishes/1/edit", "/admin/dishes/1/delete", "/admin/chefs", "/admin/chefs/new", "/admin/chefs/1/edit", "/admin/chefs/1/delete", "/admin/ingredients", "/admin/ingredients/new", "/admin/ingredients/1/edit", "/admin/ingredients/1/delete", "/admin/tags", "/admin/tags/new", "/admin/tags/1/edit", "/admin/tags/1/delete"];
+  const gets = ["/admin", "/admin/dishes", "/admin/dishes?page=2", "/admin/dishes/new", "/admin/dishes/1/edit", "/admin/dishes/1/delete", "/admin/chefs", "/admin/chefs/new", "/admin/chefs/1/edit", "/admin/chefs/1/delete", "/admin/ingredients", "/admin/ingredients/new", "/admin/ingredients/1/edit", "/admin/ingredients/1/delete", "/admin/tags", "/admin/tags/new", "/admin/tags/1/edit", "/admin/tags/1/delete", "/admin/profile", "/admin/profile/password"];
   const badGets = [];
   for (const u of gets) {
     const res = await anon.get(u);
@@ -86,7 +88,7 @@ async function partD() {
   }
   r.ok(badGets.length === 0, `${gets.length} route GET của /admin khi chưa đăng nhập → 303 /login?next=<trang>`, badGets.join(", "));
   await anon.get("/login"); // _csrf hợp lệ của phiên ẩn danh → bị chặn vì chưa đăng nhập, không phải vì CSRF
-  const writes = [["/admin/dishes", []], ["/admin/dishes/1?_method=PATCH", [["name", "x"]]], ["/admin/dishes/1?_method=DELETE", []], ["/admin/chefs", [["name", "x"]]], ["/admin/chefs/1?_method=PATCH", [["name", "x"]]], ["/admin/chefs/1?_method=DELETE", []], ["/admin/ingredients", [["name", "x"]]], ["/admin/ingredients/1?_method=PATCH", [["name", "x"]]], ["/admin/ingredients/1?_method=DELETE", []], ["/admin/tags", [["name", "x"]]], ["/admin/tags/1?_method=PATCH", [["name", "x"]]], ["/admin/tags/1?_method=DELETE", []]];
+  const writes = [["/admin/dishes", []], ["/admin/dishes/1?_method=PATCH", [["name", "x"]]], ["/admin/dishes/1?_method=DELETE", []], ["/admin/chefs", [["name", "x"]]], ["/admin/chefs/1?_method=PATCH", [["name", "x"]]], ["/admin/chefs/1?_method=DELETE", []], ["/admin/ingredients", [["name", "x"]]], ["/admin/ingredients/1?_method=PATCH", [["name", "x"]]], ["/admin/ingredients/1?_method=DELETE", []], ["/admin/tags", [["name", "x"]]], ["/admin/tags/1?_method=PATCH", [["name", "x"]]], ["/admin/tags/1?_method=DELETE", []], ["/admin/profile?_method=PATCH", [["username", "x"]]], ["/admin/profile/password", [["currentPassword", "x"], ["password", "y"]]]];
   const badWrites = [];
   for (const [u, f] of writes) {
     const res = await anon.post(u, f);
@@ -488,6 +490,155 @@ async function partE() {
     r.ok(JSON.stringify(st) === JSON.stringify([303, 303, 303, 429]), `4 yêu cầu /forgot cùng email (${label}) trong 1 giờ → lần 4 nhận 429`, st.join(","));
   }
   r.ok(!serverLog().includes(tok1) && !serverLog().includes(tokW), "Log server không chứa reset token");
+  results.push(r.counts);
+}
+
+async function partG() {
+  const r = reporter("G. Hồ sơ, tên hiển thị, đổi mật khẩu (plan 12.4)");
+  const OLD = "mat-khau-cu-123", NEW = "mat-khau-moi-456";
+  const mk = async (tag, username = null) => {
+    const email = newEmail(tag);
+    const user = await prisma.user.create({ data: { email, emailInput: email, username, passwordHash: await hashPassword(OLD), status: "active", emailVerifiedAt: new Date() } });
+    return { email, id: user.id };
+  };
+  const loggedIn = async (email, pw = OLD) => { const c = client(); await login(c, email, pw); return c; };
+  const row = (id) => prisma.user.findUnique({ where: { id } });
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "login:ip:" } } });
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "register:ip:" } } }); // phần A, B đã dùng hết 10 lần / giờ theo IP
+
+  // Đăng ký: tên bắt buộc, được trùng, không ghi đè khi đang pending, email đã active không đổi gì.
+  const e1 = newEmail("ten"), c1 = client();
+  await c1.get("/register");
+  let res = await c1.post("/register", [["username", " "], ["email", e1], ["password", OLD], ["passwordConfirm", OLD], ...TOKEN]);
+  r.ok(res.status === 200 && code(res) === "VALIDATION_FAILED" && res.text.includes("Nhập tên hiển thị.") && !(await prisma.user.findUnique({ where: { email: e1 } })), "Đăng ký thiếu tên → 200 VALIDATION_FAILED, không tạo user");
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "register:ip:" } } });
+  res = await c1.post("/register", [["username", "A"], ["email", e1], ["password", OLD], ["passwordConfirm", OLD], ...TOKEN]);
+  r.ok(res.text.includes("Tên cần ít nhất 2 ký tự.") && res.text.includes('value="A"') && !res.text.includes(OLD), "Tên quá ngắn: báo lỗi, giữ tên đã gõ, không điền lại mật khẩu");
+  res = await register(client(), e1, OLD, [["username", "  Nguyễn Văn An  "]]);
+  const first = await prisma.user.findUnique({ where: { email: e1 } });
+  // register() gửi "Người thử" trước, ["username", …] thêm sau: Express gộp thành mảng, one() lấy giá trị cuối.
+  r.ok(res.status === 303 && first.username === "Nguyễn Văn An", "Đăng ký: lưu tên đã cắt khoảng trắng", first.username);
+  await skipCooldown(e1);
+  await register(client(), e1, "mat-khau-khac-789", [["username", "Kẻ đến sau"]]);
+  const second = await prisma.user.findUnique({ where: { email: e1 } });
+  r.ok(second.username === "Nguyễn Văn An" && second.passwordHash === first.passwordHash, "Đăng ký lại khi pending: tên và mật khẩu không bị ghi đè");
+  const act = await mk("daco", "Tên cũ");
+  const before = await row(act.id);
+  await register(client(), act.email, "mat-khau-khac-789", [["username", "Tên mới"]]);
+  r.ok(JSON.stringify(await row(act.id)) === JSON.stringify(before), "Đăng ký lại email đã active: bản ghi không đổi");
+
+  // Xem hồ sơ: chỉ của chính mình, không lộ hash; header hiện tên, chưa có tên thì hiện email.
+  const u = await mk("hoso"), other = await mk("khac", "Người khác");
+  const c = await loggedIn(u.email);
+  let page = await c.get("/admin/profile");
+  r.ok(page.status === 200 && page.headers.get("cache-control") === "no-store" && page.text.includes(u.email) && page.text.includes("Viewer") && page.text.includes("Đang hoạt động"), "Hồ sơ: 200, no-store, có email, vai trò, trạng thái");
+  r.ok(!page.text.includes("$argon2") && !page.text.includes("Người khác") && !page.text.includes(other.email), "Hồ sơ không có hash mật khẩu, không có dữ liệu người khác");
+  r.ok(page.text.includes(`<a class="account-email" href="/admin/profile" title="${u.email}">${u.email}</a>`), "Chưa có tên: header hiện email, là link tới hồ sơ");
+  r.ok((await c.get(`/admin/profile/${other.id}`)).status === 404 && !(await c.get(`/admin/profile?id=${other.id}`)).text.includes(other.email), "Không có đường xem hồ sơ người khác qua URL");
+
+  // Sửa tên.
+  res = await c.post("/admin/profile?_method=PATCH", [["username", "Tên mới"]], { csrf: false });
+  r.ok(res.status === 403 && (await row(u.id)).username === null, "Sửa tên thiếu _csrf → 403, không đổi");
+  res = await c.post("/admin/profile?_method=PATCH", [["username", "Tên mới"]], { headers: { origin: "https://evil.example" } });
+  r.ok(res.status === 403 && (await row(u.id)).username === null, "Sửa tên từ trang khác → 403, không đổi");
+  const bad = [];
+  for (const [value, msg] of [["", "Nhập tên hiển thị."], ["a", "Tên cần ít nhất 2 ký tự."], ["x".repeat(51), "Tên tối đa 50 ký tự."], ["ab‮cd", "Tên chứa ký tự không hợp lệ."], ["ab\u0007cd", "Tên chứa ký tự không hợp lệ."]]) {
+    await c.get("/admin/profile");
+    res = await c.post("/admin/profile?_method=PATCH", [["username", value]]);
+    if (!(res.status === 400 && res.text.includes(msg))) bad.push(`${JSON.stringify(value)} ${res.status}`);
+  }
+  r.ok(bad.length === 0 && (await row(u.id)).username === null, "Tên trống, quá ngắn, quá dài, ký tự điều khiển → 400, không đổi", bad.join(", "));
+  await c.get("/admin/profile");
+  res = await c.post("/admin/profile?_method=PATCH", [["username", "  <script>alert(1)</script> Bếp  "], ["role", "admin"], ["email", other.email], ["status", "pending"], ["id", String(other.id)], ["userId", String(other.id)]]);
+  const edited = await row(u.id), untouched = await row(other.id);
+  r.ok(res.status === 303 && res.location === "/admin/profile?msg=profile-updated" && edited.username === "<script>alert(1)</script> Bếp", "Sửa tên → 303, lưu tên đã cắt khoảng trắng");
+  r.ok(edited.role === "viewer" && edited.email === u.email && edited.status === "active" && untouched.username === "Người khác", "role, email, status, id gửi kèm bị bỏ qua; người khác không đổi");
+  page = await c.get(res.location);
+  r.ok(page.text.includes("Đã lưu tên hiển thị.") && page.text.includes("&lt;script&gt;alert(1)&lt;/script&gt; Bếp") && !page.text.includes("<script>alert(1)"), "Tên có thẻ HTML được escape ở header và hồ sơ");
+  await c.get("/admin/profile");
+  r.ok((await c.post("/admin/profile?_method=PATCH", [["username", "Người khác"]])).status === 303, "Tên được trùng với người khác → 303");
+  await prisma.user.update({ where: { id: u.id }, data: { username: "Tên của tôi" } });
+
+  // Đổi mật khẩu: lỗi nhập không đổi gì, không tính vào bộ đếm.
+  const original = (await row(u.id)).passwordHash;
+  const failCount = async () => (await prisma.rateLimit.findUnique({ where: { key: `password-change-fail:user:${u.id}` } }))?.count ?? 0;
+  const change = async (cl, current, next, confirm = next, opts) => {
+    await cl.get("/admin/profile/password");
+    return cl.post("/admin/profile/password", [["currentPassword", current], ["password", next], ["passwordConfirm", confirm]], opts);
+  };
+  res = await change(c, OLD, NEW, NEW, { csrf: false });
+  r.ok(res.status === 403 && (await row(u.id)).passwordHash === original, "Thiếu _csrf → 403, không đổi");
+  const inputCases = [["", NEW, NEW, "Nhập mật khẩu hiện tại."], [OLD, "ngan", "ngan", "Mật khẩu cần ít nhất 8 ký tự."], [OLD, "x".repeat(65), "x".repeat(65), "Mật khẩu tối đa 64 ký tự."], [OLD, NEW, "khac-hoan-toan", "Hai mật khẩu chưa khớp nhau."], [OLD, OLD, OLD, "Mật khẩu mới phải khác mật khẩu hiện tại."]];
+  const badInput = [];
+  for (const [cur, nw, cf, msg] of inputCases) {
+    res = await change(c, cur, nw, cf);
+    if (!(res.status === 400 && res.text.includes(msg) && !res.text.includes(`value="${OLD}"`) && !res.text.includes(`value="${NEW}"`))) badInput.push(msg);
+  }
+  r.ok(badInput.length === 0 && (await row(u.id)).passwordHash === original && (await failCount()) === 0, "Thiếu, ngắn, dài, không khớp, trùng mật khẩu cũ → 400, không điền lại, không đổi, không tính lần sai", badInput.join(" | "));
+
+  // Mật khẩu hiện tại sai: đủ 5 lần → 429, kể cả khi gửi đúng; đổi cookie không đặt lại được.
+  res = await change(c, "sai-mat-khau-1", NEW);
+  r.ok(res.status === 400 && res.text.includes("Mật khẩu hiện tại không đúng.") && (await row(u.id)).passwordHash === original && (await failCount()) === 1, "Sai mật khẩu hiện tại → 400, không đổi, bộ đếm = 1");
+  for (let i = 2; i <= 4; i++) await change(c, `sai-mat-khau-${i}`, NEW);
+  res = await change(c, "sai-mat-khau-5", NEW);
+  r.ok(res.status === 429 && Number(res.headers.get("retry-after")) > 0, "Lần sai thứ 5 → 429, có Retry-After", `Retry-After ${res.headers.get("retry-after")}`);
+  res = await change(c, OLD, NEW);
+  r.ok(res.status === 429 && (await row(u.id)).passwordHash === original, "Đang khoá: gửi đúng mật khẩu hiện tại vẫn 429, không đổi");
+  res = await change(await loggedIn(u.email), OLD, NEW);
+  r.ok(res.status === 429 && (await row(u.id)).passwordHash === original, "Phiên mới (cookie khác) vẫn bị khoá: bộ đếm ở DB theo user");
+  await prisma.rateLimit.deleteMany({ where: { key: `password-change-fail:user:${u.id}` } });
+
+  // Đổi thành công: phiên này còn với sid mới, phiên khác bị từ chối, link đặt lại cũ hết dùng được, có thư báo.
+  const otherDevice = await loggedIn(u.email);
+  const stale = client();
+  await otherDevice.get("/admin/dishes");
+  const token = "token-dat-lai-chua-dung-cua-tai-khoan-thu";
+  await prisma.passwordReset.create({ data: { userId: u.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + 600_000) } });
+  await c.get("/admin/profile/password");
+  const sidBefore = sidOf(c), copy = c.jar.get("sid");
+  stale.jar.set("sid", copy);
+  const loginAtBefore = (await prisma.session.findUnique({ where: { sid: sidBefore } })).data.loginAt;
+  const t0 = Date.now();
+  await prisma.rateLimit.create({ data: { key: `password-change-fail:user:${u.id}`, count: 2, windowStart: new Date() } });
+  res = await c.post("/admin/profile/password", [["currentPassword", OLD], ["password", NEW], ["passwordConfirm", NEW]]);
+  r.ok(res.status === 303 && res.location === "/admin/profile?msg=password-changed", "Đổi đúng → 303 về hồ sơ", res.location);
+  r.ok((await row(u.id)).passwordHash.startsWith("$argon2id$") && (await row(u.id)).passwordHash !== original, "Hash mới dạng Argon2id");
+  r.ok((await failCount()) === 0, "Đổi thành công xoá bộ đếm sai");
+  const sidNew = sidOf(c);
+  const newRow = await prisma.session.findUnique({ where: { sid: sidNew } });
+  r.ok(sidNew !== sidBefore && !(await prisma.session.findUnique({ where: { sid: sidBefore } })) && newRow?.userId === u.id, "sid đổi, phiên cũ của thiết bị này đã xoá");
+  r.ok(newRow.data.loginAt === loginAtBefore, "loginAt giữ nguyên: không kéo dài hạn tối đa 12 giờ");
+  page = await c.get(res.location);
+  r.ok(page.status === 200 && page.text.includes("Đã đổi mật khẩu."), "Thiết bị này vẫn đăng nhập, có thông báo");
+  r.ok((await otherDevice.get("/admin/dishes")).status === 303, "Thiết bị khác → 303 /login");
+  r.ok((await stale.get("/admin/dishes")).status === 303, "Bản sao sid cũ → 303 /login");
+  r.ok((await prisma.session.count({ where: { userId: u.id } })) === 1, "Chỉ còn đúng một phiên của tài khoản");
+  r.ok((await prisma.passwordReset.findUnique({ where: { tokenHash: sha256(token) } })).usedAt !== null, "Link đặt lại chưa dùng bị vô hiệu");
+  const mail = await waitMail(u.email, "password-changed", { after: t0 });
+  r.ok(Boolean(mail) && !mail.includes(NEW) && !mail.includes(OLD), "Có thư báo đã đổi, không chứa mật khẩu");
+  await prisma.rateLimit.deleteMany({ where: { key: { startsWith: "login:ip:" } } });
+  const oldTry = client(); await oldTry.get("/login");
+  r.ok(code(await oldTry.post("/login", [["email", u.email], ["password", OLD]])) === "INVALID_CREDENTIALS", "Mật khẩu cũ không đăng nhập được");
+  await prisma.rateLimit.deleteMany({ where: { key: `login-fail:email:${u.email}` } });
+  const newTry = client(); await newTry.get("/login");
+  r.ok((await newTry.post("/login", [["email", u.email], ["password", NEW]])).status === 303, "Mật khẩu mới đăng nhập được");
+
+  // Hai request đổi cùng lúc: chỉ một thắng.
+  const v = await mk("songsong");
+  const [a1, a2] = [await loggedIn(v.email), await loggedIn(v.email)];
+  await a1.get("/admin/profile/password"); await a2.get("/admin/profile/password");
+  const both = await Promise.all([["song-song-mot-111", a1], ["song-song-hai-222", a2]].map(([pw, cl]) => cl.post("/admin/profile/password", [["currentPassword", OLD], ["password", pw], ["passwordConfirm", pw]])));
+  // Request thắng về hồ sơ. Request thua nhận 400 (đã qua bước kiểm tra phiên) hoặc 303 /login (phiên của nó vừa bị request thắng xoá).
+  const wonIdx = both.flatMap((x, i) => (x.status === 303 && x.location === "/admin/profile?msg=password-changed" ? [i] : []));
+  const lost = both.find((_, i) => !wonIdx.includes(i));
+  r.ok(wonIdx.length === 1 && (lost.status === 400 || (lost.status === 303 && lost.location === "/login")), "Hai request đổi mật khẩu đồng thời → đúng một request thắng", both.map((x) => `${x.status} ${x.location ?? ""}`).join(", "));
+  const finalHash = (await row(v.id)).passwordHash;
+  const [okOne, okTwo] = [await verifyPassword(finalHash, "song-song-mot-111"), await verifyPassword(finalHash, "song-song-hai-222")];
+  r.ok(okOne !== okTwo && okOne === (wonIdx[0] === 0), "Hash cuối đúng là mật khẩu của request thắng");
+
+  const log = serverLog();
+  r.ok(![OLD, NEW, "song-song-mot-111", "song-song-hai-222", "sai-mat-khau-1"].some((s) => log.includes(s)), "Log server không chứa mật khẩu");
+  await prisma.rateLimit.deleteMany({ where: { key: { in: [u.id, v.id, act.id, other.id].map((id) => `password-change-fail:user:${id}`) } } });
   results.push(r.counts);
 }
 

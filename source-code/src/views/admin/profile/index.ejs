@@ -1,0 +1,54 @@
+<%- include("../../partials/header", { title }) %>
+<%# Hồ sơ của chính người đang đăng nhập (/admin/profile). Thông tin tài khoản chỉ đọc; chỉ tên hiển thị sửa được. -%>
+<% const shownName = profile.username ?? profile.email; -%>
+<%- include("../../partials/admin-nav", { current: "" }) %>
+<div class="profile">
+  <section class="panel profile-card" aria-labelledby="profile-title">
+    <div class="profile-head">
+      <span class="profile-avatar" aria-hidden="true"><%= [...shownName][0].toLocaleUpperCase("vi") %></span>
+      <div class="profile-name">
+        <h1 id="profile-title"><%= shownName %></h1>
+<% if (profile.username) { %>        <p class="muted"><%= profile.email %></p>
+<% } -%>
+      </div>
+    </div>
+    <dl class="facts">
+      <dt>Vai trò</dt>
+      <dd><%= profile.roleLabel %></dd>
+      <dt>Trạng thái</dt>
+      <dd><%= profile.statusLabel %></dd>
+      <dt>Xác minh email</dt>
+      <dd><%= profile.verifiedAt %></dd>
+      <dt>Ngày tạo</dt>
+      <dd><%= profile.joinedAt %></dd>
+    </dl>
+  </section>
+
+  <div class="profile-side">
+    <section class="panel profile-card" aria-labelledby="profile-name-title">
+      <h2 id="profile-name-title">Tên hiển thị</h2>
+<% if (Object.keys(errors).length) { %>      <p class="alert" role="alert" data-focus-first-error>Dữ liệu chưa hợp lệ, vui lòng sửa bên dưới.</p>
+<% } -%>
+      <form class="form" method="post" action="/admin/profile?_method=PATCH" novalidate data-once data-unsaved-guard>
+        <input type="hidden" name="_csrf" value="<%= csrf() %>">
+        <label class="field<%= errors.username ? " invalid" : "" %>">
+          <span>Tên</span>
+          <input name="username" value="<%= values.username %>" autocomplete="name" maxlength="50">
+          <span class="hint">2–50 ký tự. Hiện ở đầu trang, không dùng để đăng nhập.</span>
+<% if (errors.username) { %>          <span class="error"><%= errors.username %></span>
+<% } -%>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" data-busy-label="Đang lưu…">Lưu tên</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel profile-card" aria-labelledby="profile-password-title">
+      <h2 id="profile-password-title">Mật khẩu</h2>
+      <p class="muted">Sau khi đổi, các thiết bị khác sẽ bị đăng xuất.</p>
+      <a class="btn" href="/admin/profile/password">Đổi mật khẩu</a>
+    </section>
+  </div>
+</div>
+<%- include("../../partials/footer") %>

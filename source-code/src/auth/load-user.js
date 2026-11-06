@@ -14,12 +14,12 @@ export async function loadUser(req, res, next) {
   if (!Number.isInteger(userId)) return next();
 
   const tooOld = !(req.session.loginAt > Date.now() - SESSION_ABSOLUTE_MS);
-  const user = tooOld ? null : await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: true, status: true } });
+  const user = tooOld ? null : await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, username: true, role: true, status: true } });
   if (!user || user.status !== "active") {
     delete req.session.userId;
     delete req.session.loginAt;
     return next();
   }
-  res.locals.currentUser = { id: user.id, email: user.email, role: user.role };
+  res.locals.currentUser = { id: user.id, email: user.email, username: user.username, role: user.role };
   next();
 }
