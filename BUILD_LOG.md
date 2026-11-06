@@ -465,3 +465,19 @@ email có / không có → cùng 303, cùng trang, thời gian gần nhau (chên
 **Lỗi phát hiện trong lúc làm (của script):** `menuCount` tính `-12` món khi kết quả đúng là 0 (`totalPages` trả 0). App trả đúng 0 món cho `ph_`. Sửa: chặn dưới bằng 0.
 
 **Đã kiểm tra:** `check-ssr.mjs` **80/80 ĐẠT** (A, B, C giữ nguyên 48 ca, D 32 ca), `check-auth.mjs` **94/94 ĐẠT**; chạy server riêng ở :3200. `unaccent` khớp bảng 134 ký tự tiếng Việt viết tay và khớp trên mọi tên món, mô tả, đầu bếp, nguyên liệu, đơn vị, tag; xử lý được cả NFD. Chrome thật: `bo luc lat` ra Bò lúc lắc đầu tiên (0.667), không cuộn ngang ở 375px (ảnh `18`, `19`, `20`).
+
+## Sau bước 20 — Hồ sơ, đổi mật khẩu và bổ sung quản trị (plan 12.4, người dùng chốt 06/11/2026)
+
+Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ + tên hiển thị + đổi mật khẩu; quản lý tag; đổi nhanh Tạm hết + lọc; sửa 403 khi đăng xuất. Không làm: đăng xuất thiết bị khác, đổi email, xoá tài khoản, nối các trang.
+
+### 1. Đăng xuất khi không còn phiên
+
+**Lỗi tái hiện được:** hai tab cùng phiên; đăng xuất ở tab A rồi bấm Đăng xuất ở tab B. Bản ghi phiên đã bị xoá nên phiên mới không có `csrfToken`, `csrf.js` trả `403` "Yêu cầu bị từ chối" trong khi người dùng thực ra đã đăng xuất.
+
+**Sửa:** `app.js` thêm một chặn trước `csrf`: `POST /logout` mà không có `currentUser` thì `303 /login?msg=logged-out`. Không có phiên đăng nhập thì không có gì để đổi, nên bỏ `_csrf` ở nhánh này không mở lỗ hổng. Còn đăng nhập thì vẫn qua `csrf`.
+
+**Phương án đã bỏ:** miễn `_csrf` cho mọi `POST /logout` (trang lạ khi đó ép đăng xuất được).
+
+**Giới hạn còn lại:** đã đăng nhập lại ở tab A rồi bấm Đăng xuất ở tab B cũ thì vẫn `403`, vì token của tab B thuộc phiên trước và phiên hiện tại vẫn cần được bảo vệ.
+
+**Đã kiểm tra:** `check-auth.mjs D` 30/30 ĐẠT, thêm 3 ca: còn đăng nhập thiếu `_csrf` → `403`, phiên còn; tab thứ hai → `303`; không phiên, không `_csrf` → `303`.

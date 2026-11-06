@@ -167,6 +167,11 @@ async function partD() {
 
   // Đăng xuất: huỷ phiên ở server rồi xoá cookie; bản sao sid cũ bị từ chối; GET /logout không đăng xuất được.
   const copy = c.jar.get("sid");
+  res = await c.post("/logout", [], { csrf: false });
+  r.ok(res.status === 403 && Boolean(await prisma.session.findUnique({ where: { sid: sidAfter } })), "Còn đăng nhập, POST /logout thiếu _csrf → 403, phiên còn nguyên");
+  const secondTab = client();
+  secondTab.jar.set("sid", copy);
+  await secondTab.get("/admin/dishes"); // tab thứ hai mở trước, giữ _csrf của phiên
   const out = await c.post("/logout");
   r.ok(out.status === 303 && out.location === "/login?msg=logged-out" && /sid=;/.test(out.headers.get("set-cookie") ?? ""), "Đăng xuất → 303 /login, Set-Cookie xoá sid");
   r.ok(!(await prisma.session.findUnique({ where: { sid: sidAfter } })), "Bản ghi phiên đã bị xoá ở server");
@@ -174,6 +179,10 @@ async function partD() {
   thief.jar.set("sid", copy);
   r.ok((await thief.get("/admin/dishes")).status === 303, "Dùng lại bản sao sid cũ sau khi đăng xuất → 303 /login");
   r.ok((await client().get("/logout")).status === 404, "GET /logout → 404 (đăng xuất chỉ bằng POST)");
+  const tab2Out = await secondTab.post("/logout");
+  r.ok(tab2Out.status === 303 && tab2Out.location === "/login?msg=logged-out", "Đã đăng xuất ở tab khác, bấm Đăng xuất ở tab này → 303 /login, không phải 403", `${tab2Out.status}`);
+  const bareOut = await client().post("/logout", [], { csrf: false });
+  r.ok(bareOut.status === 303 && bareOut.location === "/login?msg=logged-out", "POST /logout không có phiên, không _csrf → 303 /login, không đổi gì", `${bareOut.status}`);
   results.push(r.counts);
 }
 

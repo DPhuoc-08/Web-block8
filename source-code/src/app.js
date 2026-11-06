@@ -67,6 +67,9 @@ app.use(loadUser);
 // Đặt TRƯỚC csrf: chưa đăng nhập thì mọi request /admin (kể cả POST gửi thẳng bằng curl, không cookie, không token)
 // đều nhận 303 /login như đề yêu cầu, thay vì 403 của CSRF (lỗi phát hiện ở bước 18). Đã đăng nhập thì đi tiếp qua csrf.
 app.use("/admin", requireLogin);
+// Đăng xuất khi không còn phiên đăng nhập (đã đăng xuất ở tab khác, phiên hết hạn): không có gì để huỷ nên không cần
+// _csrf, về /login thay vì trang 403 khó hiểu (plan 12.4). Còn phiên đăng nhập thì đi tiếp và vẫn bắt buộc _csrf.
+app.post("/logout", (req, res, next) => (res.locals.currentUser ? next() : res.redirect(303, "/login?msg=logged-out")));
 // CSRF: kiểm tra token trên method GỐC (POST) — phải đặt TRƯỚC method-override.
 app.use(csrf);
 
