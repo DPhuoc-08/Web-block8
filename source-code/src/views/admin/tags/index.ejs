@@ -1,0 +1,37 @@
+<%- include("../../partials/header", { title }) %>
+<%# Danh sách tag (/admin/tags): hiện hết một trang, xếp A→Z. Link Sửa / Xoá chỉ MỞ trang, không tự ghi dữ liệu. -%>
+<%- include("../../partials/admin-nav", { current: "tags" }) %>
+<div class="toolbar">
+  <h1 id="ket-qua" tabindex="-1" class="list-anchor">Tag</h1>
+  <a class="btn btn-primary" href="/admin/tags/new">+ Thêm tag</a>
+</div>
+<% if (tags.length === 0) { -%>
+<div class="panel empty">Chưa có tag nào.</div>
+<% } else { -%>
+<div class="panel table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Tên</th><th>Món dùng</th><th>Đầu bếp dùng</th>
+        <th><span class="sr-only">Thao tác</span></th>
+      </tr>
+    </thead>
+    <tbody>
+<% for (const t of tags) { -%>
+      <tr<% if (t.id === savedId) { %> class="just-saved"<% } %>>
+        <td class="num" data-label="Mã"><%= t.id %></td>
+        <td class="title" data-label="Tên"><a href="/admin/tags/<%= t.id %>/edit"><%= t.name %></a></td>
+        <td data-label="Món dùng"><%= t.dishCount %> món</td>
+        <td data-label="Đầu bếp dùng"><%= t.chefCount %> đầu bếp</td>
+        <td class="actions">
+          <a class="btn btn-sm" href="/admin/tags/<%= t.id %>/edit">Sửa</a>
+          <a class="btn btn-sm danger-text" href="/admin/tags/<%= t.id %>/delete">Xoá</a>
+        </td>
+      </tr>
+<% } -%>
+    </tbody>
+  </table>
+</div>
+<p class="muted page-summary"><%= tags.length %> tag</p>
+<% } -%>
+<%- include("../../partials/footer") %>

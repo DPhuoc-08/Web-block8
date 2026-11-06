@@ -1,6 +1,6 @@
 <%# Thanh chuyển giữa 3 trang quản trị (giữ từ block5/block7). Tham số: current. -%>
 <nav class="admin-nav" aria-label="Quản trị">
-<% for (const [key, label] of [["dishes", "Món ăn"], ["chefs", "Đầu bếp"], ["ingredients", "Nguyên liệu"]]) { -%>
+<% for (const [key, label] of [["dishes", "Món ăn"], ["chefs", "Đầu bếp"], ["ingredients", "Nguyên liệu"], ["tags", "Tag"]]) { -%>
   <a href="/admin/<%= key %>"<% if (key === current) { %> class="current" aria-current="page"<% } %>><%= label %></a>
 <% } -%>
 </nav>

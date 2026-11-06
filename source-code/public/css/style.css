@@ -183,6 +183,7 @@ td.actions .btn + .btn { margin-left: 6px; }
 .image-preview { width: 200px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
 .form-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding-top: 4px; }
 .alert { background: var(--danger-soft); color: var(--danger); border: 1px solid #f0c4bf; padding: 10px 14px; border-radius: 8px; margin: 12px 0 0; }
+.note { background: var(--surface-2); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin: 12px 0 0; font-size: .92rem; }
 .confirm { max-width: 560px; padding: 24px; }
 .confirm h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
 .confirm { max-width: 640px; }

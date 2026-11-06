@@ -1,6 +1,6 @@
 import { requiredText, idList } from "./common.js";
 
-// Body của POST /api/tags: chỉ có tên. Tag không sửa/xoá (nhóm chốt) nên không có chế độ partial.
+// Form thêm / sửa tag (plan 12.4): chỉ có tên, nên thêm và sửa dùng chung một kiểm tra.
 export function validateTag(body) {
   const data = {};
   const errors = {};

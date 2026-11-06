@@ -481,3 +481,19 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Giới hạn còn lại:** đã đăng nhập lại ở tab A rồi bấm Đăng xuất ở tab B cũ thì vẫn `403`, vì token của tab B thuộc phiên trước và phiên hiện tại vẫn cần được bảo vệ.
 
 **Đã kiểm tra:** `check-auth.mjs D` 30/30 ĐẠT, thêm 3 ca: còn đăng nhập thiếu `_csrf` → `403`, phiên còn; tab thứ hai → `303`; không phiên, không `_csrf` → `303`.
+
+### 2. Quản lý tag
+
+**Đã làm:** `/admin/tags` (danh sách, thêm, sửa tên, xoá), mục Tag trên thanh quản trị, thông báo sau khi ghi. `/admin` đã có `requireLogin` nên các route mới tự được bảo vệ.
+
+**Quyết định:**
+- **Danh sách không có tìm kiếm, số trang:** seed có 16 tag, hiện hết một trang là đủ.
+- **Xoá bằng một câu `deleteMany` có điều kiện không món, không đầu bếp dùng:** không có khoảng hở giữa lúc kiểm tra và lúc xoá. Tag đang dùng → `409`. Không xoá kèm liên kết vì món và đầu bếp phải còn ít nhất một tag.
+- **Trang xoá chỉ hiện số món, số đầu bếp kèm link danh sách đã lọc theo tên tag:** một tag vùng miền có thể có hàng trăm món, không liệt kê từng dòng.
+- **Cho đổi tên tag loại món nhưng cảnh báo trên form:** `dish-art.js` chọn hình minh hoạ và nhóm nút hiện sẵn theo đúng tên tag, nên đổi tên "Món nước" làm mất hình riêng.
+
+**Phương án đã bỏ:** khoá đổi tên tag loại món (gõ sai vẫn không sửa được); đưa hình minh hoạ sang cột mới của `tags` (đổi bảng block7).
+
+**Giới hạn còn lại:** thêm tag loại món mới vẫn dùng hình chung, vì bảng hình nằm trong code.
+
+**Đã kiểm tra:** `check-ssr.mjs E` 18/18 ĐẠT (đếm so với SQL, trùng tên khác hoa thường, tên có thẻ HTML được escape, xoá bị chặn `409` và liên kết còn nguyên, GET xác nhận không xoá); `check-auth.mjs D` 30/30, phần chặn route mở rộng thành 18 GET và 12 lệnh ghi. Sau khi dọn: 1200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag.

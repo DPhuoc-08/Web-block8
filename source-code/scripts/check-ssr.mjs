@@ -143,6 +143,54 @@ if (run("C")) {
   results.push(r.counts);
 }
 
+if (run("E")) {
+  const r = reporter("E. Quản trị tag (plan 12.4)");
+  const c = await adminClient();
+  const list = await c.get("/admin/tags");
+  const nTags = await prisma.tag.count();
+  const nUsed = await count(prisma.$queryRaw`SELECT count(*) n FROM dish_tags WHERE "tagId" = (SELECT id FROM tags WHERE name = 'Món nước')`);
+  r.ok(list.status === 200 && list.text.includes(`${nTags} tag`) && list.text.includes(`${nUsed} món`), `Danh sách: ${nTags} tag, “Món nước” dùng trong ${nUsed} món theo SQL`);
+  r.ok(list.text.includes('href="/admin/tags" class="current"'), "Thanh quản trị có mục Tag, đang được chọn");
+  for (const [url, status] of [["/admin/tags/abc/edit", 404], ["/admin/tags/999999/edit", 404], ["/admin/tags/999999/delete", 404]]) {
+    r.ok((await c.get(url)).status === status, `${url} → ${status}`);
+  }
+
+  await c.get("/admin/tags/new");
+  let res = await c.post("/admin/tags", [["name", "   "]]);
+  r.ok(res.status === 400 && res.text.includes("Tên tag không được để trống."), "Tên trống → 400, lỗi cạnh ô");
+  res = await c.post("/admin/tags", [["name", "MÓN NƯỚC"]]);
+  r.ok(res.status === 400 && res.text.includes("Đã có tag tên này.") && res.text.includes('value="MÓN NƯỚC"'), "Trùng tên (khác hoa thường) → 400, giữ giá trị đã gõ");
+  res = await c.post("/admin/tags", [["name", `${P} Tag <b>`]]);
+  const id = savedIdOf(res.location);
+  r.ok(res.status === 303 && res.location.startsWith("/admin/tags?msg=tag-created") && Boolean(await prisma.tag.findUnique({ where: { id } })), "Thêm tag → 303 + thông báo", res.location);
+  const shown = await c.get(res.location);
+  r.ok(shown.text.includes("[TEST B8] Tag &lt;b&gt;") && !shown.text.includes("[TEST B8] Tag <b>") && shown.text.includes("just-saved"), "Tên có thẻ HTML được escape; dòng vừa lưu được tô");
+
+  await c.get(`/admin/tags/${id}/edit`);
+  res = await c.post(`/admin/tags/${id}?_method=PATCH`, [["name", `${P} Tag sửa`]]);
+  r.ok(res.status === 303 && (await prisma.tag.findUnique({ where: { id } })).name === `${P} Tag sửa`, "Sửa tên → 303, DB đổi");
+  res = await c.post(`/admin/tags/${id}?_method=PATCH`, [["name", `${P} tag SỬA`]]);
+  r.ok(res.status === 303, "Đổi hoa thường của chính tag đó → 303 (không tự trùng với mình)");
+  res = await c.post(`/admin/tags/999999?_method=PATCH`, [["name", `${P} không có`]]);
+  r.ok(res.status === 404, "Sửa tag không có → 404");
+
+  const art = await prisma.tag.findFirst({ where: { name: "Lẩu" } });
+  r.ok((await c.get(`/admin/tags/${art.id}/edit`)).text.includes("hình minh hoạ riêng") && !(await c.get(`/admin/tags/${id}/edit`)).text.includes("hình minh hoạ riêng"), "Tag loại món có cảnh báo khi đổi tên; tag thường thì không");
+
+  // Xoá: tag đang dùng → 409, liên kết còn nguyên; GET xác nhận không xoá; tag rảnh → 303.
+  const beforeLinks = await prisma.dishTag.count({ where: { tagId: art.id } });
+  const blockedPage = await c.get(`/admin/tags/${art.id}/delete`);
+  r.ok(blockedPage.status === 200 && !blockedPage.text.includes("?_method=DELETE"), "Tag đang dùng: trang xoá không có nút xoá");
+  res = await c.post(`/admin/tags/${art.id}?_method=DELETE`);
+  r.ok(res.status === 409 && Boolean(await prisma.tag.findUnique({ where: { id: art.id } })) && (await prisma.dishTag.count({ where: { tagId: art.id } })) === beforeLinks, "Gửi thẳng lệnh xoá tag đang dùng → 409, tag và liên kết còn nguyên");
+  await c.get(`/admin/tags/${id}/delete`);
+  r.ok(Boolean(await prisma.tag.findUnique({ where: { id } })), "GET trang xác nhận xoá không xoá");
+  res = await c.post(`/admin/tags/${id}?_method=DELETE`);
+  r.ok(res.status === 303 && !(await prisma.tag.findUnique({ where: { id } })), "Xoá tag không ai dùng → 303");
+  r.ok((await c.post(`/admin/tags/${id}?_method=DELETE`)).status === 404, "Xoá lần hai → 404");
+  results.push(r.counts);
+}
+
 if (run("D")) {
   const r = reporter("D. Tìm tiếng Việt không dấu (plan 12.3)");
   const c = client();
