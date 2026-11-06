@@ -146,7 +146,7 @@
   <div class="table-wrap"><table>
     <thead><tr><th>Bảng</th><th>Cột chính</th><th>Dùng để</th></tr></thead>
     <tbody>
-      <tr><td><code>users</code></td><td><code>email</code> (đã chuẩn hoá, unique), <code>emailInput</code>, <code>passwordHash</code> (Argon2id), <code>role</code> (mặc định <code>viewer</code>), <code>status</code> (<code>pending</code> / <code>active</code>), <code>emailVerifiedAt</code></td><td>Tài khoản. Seed 2 tài khoản <code>active</code>, email và mật khẩu đọc từ <code>.env</code></td></tr>
+      <tr><td><code>users</code></td><td><code>email</code> (đã chuẩn hoá, unique), <code>emailInput</code>, <code>username</code> (tên hiển thị, được trùng, có thể rỗng), <code>passwordHash</code> (Argon2id), <code>role</code> (mặc định <code>viewer</code>), <code>status</code> (<code>pending</code> / <code>active</code>), <code>emailVerifiedAt</code></td><td>Tài khoản. Seed 2 tài khoản <code>active</code>, email và mật khẩu đọc từ <code>.env</code></td></tr>
       <tr><td><code>activation_challenges</code></td><td><code>userId</code> (khoá chính — mỗi user một mã), <code>purpose</code>, <code>otpHash</code> (HMAC-SHA256 + <code>OTP_PEPPER</code>), <code>expiresAt</code>, <code>usedAt</code>, <code>attempts</code>, <code>lockedUntil</code>, <code>lastSentAt</code></td><td>Mã kích hoạt 6 số. Gửi lại ghi đè <code>otpHash</code>, giữ <code>attempts</code></td></tr>
       <tr><td><code>password_resets</code></td><td><code>userId</code>, <code>tokenHash</code> (SHA-256, unique), <code>expiresAt</code>, <code>usedAt</code>, <code>createdAt</code></td><td>Link đặt lại mật khẩu; yêu cầu mới vô hiệu token cũ</td></tr>
       <tr><td><code>sessions</code></td><td><code>sid</code> (khoá chính), <code>userId</code> (rỗng với phiên ẩn danh), <code>data</code> (JSON: <code>userId</code>, <code>loginAt</code>, <code>csrfToken</code>…), <code>expiresAt</code></td><td>Phiên ở server. Cột <code>userId</code> để xoá mọi phiên của một user khi đặt lại mật khẩu</td></tr>
@@ -162,7 +162,7 @@
   <div class="table-wrap"><table>
     <thead><tr><th>Thao tác</th><th>Request</th><th>Server kiểm tra (theo thứ tự)</th><th>DB</th><th>Kết quả</th></tr></thead>
     <tbody>
-      <tr><td>Đăng ký</td><td><code>POST /register</code><br>email, password, passwordConfirm, <code>g-recaptcha-response</code></td><td>CSRF → 10 / giờ / IP → reCAPTCHA (siteverify) → dữ liệu → băm Argon2id → email đã có?</td><td>Mới: <code>users</code> pending + <code>activation_challenges</code> (một transaction). Pending: không ghi đè mật khẩu, gửi lại mã nếu còn hạn mức. Active: không ghi</td><td><code>303 /activate?msg=registered</code> — giống nhau cả ba nhánh</td></tr>
+      <tr><td>Đăng ký</td><td><code>POST /register</code><br>username, email, password, passwordConfirm, <code>g-recaptcha-response</code></td><td>CSRF → 10 / giờ / IP → reCAPTCHA (siteverify) → dữ liệu → băm Argon2id → email đã có?</td><td>Mới: <code>users</code> pending + <code>activation_challenges</code> (một transaction). Pending: không ghi đè mật khẩu, gửi lại mã nếu còn hạn mức. Active: không ghi</td><td><code>303 /activate?msg=registered</code> — giống nhau cả ba nhánh</td></tr>
       <tr><td>Nhập mã</td><td><code>POST /activate</code><br>email, otp</td><td>CSRF → IP → đang khoá? → 6 điều kiện của mã</td><td>Đúng: <code>usedAt</code> + <code>status=active</code> + <code>emailVerifiedAt</code> (một transaction, <code>updateMany</code> có điều kiện). Sai: <code>attempts + 1</code>, đủ 5 → <code>lockedUntil</code></td><td>Đúng: <code>303 /login?msg=activated</code>. Sai: <code>200 INVALID_OTP</code>. Khoá: <code>429</code></td></tr>
       <tr><td>Gửi lại mã</td><td><code>POST /activate/resend</code> (cùng form, nút có <code>formaction</code>)</td><td>CSRF → định dạng email → chờ 60 giây → 5 lần / giờ / email (tính cả email không có)</td><td>Pending: <code>otpHash</code> mới, hạn mới, <code>attempts</code> giữ nguyên</td><td><code>303 /activate?msg=otp-sent</code> (giống nhau dù email không có); quá hạn mức: <code>429</code></td></tr>
       <tr><td>Đăng nhập</td><td><code>POST /login</code><br>email, password, next (+ CAPTCHA)</td><td>CSRF → 30 / 15 phút / IP → khoá theo email → CAPTCHA nếu đã sai ≥ 3 → mật khẩu → active?</td><td>Sai: <code>rate_limits</code> <code>login-fail:email:…</code> + 1. Đúng: xoá bộ đếm email, <code>regenerate</code> → bản ghi <code>sessions</code> mới có <code>userId</code></td><td>Đúng: <code>303</code> + <code>Set-Cookie: sid</code> mới. Sai: <code>200 INVALID_CREDENTIALS</code>. Pending: <code>200 ACCOUNT_NOT_ACTIVATED</code>. Khoá: <code>429</code></td></tr>
@@ -249,6 +249,18 @@
       <tr><td>Đăng nhập ở tab 1. Mở link trong Gmail ở tab 2</td><td>Form; <code>usedAt</code> vẫn rỗng; header <code>Referrer-Policy: no-referrer</code></td><td>network mục 10, <code>db/5</code></td></tr>
       <tr><td>Đặt mật khẩu mới ở tab 2, rồi F5 tab 1</td><td><code>303 /login</code> ở tab 2 (không tự đăng nhập); tab 1 bị đưa về <code>/login</code>; 0 phiên của user</td><td>network mục 11, <code>db/6</code></td></tr>
       <tr><td>Mở lại link cũ; dùng token làm mã kích hoạt / mật khẩu</td><td>“Link không dùng được”; các chỗ khác đều từ chối; mật khẩu không đổi</td><td>ảnh 14, check-auth E</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Phần 5 — Hồ sơ và bổ sung quản trị (plan 12.4, ngoài đề)</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Làm</th><th>Cho xem</th><th>Đối chiếu bằng chứng</th></tr></thead>
+    <tbody>
+      <tr><td>Bấm tên trên header, sửa tên hiển thị; thêm <code>role=admin</code> vào form bằng DevTools</td><td><code>303</code>, header đổi tên; role vẫn như cũ</td><td><code>curl/9</code> phần G</td></tr>
+      <tr><td>Đổi mật khẩu với mật khẩu hiện tại sai 5 lần</td><td>Lỗi cạnh ô, rồi trang <code>429</code> dù gửi đúng</td><td><code>curl/9</code> phần G</td></tr>
+      <tr><td>Đăng nhập ở tab ẩn danh. Đổi mật khẩu đúng ở tab thường, rồi F5 tab ẩn danh</td><td>Tab thường vẫn đăng nhập; tab ẩn danh <code>303 /login</code>; có thư báo</td><td><code>curl/9</code> phần G</td></tr>
+      <tr><td>Quản trị tag: sửa tên một tag; xoá tag đang dùng</td><td>Tên đổi trên thực đơn; trang xoá không có nút, gửi thẳng ra <code>409</code></td><td><code>curl/10</code> phần E</td></tr>
+      <tr><td>Danh sách món: lọc Tạm hết + một đầu bếp, bấm Mở phục vụ</td><td>Về đúng danh sách đang lọc, có thông báo; trang khách đổi tình trạng</td><td><code>curl/10</code> phần F</td></tr>
+      <tr><td>Hai tab cùng phiên: đăng xuất tab 1, bấm Đăng xuất tab 2</td><td><code>303 /login</code>, không còn trang <code>403</code></td><td><code>curl/9</code> phần D</td></tr>
     </tbody>
   </table></div>
   <p class="muted">Chạy lại toàn bộ tự động: <code>node scripts/check-auth.mjs</code> (tự chạy server riêng ở :3100, dùng key thử từ <code>.env.test</code>) và <code>npm start</code> + <code>node scripts/check-ssr.mjs</code>. Thu lại bằng chứng: tắt <code>npm start</code> rồi <code>node scripts/collect-evidence.mjs</code>. Seed lại sau khi chạy.</p>

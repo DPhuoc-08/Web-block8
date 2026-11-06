@@ -32,14 +32,42 @@
 ĐẠT      /admin/dishes/abc/edit → 404
 ĐẠT      /admin/dishes/999999/delete → 404
 ĐẠT      Form sai → 400, lỗi cạnh ô, không ghi
-ĐẠT      Thêm món → 303 trang 1 + thông báo — /admin/dishes?msg=dish-created&saved=1203
+ĐẠT      Thêm món → 303 trang 1 + thông báo — /admin/dishes?msg=dish-created&saved=1215
 ĐẠT      Thêm nhanh tag / nguyên liệu / đầu bếp khi lưu (bỏ trùng hoa thường)
 ĐẠT      Tag mới trùng tag đã có → 400
-ĐẠT      Sửa → 303 về đúng trang, giá 0, bỏ tick còn phục vụ — /admin/dishes?page=3&msg=dish-updated&saved=1203
+ĐẠT      Sửa → 303 về đúng trang, giá 0, bỏ tick còn phục vụ — /admin/dishes?page=3&msg=dish-updated&saved=1215
 ĐẠT      back trỏ ra ngoài → về /admin/dishes
 ĐẠT      GET trang xác nhận xoá không xoá
 ĐẠT      Xoá → 303 về trang 2
 ĐẠT      Xoá lần hai → 404
+
+== F. Danh sách món: lọc + đổi nhanh tình trạng (plan 12.4) ==
+ĐẠT      Tạm hết: 181 món theo SQL
+ĐẠT      Đầu bếp #1: 21 món theo SQL
+ĐẠT      Tạm hết + đầu bếp: 3 món theo SQL
+ĐẠT      Từ khoá “lẩu” + Tạm hết: 12 món theo SQL
+ĐẠT      Ô lọc giữ giá trị đang chọn
+ĐẠT      Toàn văn “pho” + Tạm hết: 10 món theo SQL
+ĐẠT      Gần đúng “bun bo” + Tạm hết: 3 món theo SQL
+ĐẠT      Gần đúng “bun bo”, không lọc: 16 món theo SQL
+ĐẠT      Bộ lọc thật sự thu hẹp kết quả gần đúng — 16 → 3
+ĐẠT      chef=1 OR 1=1 → 400, không chạm SQL
+ĐẠT      available sai → 400
+ĐẠT      available lặp → 400
+ĐẠT      đầu bếp không có → 400
+ĐẠT      chef lặp → 400
+ĐẠT      Form GET có ô trống → 302 về URL gọn
+ĐẠT      Link số trang giữ bộ lọc
+ĐẠT      Danh sách có nút đổi nhanh dạng form POST
+ĐẠT      Thiếu _csrf → 403, không đổi
+ĐẠT      Giá trị sai → 400, không đổi
+ĐẠT      Đặt tạm hết → 303 về đúng danh sách, DB đổi — /admin/dishes?q=%5BTEST+B8%5D&msg=dish-availability&saved=1217
+ĐẠT      Chỉ đổi tình trạng, các cột và liên kết khác giữ nguyên
+ĐẠT      Trang sau khi đổi: có thông báo, tô dòng, nút thành Mở phục vụ
+ĐẠT      Gửi lại cùng giá trị (hai tab) → vẫn Tạm hết, không bị đảo
+ĐẠT      back trỏ ra ngoài → về /admin/dishes
+ĐẠT      Món không có → 404
+ĐẠT      Trang khách thấy tình trạng mới
 
 == C. Quản trị đầu bếp, nguyên liệu ==
 ĐẠT      Tìm đầu bếp “lẩu” (tên hoặc chuyên môn) = 6 theo SQL
@@ -52,6 +80,26 @@
 ĐẠT      Thêm nguyên liệu, đơn vị trống lưu null
 ĐẠT      Xoá nguyên liệu đang dùng → 409
 ĐẠT      Xoá nguyên liệu chưa dùng → 303
+
+== E. Quản trị tag (plan 12.4) ==
+ĐẠT      Danh sách: 18 tag, “Món nước” dùng trong 224 món theo SQL
+ĐẠT      Thanh quản trị có mục Tag, đang được chọn
+ĐẠT      /admin/tags/abc/edit → 404
+ĐẠT      /admin/tags/999999/edit → 404
+ĐẠT      /admin/tags/999999/delete → 404
+ĐẠT      Tên trống → 400, lỗi cạnh ô
+ĐẠT      Trùng tên (khác hoa thường) → 400, giữ giá trị đã gõ
+ĐẠT      Thêm tag → 303 + thông báo — /admin/tags?msg=tag-created&saved=33
+ĐẠT      Tên có thẻ HTML được escape; dòng vừa lưu được tô
+ĐẠT      Sửa tên → 303, DB đổi
+ĐẠT      Đổi hoa thường của chính tag đó → 303 (không tự trùng với mình)
+ĐẠT      Sửa tag không có → 404
+ĐẠT      Tag loại món có cảnh báo khi đổi tên; tag thường thì không
+ĐẠT      Tag đang dùng: trang xoá không có nút xoá
+ĐẠT      Gửi thẳng lệnh xoá tag đang dùng → 409, tag và liên kết còn nguyên
+ĐẠT      GET trang xác nhận xoá không xoá
+ĐẠT      Xoá tag không ai dùng → 303
+ĐẠT      Xoá lần hai → 404
 
 == D. Tìm tiếng Việt không dấu (plan 12.3) ==
 ĐẠT      cơ bản “pho”: 65 món theo SQL — trang hiển thị 65 món / 6 trang
@@ -88,4 +136,4 @@
 ĐẠT      Quản trị nguyên liệu gần đúng “tom xu”: 5 nguyên liệu theo SQL
 
 Sau khi dọn: 1200 món / 60 đầu bếp / 250 nguyên liệu / 16 tag
-TỔNG: 80 ĐẠT, 0 CHƯA ĐẠT
+TỔNG: 124 ĐẠT, 0 CHƯA ĐẠT

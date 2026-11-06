@@ -30,7 +30,7 @@ Thu ngày 03/11/2026 bằng `node scripts/collect-evidence.mjs` (trong `source-c
 | Mở link đặt lại | Chỉ hiện form, không tiêu thụ token, `Referrer-Policy: no-referrer` | `12-dat-lai-mat-khau-375` | `network` mục 10, `db/5` (`usedAt` rỗng, chỉ lưu SHA-256, hạn 15 phút) |
 | Đặt mật khẩu mới | Token dùng xong, mật khẩu đổi, mọi phiên cũ bị xoá, không tự đăng nhập | `13-dat-lai-xong-375` | `network` mục 11, `db/6` (vân tay hash đổi, `usedAt` có giá trị, 0 phiên), `mail/3` |
 | Dùng lại link | "Link không dùng được" | `14-link-da-dung-375` | `curl/9` phần E |
-| Toàn bộ bảng nghiệm thu + hồi quy thực đơn / quản trị | ĐẠT hết | — | `curl/9-check-auth.txt` **94/94**, `curl/10-check-ssr.txt` **80/80** |
+| Toàn bộ bảng nghiệm thu + hồi quy thực đơn / quản trị | ĐẠT hết | — | `curl/9-check-auth.txt` **135/135**, `curl/10-check-ssr.txt` **124/124** |
 | Mở rộng: tìm tiếng Việt không dấu (plan 12.3, không thuộc đề) | Từ khoá không dấu ra món có dấu ở mọi kiểu tìm; từ khoá có dấu giữ nguyên như block7 | `18-tim-khong-dau-pho-1280`, `19-gan-dung-khong-dau-375`, `20-toan-van-khong-dau-1280` (chụp ngày 05/11/2026 bằng script riêng, `collect-evidence.mjs` không thu lại 3 ảnh này) | `curl/10` phần D (32 ca) |
 
 Hai file `curl/9`, `curl/10` thu lại ngày 05/11/2026 sau khi thêm tìm không dấu.

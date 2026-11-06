@@ -50,14 +50,14 @@
 
 == D. Đăng nhập, đăng xuất, chặn CRUD, CSRF ==
 ĐẠT      Khách xem thực đơn: 200, không có Set-Cookie (không tạo phiên)
-ĐẠT      14 route GET của /admin khi chưa đăng nhập → 303 /login?next=<trang>
-ĐẠT      9 request POST / PATCH / DELETE khi chưa đăng nhập → 303 /login, dữ liệu không đổi
-ĐẠT      9 request ghi KHÔNG cookie, KHÔNG _csrf (curl trần) → cũng 303 /login, dữ liệu không đổi
+ĐẠT      20 route GET của /admin khi chưa đăng nhập → 303 /login?next=<trang>
+ĐẠT      14 request POST / PATCH / DELETE khi chưa đăng nhập → 303 /login, dữ liệu không đổi
+ĐẠT      14 request ghi KHÔNG cookie, KHÔNG _csrf (curl trần) → cũng 303 /login, dữ liệu không đổi
 ĐẠT      Cookie sid bịa → 303 /login (không lỗi 500)
 ĐẠT      Sai mật khẩu / email không có → cùng 200, cùng nội dung
 ĐẠT      Form giữ email, không điền lại mật khẩu
 ĐẠT      Sai mật khẩu → không có phiên đăng nhập
-ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Thu, 05 Nov 2026 17:17:49 GMT; HttpOnly; SameSite=Lax
+ĐẠT      Đăng nhập đúng (email viết hoa + khoảng trắng) → 303, Set-Cookie sid HttpOnly SameSite=Lax — sid=…; Path=/; Expires=Fri, 06 Nov 2026 03:57:20 GMT; HttpOnly; SameSite=Lax
 ĐẠT      sid trước ≠ sid sau đăng nhập; phiên cũ bị xoá (chống session fixation)
 ĐẠT      Bản ghi phiên mới có userId của tài khoản
 ĐẠT      Vào /admin/dishes: 200, Cache-Control no-store, header có email + Đăng xuất (form POST)
@@ -72,14 +72,17 @@
 ĐẠT      Origin: null (trang lạ đặt no-referrer / iframe sandbox) ở route quản trị → 403
 ĐẠT      ?_method=DELETE thiếu _csrf → 403 (kiểm tra trước method-override)
 ĐẠT      Dừng + chạy lại server, dùng lại cookie → vẫn đăng nhập, bản ghi phiên còn trong DB
+ĐẠT      Còn đăng nhập, POST /logout thiếu _csrf → 403, phiên còn nguyên
 ĐẠT      Đăng xuất → 303 /login, Set-Cookie xoá sid
 ĐẠT      Bản ghi phiên đã bị xoá ở server
 ĐẠT      Dùng lại bản sao sid cũ sau khi đăng xuất → 303 /login
 ĐẠT      GET /logout → 404 (đăng xuất chỉ bằng POST)
+ĐẠT      Đã đăng xuất ở tab khác, bấm Đăng xuất ở tab này → 303 /login, không phải 403 — 303
+ĐẠT      POST /logout không có phiên, không _csrf → 303 /login, không đổi gì — 303
 
 == E. Quên mật khẩu, đặt lại mật khẩu ==
 ĐẠT      Email có / không có → cùng 303, cùng trang “Kiểm tra email của bạn”
-ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 134ms / 139ms
+ĐẠT      Thời gian phản hồi gần nhau (việc ghi DB + gửi thư chạy sau khi trả lời) — 209ms / 203ms
 ĐẠT      Email chứa link APP_ORIGIN/reset?token=…; DB chỉ lưu SHA-256, hạn 15 phút
 ĐẠT      GET /reset với token hợp lệ: chỉ hiện form, usedAt vẫn rỗng, Referrer-Policy no-referrer
 ĐẠT      Mật khẩu mới không khớp → VALIDATION_FAILED, token chưa bị dùng
@@ -105,4 +108,44 @@
 ĐẠT      Đã đăng nhập: xoá nguyên liệu → 303
 ĐẠT      Xoá nguyên liệu đang dùng vẫn bị chặn 409
 
-TỔNG: 94 ĐẠT, 0 CHƯA ĐẠT
+== G. Hồ sơ, tên hiển thị, đổi mật khẩu (plan 12.4) ==
+ĐẠT      Đăng ký thiếu tên → 200 VALIDATION_FAILED, không tạo user
+ĐẠT      Tên quá ngắn: báo lỗi, giữ tên đã gõ, không điền lại mật khẩu
+ĐẠT      Đăng ký: lưu tên đã cắt khoảng trắng — Nguyễn Văn An
+ĐẠT      Đăng ký lại khi pending: tên và mật khẩu không bị ghi đè
+ĐẠT      Đăng ký lại email đã active: bản ghi không đổi
+ĐẠT      Hồ sơ: 200, no-store, có email, vai trò, trạng thái
+ĐẠT      Hồ sơ không có hash mật khẩu, không có dữ liệu người khác
+ĐẠT      Chưa có tên: header hiện email, là link tới hồ sơ
+ĐẠT      Không có đường xem hồ sơ người khác qua URL
+ĐẠT      Sửa tên thiếu _csrf → 403, không đổi
+ĐẠT      Sửa tên từ trang khác → 403, không đổi
+ĐẠT      Tên trống, quá ngắn, quá dài, ký tự điều khiển → 400, không đổi
+ĐẠT      Sửa tên → 303, lưu tên đã cắt khoảng trắng
+ĐẠT      role, email, status, id gửi kèm bị bỏ qua; người khác không đổi
+ĐẠT      Tên có thẻ HTML được escape ở header và hồ sơ
+ĐẠT      Tên được trùng với người khác → 303
+ĐẠT      Thiếu _csrf → 403, không đổi
+ĐẠT      Thiếu, ngắn, dài, không khớp, trùng mật khẩu cũ → 400, không điền lại, không đổi, không tính lần sai
+ĐẠT      Sai mật khẩu hiện tại → 400, không đổi, bộ đếm = 1
+ĐẠT      Lần sai thứ 5 → 429, có Retry-After — Retry-After 901
+ĐẠT      Đang khoá: gửi đúng mật khẩu hiện tại vẫn 429, không đổi
+ĐẠT      Phiên mới (cookie khác) vẫn bị khoá: bộ đếm ở DB theo user
+ĐẠT      Đổi đúng → 303 về hồ sơ — /admin/profile?msg=password-changed
+ĐẠT      Hash mới dạng Argon2id
+ĐẠT      Đổi thành công xoá bộ đếm sai
+ĐẠT      sid đổi, phiên cũ của thiết bị này đã xoá
+ĐẠT      loginAt giữ nguyên: không kéo dài hạn tối đa 12 giờ
+ĐẠT      Thiết bị này vẫn đăng nhập, có thông báo
+ĐẠT      Thiết bị khác → 303 /login
+ĐẠT      Bản sao sid cũ → 303 /login
+ĐẠT      Chỉ còn đúng một phiên của tài khoản
+ĐẠT      Link đặt lại chưa dùng bị vô hiệu
+ĐẠT      Có thư báo đã đổi, không chứa mật khẩu
+ĐẠT      Mật khẩu cũ không đăng nhập được
+ĐẠT      Mật khẩu mới đăng nhập được
+ĐẠT      Hai request đổi mật khẩu đồng thời → đúng một request thắng — 303 /admin/profile?msg=password-changed, 400 
+ĐẠT      Hash cuối đúng là mật khẩu của request thắng
+ĐẠT      Log server không chứa mật khẩu
+
+TỔNG: 135 ĐẠT, 0 CHƯA ĐẠT

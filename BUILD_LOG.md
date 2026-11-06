@@ -548,3 +548,9 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 - *Của script:* phần G hết lượt 10 lần / giờ theo IP khi chạy sau A, B. Sửa: xoá bộ đếm đó đầu phần G.
 
 **Đã kiểm tra:** `check-auth.mjs` toàn bộ **135/135 ĐẠT** (A 25, B 6, C 12, D 30, E 20, F 4, G 38), `check-ssr.mjs` **124/124 ĐẠT**. Log server không chứa mật khẩu. Chrome 1280 / 820 / 375 / 320px: hồ sơ, đổi mật khẩu, danh sách món không cuộn ngang trang.
+
+### 5. Tài liệu
+
+**Đã làm:** cập nhật `README.md`, `hotrotrinhbay.html`, `kichban.html` (Phần 5 của kịch bản demo), `evidence/README.md`, output `evidence/curl/9-check-auth.txt`, `10-check-ssr.txt` (đã dò không có mật khẩu, email seed, secret, chuỗi kết nối). Sơ đồ đăng ký và đăng xuất vẽ lại từ code; sơ đồ đăng xuất thêm bước "Còn phiên đăng nhập?". Plan 12.4 ghi các điểm đã chốt.
+
+**Chưa làm:** ảnh trong `evidence/screens/` và các file `evidence/curl/` khác chưa thu lại, nên ảnh form đăng ký chưa có ô tên. `collect-evidence.mjs` đã sửa để điền ô tên nhưng chưa chạy lại.

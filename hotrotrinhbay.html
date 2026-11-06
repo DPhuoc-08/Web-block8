@@ -150,7 +150,7 @@
 
 <section class="card" id="muc-tieu">
   <h2>1. Mục tiêu và tiêu chí nghiệm thu</h2>
-  <p>Thêm xác thực vào ứng dụng nhà hàng đã có: khách vẫn xem thực đơn tự do, còn cụm CRUD (<code>/admin/*</code>: món, đầu bếp, nguyên liệu) chỉ dùng được sau khi đăng nhập. Mọi thao tác là form HTML gửi về server, server trả trang hoặc <code>303</code>; JavaScript phía trình duyệt chỉ để tiện dùng.</p>
+  <p>Thêm xác thực vào ứng dụng nhà hàng đã có: khách vẫn xem thực đơn tự do, còn cụm CRUD (<code>/admin/*</code>: món, đầu bếp, nguyên liệu, tag, hồ sơ) chỉ dùng được sau khi đăng nhập. Mọi thao tác là form HTML gửi về server, server trả trang hoặc <code>303</code>; JavaScript phía trình duyệt chỉ để tiện dùng.</p>
   <div class="grid two">
     <div class="box">
       <h3>Phải làm được</h3>
@@ -165,10 +165,11 @@
     <div class="box">
       <h3>Kết quả</h3>
       <ul>
-        <li><code>check-auth.mjs</code>: <strong>94/94 ĐẠT</strong> — A đăng ký 25, B CAPTCHA 6, C brute force 12, D phiên + CRUD + CSRF 27, E quên mật khẩu 20, F hồi quy 4 (<a href="evidence/curl/9-check-auth.txt">output</a>)</li>
-        <li><code>check-ssr.mjs</code>: <strong>80/80 ĐẠT</strong> — thực đơn, tìm kiếm, CRUD như block7, thêm tìm không dấu (<a href="evidence/curl/10-check-ssr.txt">output</a>)</li>
+        <li><code>check-auth.mjs</code>: <strong>135/135 ĐẠT</strong> — A đăng ký 25, B CAPTCHA 6, C brute force 12, D phiên + CRUD + CSRF 30, E quên mật khẩu 20, F hồi quy 4, G hồ sơ + đổi mật khẩu 38 (<a href="evidence/curl/9-check-auth.txt">output</a>)</li>
+        <li><code>check-ssr.mjs</code>: <strong>124/124 ĐẠT</strong> — thực đơn, tìm kiếm, CRUD như block7, tìm không dấu, quản lý tag, lọc món (<a href="evidence/curl/10-check-ssr.txt">output</a>)</li>
         <li>Bằng chứng Chrome thật, request trực tiếp, bản ghi DB, thư: <a href="evidence/README.md">evidence/README.md</a></li>
         <li>Phần chỉ làm được bằng tay (key reCAPTCHA thật, Gmail thật): checklist trong <code>BUILD_LOG.md</code> bước 16</li>
+        <li>Bổ sung ngoài đề (plan 12.4): hồ sơ, tên hiển thị, đổi mật khẩu, quản lý tag, đổi nhanh Tạm hết + lọc món</li>
       </ul>
     </div>
   </div>

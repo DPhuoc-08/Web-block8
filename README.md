@@ -47,10 +47,10 @@ npm start                 # http://localhost:3000  (npm run dev: tự khởi đ�
 
 ```bash
 cd source-code
-node scripts/check-auth.mjs        # 94 kiểm tra — tự chạy server riêng ở :3100, thư ghi ra file
+node scripts/check-auth.mjs        # 135 kiểm tra — tự chạy server riêng ở :3100, thư ghi ra file
 node scripts/check-auth.mjs C D    # chỉ phần C, D
 npm start &                        # check-ssr cần server ở :3000
-node scripts/check-ssr.mjs         # 80 kiểm tra — thực đơn, tìm kiếm (cả không dấu), CRUD so với SQL viết tay
+node scripts/check-ssr.mjs         # 124 kiểm tra — thực đơn, tìm kiếm (cả không dấu), CRUD, tag, lọc món so với SQL viết tay
 node scripts/run-sql.js prisma/sql/auth-state.sql   # trạng thái 5 bảng xác thực (đã che hash, sid)
 ```
 
@@ -59,9 +59,10 @@ node scripts/run-sql.js prisma/sql/auth-state.sql   # trạng thái 5 bảng xá
 | A | 25 | Đăng ký, mã kích hoạt (6 điều kiện, khoá, gửi lại không đặt lại số lần thử, hai request đồng thời) |
 | B | 6 | CAPTCHA ở đăng ký (thiếu, tự khai “đã qua”, secret không lộ ra trang, secret sai, hostname sai), giới hạn theo IP |
 | C | 12 | Brute force: CAPTCHA từ lần sai 3, khoá ở lần 10, bộ đếm không theo cookie |
-| D | 27 | Phiên, cookie, đổi sid, khởi động lại server, đăng xuất, CRUD khi chưa đăng nhập, CSRF |
+| D | 30 | Phiên, cookie, đổi sid, khởi động lại server, đăng xuất (cả khi đã hết phiên), CRUD khi chưa đăng nhập, CSRF |
 | E | 20 | Quên / đặt lại mật khẩu, xoá phiên cũ, token dùng một lần |
 | F | 4 | Hồi quy nhanh thực đơn và CRUD sau khi đăng nhập |
+| G | 38 | Tên hiển thị, hồ sơ, đổi mật khẩu (khoá sau 5 lần sai, xoá phiên khác, hai request đồng thời) |
 
 `check-auth` cần file `source-code/.env.test` (không commit) chứa **cặp key thử công khai của Google reCAPTCHA** — lấy trong FAQ của reCAPTCHA (“I'd like to run automated tests…”):
 ```
@@ -83,7 +84,9 @@ Key thử cho mọi token qua → chỉ dùng cho script, không dùng khi demo,
 | `GET/POST /login` | Không | CAPTCHA từ lần sai thứ 3 |
 | `POST /logout` | — | Không có `GET /logout` |
 | `GET/POST /forgot`, `GET/POST /reset` | Không | `GET /reset` chỉ hiện form |
-| `/admin/dishes`, `/admin/chefs`, `/admin/ingredients` (+ `/new`, `/:id/edit`, `/:id/delete`, `POST`, `?_method=PATCH|DELETE`) | **Có** | Chưa đăng nhập → `303 /login` |
+| `/admin/dishes`, `/admin/chefs`, `/admin/ingredients`, `/admin/tags` (+ `/new`, `/:id/edit`, `/:id/delete`, `POST`, `?_method=PATCH|DELETE`) | **Có** | Chưa đăng nhập → `303 /login`. Tag đang dùng không xoá được (`409`) |
+| `GET /admin/dishes?available=&chef=`, `PATCH /admin/dishes/:id/availability` | **Có** | Lọc theo tình trạng, đầu bếp ở cả ba kiểu tìm; đổi nhanh Đang phục vụ / Tạm hết trên danh sách |
+| `GET`, `PATCH /admin/profile`; `GET`, `POST /admin/profile/password` | **Có** | Hồ sơ của chính mình, sửa tên hiển thị, đổi mật khẩu. Không nhận id từ URL hay body |
 
 ## Cấu trúc
 
