@@ -562,3 +562,11 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 - Hai ô lọc của danh sách món chọn xong tự gửi form GET, dùng lại `data-autosubmit` của ô sắp xếp thực đơn (không `fetch`, trình duyệt tải lại trang như gửi form thường). Nút Tìm giữ lại cho ô từ khoá và khi tắt JavaScript. Ô Kiểu tìm không tự gửi: Toàn văn, Gần đúng bắt buộc có từ khoá, tự gửi ngay sẽ báo lỗi khi người dùng chưa kịp gõ.
 
 **Đã kiểm tra:** Chrome thật: mở `/admin/dishes?q=lẩu&page=2`, chọn Tạm hết → URL tự thành `?q=lẩu&available=false` (giữ từ khoá, về trang 1), chọn đầu bếp → thêm `chef=`, bỏ lọc tình trạng → bỏ `available`. Hồ sơ không còn chữ Vai trò, không cuộn ngang ở 1280 / 820 / 375 / 320px. `check-ssr.mjs F` 26/26, `check-auth.mjs G` 38/38.
+
+### 7. Tóm gọn `hotrotrinhbay.html` (người dùng yêu cầu 06/11/2026)
+
+**Đã làm:** viết lại trang chỉ còn ý chính, từ 2.988 từ xuống 946 từ. Giữ đủ các mục `CLAUDE.md` yêu cầu: mục tiêu, kết quả, vì sao hybrid, chỗ lệch chữ của đề, chính sách, ba lựa chọn và giới hạn, 6 câu hỏi (mỗi câu một bằng chứng), công nghệ, cố ý không dùng. Thêm mục Luồng chính và Quy trình làm dạng chuỗi bước. Diễn giải dài chuyển sang lời nói khi trình bày; chi tiết nằm ở `kichban.html`, `BUILD_LOG.md`, sơ đồ và lịch sử git.
+
+**Quyết định:** bỏ phiên bản thư viện khỏi bảng công nghệ (đã ghim trong `package-lock.json`); giới hạn còn lại giữ 5 ý quan trọng nhất, bỏ các ý về `Origin: null`, Gmail, pending.
+
+**Đã kiểm tra:** mọi link nội bộ trỏ tới file có thật; Chrome 1280 / 820 / 375 / 320px không cuộn ngang.

@@ -65,71 +65,51 @@
     scroll-margin-top: 64px;
   }
   section.card > h2 { margin: 0 0 12px; font-size: 22px; }
-  h3 { margin: 20px 0 8px; font-size: 17px; }
+  h3 { margin: 16px 0 8px; font-size: 16px; }
   p { margin: 8px 0; }
-  ul, ol { margin: 8px 0; padding-left: 22px; }
+  ul { margin: 8px 0; padding-left: 22px; }
   li { margin: 3px 0; }
 
-  code, pre { font-family: var(--mono); font-size: 0.9em; }
-  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
-  pre {
-    background: var(--code-bg); border-radius: 8px;
-    padding: 12px 14px; overflow-x: auto; margin: 8px 0; line-height: 1.5;
-  }
-  pre code { background: none; padding: 0; overflow-wrap: normal; }
-
+  code { font-family: var(--mono); font-size: 0.9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
   .muted { color: var(--muted); }
-  .tag {
-    display: inline-block; font-size: 12px; font-weight: 600;
-    padding: 1px 8px; border-radius: 999px; vertical-align: middle;
-    background: var(--accent-soft); color: var(--accent);
-  }
-  .s200 { background: var(--ok-soft); color: var(--ok); }
-  .biz { background: var(--warn-soft); color: var(--warn); }
-  .no { background: var(--err-soft); color: var(--err); }
 
   .grid { display: grid; gap: 12px; }
-  /* Ô lưới mặc định min-width: auto → giãn theo dòng code dài nhất và đẩy trang tràn ngang ở 375px.
-     min-width: 0 để khối <pre> tự cuộn ngang bên trong ô. */
   .grid > * { min-width: 0; }
   @media (min-width: 768px) { .grid.two { grid-template-columns: 1fr 1fr; } .grid.three { grid-template-columns: 1fr 1fr 1fr; } }
   .box { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
-  .box h3 { margin-top: 0; }
-  .box.chosen { border-color: var(--accent); background: var(--accent-soft); }
+  .box h3 { margin: 0 0 6px; }
+  .box p { margin: 4px 0; font-size: 15px; }
   .box .label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .box.chosen { border-color: var(--accent); background: var(--accent-soft); }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 4px; }
+  .stat { flex: 1 1 200px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+  .stat strong { display: block; font-size: 24px; line-height: 1.2; color: var(--ok); }
 
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--border); }
   th { background: var(--code-bg); font-weight: 600; white-space: nowrap; }
-  td:first-child { font-weight: 600; }
-  td:first-child code { white-space: nowrap; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
 
-  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
-  .flow .step {
-    border: 1px solid var(--border); background: var(--card);
-    border-radius: 6px; padding: 4px 10px; font-size: 14px;
-  }
-  .flow .step.key { border-color: var(--accent); background: var(--accent-soft); }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 12px; }
+  .flow .step { border: 1px solid var(--border); background: var(--card); border-radius: 6px; padding: 3px 10px; font-size: 14px; }
+  .flow .step.key { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
   .flow .arrow { color: var(--muted); }
 
-  .callout {
-    border-left: 4px solid var(--accent); background: var(--accent-soft);
-    padding: 10px 14px; border-radius: 6px; margin: 8px 0 12px;
-  }
-  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout { border-left: 4px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 6px; margin: 12px 0 0; }
 
   footer { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0 8px; }
-
   @media print { nav.toc { display: none; } }
+  @media (max-width: 520px) { td:first-child { white-space: normal; } }
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header class="top">
-  <h1>Ứng dụng nhà hàng: đăng ký, đăng nhập, phiên và chống brute force</h1>
-  <p>Hỗ trợ trình bày Block 8: ứng dụng SSR (form HTML, <code>303</code>, cookie phiên, trang <code>429</code>) trên database và backend của Block 7, khu quản trị chỉ mở cho tài khoản đã đăng nhập</p>
+  <h1>Nhà hàng SSR: xác thực tài khoản</h1>
+  <p>Block 8 · form HTML, session + cookie, chống brute force, trên database block 7</p>
   <ul class="members" aria-label="Thành viên">
     <li>Phan Quang Hiệp<span class="mssv">24127039</span></li>
     <li>Trần Nguyễn Đình Nhân<span class="mssv">24127093</span></li>
@@ -139,192 +119,207 @@
 </header>
 
 <nav class="toc" aria-label="Mục lục">
-  <a href="#muc-tieu">1. Mục tiêu</a>
-  <a href="#hybrid">2. Vì sao hybrid</a>
-  <a href="#chinh-sach">3. Chính sách công bố</a>
-  <a href="#lua-chon">4. Ba lựa chọn</a>
-  <a href="#cau-hoi">5. Sáu câu hỏi</a>
-  <a href="#loi">6. Lỗi của agent</a>
-  <a href="#cong-nghe">7. Công nghệ</a>
+  <a href="#muc-tieu">Mục tiêu</a>
+  <a href="#huong-lam">Hướng làm</a>
+  <a href="#luong">Luồng chính</a>
+  <a href="#chinh-sach">Chính sách</a>
+  <a href="#lua-chon">Lựa chọn</a>
+  <a href="#cau-hoi">6 câu hỏi</a>
+  <a href="#cong-nghe">Công nghệ</a>
 </nav>
 
 <section class="card" id="muc-tieu">
-  <h2>1. Mục tiêu và tiêu chí nghiệm thu</h2>
-  <p>Thêm xác thực vào ứng dụng nhà hàng đã có: khách vẫn xem thực đơn tự do, còn cụm CRUD (<code>/admin/*</code>: món, đầu bếp, nguyên liệu, tag, hồ sơ) chỉ dùng được sau khi đăng nhập. Mọi thao tác là form HTML gửi về server, server trả trang hoặc <code>303</code>; JavaScript phía trình duyệt chỉ để tiện dùng.</p>
-  <div class="grid two">
-    <div class="box">
-      <h3>Phải làm được</h3>
-      <ul>
-        <li>Đăng ký có CAPTCHA → tài khoản <code>pending</code>, role <code>viewer</code> do server gán</li>
-        <li>Kích hoạt bằng mã 6 số gửi qua email: lưu dạng băm, có hạn, giới hạn số lần thử, dùng một lần</li>
-        <li>Đăng nhập bằng session + cookie <code>sid</code>, thông báo chung khi sai, đổi <code>sid</code> khi đăng nhập</li>
-        <li>Chống dò mật khẩu: bộ đếm ở DB, CAPTCHA từ lần sai thứ 3, khoá ở lần thứ 10</li>
-        <li>Đăng xuất huỷ phiên ở server; quên / đặt lại mật khẩu bằng link một lần</li>
-      </ul>
-    </div>
-    <div class="box">
-      <h3>Kết quả</h3>
-      <ul>
-        <li><code>check-auth.mjs</code>: <strong>135/135 ĐẠT</strong> — A đăng ký 25, B CAPTCHA 6, C brute force 12, D phiên + CRUD + CSRF 30, E quên mật khẩu 20, F hồi quy 4, G hồ sơ + đổi mật khẩu 38 (<a href="evidence/curl/9-check-auth.txt">output</a>)</li>
-        <li><code>check-ssr.mjs</code>: <strong>124/124 ĐẠT</strong> — thực đơn, tìm kiếm, CRUD như block7, tìm không dấu, quản lý tag, lọc món (<a href="evidence/curl/10-check-ssr.txt">output</a>)</li>
-        <li>Bằng chứng Chrome thật, request trực tiếp, bản ghi DB, thư: <a href="evidence/README.md">evidence/README.md</a></li>
-        <li>Phần chỉ làm được bằng tay (key reCAPTCHA thật, Gmail thật): checklist trong <code>BUILD_LOG.md</code> bước 16</li>
-        <li>Bổ sung ngoài đề (plan 12.4): hồ sơ, tên hiển thị, đổi mật khẩu, quản lý tag, đổi nhanh Tạm hết + lọc món</li>
-      </ul>
-    </div>
+  <h2>Mục tiêu và kết quả</h2>
+  <p>Khách xem thực đơn tự do. Khu quản trị <code>/admin/*</code> chỉ mở sau khi đăng nhập.</p>
+  <ul>
+    <li>Đăng ký có CAPTCHA, kích hoạt bằng mã qua email</li>
+    <li>Đăng nhập bằng session, cookie <code>sid</code> an toàn</li>
+    <li>Chống dò mật khẩu, chống CSRF</li>
+    <li>Đăng xuất huỷ phiên ở server; quên mật khẩu bằng link một lần</li>
+    <li>Thêm ngoài đề: hồ sơ, đổi mật khẩu, quản lý tag, lọc món, tìm không dấu</li>
+  </ul>
+  <div class="stats">
+    <div class="stat"><strong>135/135</strong><a href="evidence/curl/9-check-auth.txt">check-auth</a>: bảng nghiệm thu xác thực</div>
+    <div class="stat"><strong>124/124</strong><a href="evidence/curl/10-check-ssr.txt">check-ssr</a>: thực đơn, tìm kiếm, CRUD</div>
   </div>
+  <p class="muted">Toàn bộ bằng chứng: <a href="evidence/README.md">evidence/README.md</a> · kịch bản demo: <a href="kichban.html">kichban.html</a></p>
 </section>
 
-<section class="card" id="hybrid">
-  <h2>2. Vì sao hybrid, và chỗ lệch chữ của đề</h2>
+<section class="card" id="huong-lam">
+  <h2>Hướng làm: hybrid</h2>
   <div class="flow">
-    <span class="step">Block 5: SSR, DB cũ</span><span class="arrow">→</span>
-    <span class="step">Block 6–7: DB có tag, 1.200 món, tìm kiếm, SPA</span><span class="arrow">→</span>
+    <span class="step">Block 5: SSR</span><span class="arrow">→</span>
+    <span class="step">Block 6–7: tag, 1.200 món, tìm kiếm, SPA</span><span class="arrow">→</span>
     <span class="step key">Block 8: SSR + xác thực trên DB block 7</span><span class="arrow">→</span>
-    <span class="step">Block 9: phân quyền, MFA, API + JWT cho SPA</span>
+    <span class="step">Block 9: phân quyền, MFA, API + JWT</span>
   </div>
   <ul>
-    <li><strong>SSR theo đúng đề:</strong> bảng nghiệm thu viết theo form HTML, <code>303</code>, <code>Set-Cookie</code>, trang <code>429</code>. Thực đơn và trang quản trị được viết lại bằng EJS, giữ giao diện mới nhất của block 7, đủ 4 chế độ tìm, lọc, sắp xếp, số trang (bỏ Tải thêm / Cuộn vô hạn vì cần JavaScript gọi API).</li>
-    <li><strong>Database của block 7:</strong> chặt chẽ và thực tế hơn block 5 (tag nhiều-nhiều, 1.200 món, tìm toàn văn / gần đúng). Chỉ <strong>thêm 5 bảng</strong> xác thực; 7 bảng cũ giữ nguyên cột và quan hệ (dấu vân tay dữ liệu 7 bảng giống hệt trước và sau seed).</li>
-    <li><strong>Block 9 vẫn còn việc:</strong> đề block 9 yêu cầu “SSR đã có authentication của Block 8, rồi thêm bản SPA dùng cùng backend” — phân quyền theo role, MFA, API JSON + JWT đều chưa làm ở đây.</li>
+    <li><strong>SSR đúng đề:</strong> nghiệm thu theo form, <code>303</code>, <code>Set-Cookie</code>, trang <code>429</code></li>
+    <li><strong>Database block 7:</strong> 7 bảng cũ giữ nguyên, thêm 5 bảng xác thực</li>
+    <li><strong>Giao diện block 7</strong> viết lại bằng EJS; JavaScript chỉ để tiện dùng</li>
   </ul>
-  <div class="callout warn"><strong>Lệch chữ của đề:</strong> đề viết “dùng lại database và cụm CRUD của Block 5”. Nhóm dùng database và CRUD của block 7 — bản kế tiếp của chính ứng dụng đó (5 → 6 → 7). Cơ chế, hành vi và bảng nghiệm thu của block 8 giữ nguyên; cùng một URL tìm kiếm cho ra cùng danh sách món như API block 7 (đã so 19 ca thực đơn, 21 ca quản trị).</div>
-  <div class="callout"><strong>Mở rộng do nhóm chốt, ngoài yêu cầu của đề — tìm không dấu:</strong> block 7 gõ <code>pho</code> ra 0 món. Nay từ khoá không dấu được so với dữ liệu đã bỏ dấu bằng extension <code>unaccent</code> của PostgreSQL, ở mọi kiểu tìm: <code>pho</code> ra 65 món, <code>bun bo hue</code> ra Bún bò Huế. Từ khoá có dấu vẫn ra đúng như block 7 (<code>phở</code> 54 món), nên đây là chỗ duy nhất kết quả tìm kiếm khác block 7. Không thêm bảng, không đổi 7 bảng cũ.</div>
+  <div class="callout"><strong>Lệch chữ của đề:</strong> đề ghi “database và CRUD của Block 5”, nhóm dùng block 7, là bản kế tiếp của cùng ứng dụng. Hành vi và bảng nghiệm thu giữ nguyên.</div>
+</section>
+
+<section class="card" id="luong">
+  <h2>Luồng chính</h2>
+  <h3><a href="evidence/diagrams/1-dang-ky-captcha.svg">Đăng ký và kích hoạt</a></h3>
+  <div class="flow">
+    <span class="step">Giới hạn IP</span><span class="arrow">→</span>
+    <span class="step key">CAPTCHA</span><span class="arrow">→</span>
+    <span class="step">Validate</span><span class="arrow">→</span>
+    <span class="step">Băm mật khẩu</span><span class="arrow">→</span>
+    <span class="step">User <code>pending</code></span><span class="arrow">→</span>
+    <span class="step">Mã qua email</span><span class="arrow">→</span>
+    <span class="step key">Đúng mã → <code>active</code></span><span class="arrow">→</span>
+    <span class="step">Đăng nhập riêng</span>
+  </div>
+  <h3><a href="evidence/diagrams/2-dang-nhap-chong-brute-force.svg">Đăng nhập</a></h3>
+  <div class="flow">
+    <span class="step">Giới hạn IP, khoá email</span><span class="arrow">→</span>
+    <span class="step key">CAPTCHA khi sai từ 3 lần</span><span class="arrow">→</span>
+    <span class="step">So mật khẩu</span><span class="arrow">→</span>
+    <span class="step">Kiểm tra <code>active</code></span><span class="arrow">→</span>
+    <span class="step key"><code>sid</code> mới</span><span class="arrow">→</span>
+    <span class="step"><code>303</code></span>
+  </div>
+  <h3><a href="evidence/diagrams/3-dang-xuat.svg">Đăng xuất</a></h3>
+  <div class="flow">
+    <span class="step">Kiểm tra <code>_csrf</code></span><span class="arrow">→</span>
+    <span class="step key">Xoá bản ghi phiên</span><span class="arrow">→</span>
+    <span class="step">Xoá cookie</span><span class="arrow">→</span>
+    <span class="step"><code>303 /login</code></span>
+  </div>
+  <h3><a href="evidence/diagrams/4-quen-mat-khau.svg">Quên mật khẩu</a></h3>
+  <div class="flow">
+    <span class="step">Cùng phản hồi cho mọi email</span><span class="arrow">→</span>
+    <span class="step">Link qua email</span><span class="arrow">→</span>
+    <span class="step"><code>GET</code> chỉ hiện form</span><span class="arrow">→</span>
+    <span class="step key"><code>POST</code> đổi mật khẩu + xoá mọi phiên</span><span class="arrow">→</span>
+    <span class="step">Đăng nhập lại</span>
+  </div>
+  <h3>Quy trình làm</h3>
+  <div class="flow">
+    <span class="step">Plan + chốt</span><span class="arrow">→</span>
+    <span class="step">Nền SSR</span><span class="arrow">→</span>
+    <span class="step">Logic xác thực</span><span class="arrow">→</span>
+    <span class="step">Giao diện theo Figma</span><span class="arrow">→</span>
+    <span class="step">Script kiểm tra</span><span class="arrow">→</span>
+    <span class="step">Bằng chứng, tài liệu</span>
+  </div>
 </section>
 
 <section class="card" id="chinh-sach">
-  <h2>3. Chính sách nhóm công bố</h2>
-  <p>Đề không bắt mọi nhóm cùng ngưỡng; yêu cầu là công bố và hành vi khớp với công bố. Hằng số nằm ở đầu <code>src/routes/auth/register.js</code>, <code>login.js</code>, <code>password-reset.js</code> và <code>src/auth/load-user.js</code>.</p>
+  <h2>Chính sách nhóm công bố</h2>
   <div class="table-wrap"><table>
-    <thead><tr><th>Chủ đề</th><th>Giá trị</th><th>Lưu ở đâu</th></tr></thead>
+    <thead><tr><th>Chủ đề</th><th>Giá trị</th></tr></thead>
     <tbody>
-      <tr><td>Email</td><td>Cắt khoảng trắng, chữ thường toàn bộ; cùng một hàm ở đăng ký, kích hoạt, gửi lại, đăng nhập, quên mật khẩu</td><td><code>src/auth/email.js</code></td></tr>
-      <tr><td>Mật khẩu</td><td>8–64 ký tự, nhập lại phải khớp; Argon2id</td><td><code>users.passwordHash</code></td></tr>
-      <tr><td>Mã kích hoạt</td><td>6 chữ số, hạn 10 phút; 5 lần sai → khoá 15 phút. Gửi lại: chờ 60 giây, tối đa 5 lần / giờ; <strong>số lần thử không về 0</strong> khi gửi lại</td><td><code>activation_challenges</code> (HMAC-SHA256)</td></tr>
-      <tr><td>Đăng ký</td><td>CAPTCHA ở mọi lần; 10 lần / giờ / IP; email đã active → không ghi gì, không gửi thư</td><td><code>rate_limits</code></td></tr>
-      <tr><td>Đăng nhập (theo email, cửa sổ 15 phút)</td><td>Dưới 3 lần sai: chỉ mật khẩu · từ lần sai thứ 3: thêm CAPTCHA · đủ 10 lần: khoá 5 phút, <code>429</code> dù đúng · chỉ đăng nhập thành công mới xoá bộ đếm</td><td><code>rate_limits</code></td></tr>
-      <tr><td>Đăng nhập (theo IP)</td><td>30 lần gửi form / 15 phút, tính cả lần CAPTCHA sai; không xoá khi đăng nhập thành công</td><td><code>rate_limits</code></td></tr>
-      <tr><td>Quên mật khẩu</td><td>3 yêu cầu / giờ / email (tính cả email không có), 10 / giờ / IP · token 32 byte, hạn 15 phút, mỗi user một token còn hiệu lực</td><td><code>password_resets</code> (SHA-256)</td></tr>
-      <tr><td>Đặt lại mật khẩu</td><td><code>GET</code> + <code>POST /reset</code>: 20 lần / 15 phút / IP</td><td><code>rate_limits</code></td></tr>
-      <tr><td>Phiên</td><td>Hết hạn sau 2 giờ không hoạt động, tối đa 12 giờ kể từ lúc đăng nhập</td><td><code>sessions</code></td></tr>
+      <tr><td>Email</td><td>Cắt khoảng trắng, chữ thường toàn bộ</td></tr>
+      <tr><td>Mật khẩu</td><td>8–64 ký tự, Argon2id</td></tr>
+      <tr><td>Mã kích hoạt</td><td>6 số, hạn 10 phút, sai 5 lần khoá 15 phút; gửi lại chờ 60 giây, 5 lần / giờ</td></tr>
+      <tr><td>Đăng ký</td><td>Luôn có CAPTCHA, 10 lần / giờ / IP</td></tr>
+      <tr><td>Đăng nhập</td><td>Sai 3 lần cần CAPTCHA, sai 10 lần khoá 5 phút (cửa sổ 15 phút); 30 lần / 15 phút / IP</td></tr>
+      <tr><td>Quên mật khẩu</td><td>Token hạn 15 phút; 3 lần / giờ / email, 10 lần / giờ / IP</td></tr>
+      <tr><td>Đổi mật khẩu</td><td>Sai mật khẩu hiện tại 5 lần khoá 15 phút</td></tr>
+      <tr><td>Phiên</td><td>2 giờ không hoạt động, tối đa 12 giờ</td></tr>
     </tbody>
   </table></div>
-  <p>Mọi giới hạn vượt ngưỡng → trang <code>429</code> có <code>Retry-After</code>, nội dung chung (không nói bộ đếm nào chạm ngưỡng). Lỗi nhập ở form tài khoản trả <code>200</code> kèm mã lỗi trong trang (theo bảng của đề); form CRUD quản trị giữ <code>400</code>.</p>
 </section>
 
 <section class="card" id="lua-chon">
-  <h2>4. Ba lựa chọn và giới hạn còn lại</h2>
+  <h2>Ba lựa chọn và giới hạn</h2>
   <div class="grid three">
     <div class="box chosen">
       <span class="label">CAPTCHA</span>
-      <h3>Google reCAPTCHA v2 (ô tick)</h3>
-      <p>Widget cho trình duyệt một token; <strong>backend</strong> gửi token + secret tới <code>siteverify</code>, chỉ cho qua khi <code>success === true</code> và <code>hostname</code> đúng. Token có hạn 2 phút, chỉ xác minh được một lần. Không gọi được Google → <code>503</code>, không mặc định cho qua.</p>
-      <p class="muted">Phương án khác: thư viện tự sinh ảnh (<code>svg-captcha</code>) — phải tự lưu đáp án, tự chống dùng lại; reCAPTCHA v3 chấm điểm — khó giải thích ngưỡng.</p>
+      <h3>reCAPTCHA v2</h3>
+      <p>Backend xác minh token và hostname; lỗi Google → <code>503</code>.</p>
+      <p class="muted">Bỏ: <code>svg-captcha</code>, reCAPTCHA v3</p>
     </div>
     <div class="box chosen">
       <span class="label">Session store</span>
-      <h3>Bảng <code>sessions</code> trong PostgreSQL</h3>
-      <p>Store tự viết trên Prisma (<code>src/auth/session-store.js</code>), có cột <code>userId</code> để xoá mọi phiên của một user khi đặt lại mật khẩu. Khởi động lại server không mất phiên.</p>
-      <p class="muted">Phương án khác: MemoryStore mặc định (mất khi khởi động lại, rò bộ nhớ); Redis (thêm một dịch vụ phải chạy, không cần ở quy mô này).</p>
+      <h3>Bảng <code>sessions</code></h3>
+      <p>Khởi động lại server không mất phiên.</p>
+      <p class="muted">Bỏ: MemoryStore, Redis</p>
     </div>
     <div class="box chosen">
       <span class="label">CSRF</span>
-      <h3>Ba lớp kết hợp</h3>
-      <p>Cookie <code>SameSite=Lax</code> · token đồng bộ <code>_csrf</code> trong mọi form ghi (kiểm trước <code>method-override</code>) · header <code>Origin</code> phải là chính site này. Thiếu / sai → <code>403</code>.</p>
-      <p class="muted">Phương án khác: thư viện <code>csurf</code> (đã ngừng phát triển); chỉ dựa SameSite (trình duyệt cũ không hỗ trợ).</p>
+      <h3>Ba lớp</h3>
+      <p><code>SameSite=Lax</code>, token <code>_csrf</code>, kiểm tra <code>Origin</code>.</p>
+      <p class="muted">Bỏ: <code>csurf</code>, chỉ dựa SameSite</p>
     </div>
   </div>
-  <h3>Giới hạn nêu trung thực</h3>
+  <h3>Giới hạn còn lại</h3>
   <ul>
-    <li><strong>reCAPTCHA:</strong> phụ thuộc Google và Internet; gửi dữ liệu trình duyệt cho Google; cần JavaScript (tắt JS thì không đăng ký được, và không qua được bước CAPTCHA ở đăng nhập). Vẫn có thể bị giải bằng dịch vụ thuê người, nên luôn đi kèm bộ đếm và thời gian chờ. Khi script điều khiển Chrome, Google không cho tick (widget quay mãi) — ảnh bằng chứng tự động dùng key thử, tick thật làm tay.</li>
-    <li><strong>Giới hạn theo IP:</strong> chỉ tin <code>req.ip</code> (không bật <code>trust proxy</code>). Nếu sau này đặt sau reverse proxy, mọi người dùng sẽ chung một IP → phải cấu hình lại. Người dùng chung NAT (ký túc xá, quán cà phê) chia nhau hạn mức.</li>
-    <li><strong>Khoá theo email:</strong> người khác có thể cố ý gõ sai 10 lần để khoá tài khoản của bạn 5 phút. Đánh đổi chấp nhận được: khoá ngắn và có nút “Đặt lại mật khẩu” trên trang <code>429</code>.</li>
-    <li><strong>Tài khoản pending:</strong> người biết đúng mật khẩu sẽ thấy “chưa kích hoạt” — đề chấp nhận đánh đổi này.</li>
-    <li><strong>Cookie <code>Secure</code></strong> chỉ bật khi <code>NODE_ENV=production</code>; demo chạy <code>http://localhost</code> nên ảnh Application không có dấu Secure.</li>
-    <li><strong>Origin:</strong> trang đặt lại mật khẩu có <code>Referrer-Policy: no-referrer</code> nên Chrome gửi <code>Origin: null</code>; server chỉ chấp nhận <code>null</code> ở đúng route <code>POST /reset</code>, request đó vẫn phải có <code>_csrf</code> và reset token.</li>
-    <li><strong>Gmail:</strong> khoảng 500 thư / ngày, thư có thể vào Spam. Script kiểm tra ghi thư ra file thay vì gửi thật.</li>
-    <li><strong>Tìm không dấu:</strong> chữ không dấu gộp nhiều nghĩa — <code>bo</code> ra cả “bò” lẫn “bơ”, <code>pho</code> ra thêm 11 món “phô mai”, và chưa ưu tiên món đúng dấu lên trước. Ai cần chính xác thì gõ có dấu.</li>
-    <li><strong>Đăng xuất</strong> chỉ huỷ phiên đang dùng; các thiết bị khác vẫn đăng nhập (đặt lại mật khẩu thì xoá hết).</li>
+    <li>reCAPTCHA phụ thuộc Google, cần JavaScript, vẫn có thể bị giải thuê</li>
+    <li>Giới hạn IP: người dùng chung mạng chia nhau hạn mức</li>
+    <li>Khoá theo email: người khác có thể cố ý khoá tài khoản 5 phút</li>
+    <li>Cookie <code>Secure</code> chỉ bật ở production</li>
+    <li>Tìm không dấu gộp nghĩa: <code>bo</code> ra cả bò lẫn bơ</li>
   </ul>
 </section>
 
 <section class="card" id="cau-hoi">
-  <h2>5. Sáu câu hỏi trình bày</h2>
-
-  <h3>5.1 Cookie <code>sid</code> và bản ghi session khác nhau thế nào; xóa cookie có hủy được session không?</h3>
-  <p>Cookie <code>sid</code> chỉ là <strong>chìa khoá</strong>: mã phiên ngẫu nhiên kèm chữ ký HMAC (<code>s:&lt;sid&gt;.&lt;chữ ký&gt;</code>), không chứa <code>userId</code> hay role, JavaScript không đọc được (<code>HttpOnly</code>). <strong>Bản ghi session</strong> là dữ liệu thật trong bảng <code>sessions</code>: <code>userId</code>, <code>loginAt</code>, CSRF token, hạn. Xoá cookie chỉ làm <em>trình duyệt này</em> quên chìa khoá; bản ghi vẫn còn và ai còn giữ bản sao cookie vẫn dùng được cho tới khi hết hạn. Muốn huỷ thật phải xoá bản ghi ở server — đó là việc <code>POST /logout</code> làm trước khi xoá cookie.</p>
-  <p class="muted">Bằng chứng: <a href="evidence/network/network-log.md">network-log.md</a> mục 7 (cookie chỉ có <code>sid</code>, HttpOnly, SameSite=Lax) · <a href="evidence/db/4-sau-dang-nhap.txt">db/4</a> (bản ghi gồm <code>userId, loginAt, csrfToken</code>) · <a href="evidence/curl/2-csrf-va-dang-xuat.txt">curl/2</a> (sau logout: 0 bản ghi, gửi lại sid cũ → <code>303 /login</code>).</p>
-
-  <h3>5.2 Session lưu ở đâu, và quan sát nào chứng minh nó còn sau khi server khởi động lại?</h3>
-  <p>Ở bảng <code>sessions</code> của PostgreSQL (Supabase), qua <code>PrismaSessionStore</code> — không phải bộ nhớ tiến trình. Quan sát: đăng nhập, dừng hẳn tiến trình Node, chạy lại, gửi request với đúng cookie cũ → vẫn vào được <code>/admin/dishes</code> (<code>200</code>), vì server mới tra <code>sid</code> trong DB và thấy bản ghi.</p>
-  <p class="muted">Bằng chứng: <a href="evidence/curl/3-khoi-dong-lai-server.txt">curl/3</a> (200 trước và sau khi khởi động lại, cùng vân tay sid) · check-auth D “Khởi động lại server, dùng lại cookie”.</p>
-
-  <h3>5.3 CAPTCHA chặn được gì và không chặn được gì; vì sao vẫn cần bộ đếm sai và thời gian chờ?</h3>
-  <p><strong>Chặn được:</strong> script gửi form hàng loạt mà không có trình duyệt thật — không có token hợp lệ thì server dừng <em>trước</em> khi băm mật khẩu, tạo user, gửi thư hay so mật khẩu. Token chỉ dùng một lần nên không chép lại được. <strong>Không chặn được:</strong> người thật đoán mật khẩu bằng tay, dịch vụ thuê người giải CAPTCHA, kẻ tấn công có nhiều IP. Vì vậy cần thêm bộ đếm sai theo email (giải đúng CAPTCHA <em>không</em> xoá bộ đếm), khoá 5 phút ở lần thứ 10 (<code>429</code> dù mật khẩu và CAPTCHA đúng), và giới hạn theo IP. Bộ đếm nằm ở DB nên xoá cookie, mở tab ẩn danh hay khởi động lại server đều không đặt lại được.</p>
-  <p class="muted">Bằng chứng: <a href="evidence/curl/5-captcha.txt">curl/5</a> (thiếu token / tự khai “đã qua” → từ chối, không tạo user) · <a href="evidence/curl/7-tam-khoa-dung-mat-khau.txt">curl/7</a> (mật khẩu đúng vẫn 429) · <a href="evidence/db/7-do-mat-khau.txt">db/7</a> (<code>count=10</code>, <code>lockedUntil</code>) · ảnh <code>16-dang-nhap-can-captcha</code>, <code>17-tam-khoa-429</code> · sơ đồ <a href="evidence/diagrams/2-dang-nhap-chong-brute-force.svg">đăng nhập</a>.</p>
-
-  <h3>5.4 Tài khoản pending bị chặn ở đâu, và gửi lại OTP có đặt lại số lần thử không?</h3>
-  <p>Chặn ở <strong>hàm cấp phiên</strong>, không chỉ ở giao diện: trong <code>POST /login</code>, sau khi mật khẩu đúng, nếu <code>status !== "active"</code> thì trả trang “chưa kích hoạt” và <code>return</code> <em>trước</em> <code>regenerate</code> / gán <code>userId</code> (<code>src/routes/auth/login.js</code>, bước ⑤ trên sơ đồ). Lớp thứ hai: <code>loadUser</code> chỉ coi là đã đăng nhập khi user còn <code>active</code>. Gửi lại mã <strong>không</strong> đặt lại số lần thử: mã mới ghi đè <code>otpHash</code>, <code>attempts</code> giữ nguyên (nếu không, kẻ dò mã chỉ cần bấm “Gửi lại” để có thêm 5 lần).</p>
-  <p class="muted">Bằng chứng: ảnh <code>06-dang-nhap-chua-kich-hoat</code> · <a href="evidence/db/2-ma-sai-va-dang-nhap-pending.txt">db/2</a> (pending, 0 phiên, <code>attempts=1</code>) · check-auth A “gửi lại → mã mới, attempts vẫn 3”.</p>
-
-  <h3>5.5 Route nào truy cập được khi chưa đăng nhập, và vì sao?</h3>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Route</th><th>Vì sao công khai</th></tr></thead>
-    <tbody>
-      <tr><td><code>/dishes</code>, <code>/dishes/:id</code></td><td>Thực đơn cho khách — mục đích của trang; khách xem không tạo phiên (không có <code>Set-Cookie</code>).</td></tr>
-      <tr><td><code>/register</code>, <code>/activate</code>, <code>/activate/resend</code></td><td>Người chưa có tài khoản phải đăng ký và kích hoạt được.</td></tr>
-      <tr><td><code>/login</code></td><td>Cửa vào duy nhất để có phiên.</td></tr>
-      <tr><td><code>/forgot</code>, <code>/reset</code></td><td>Người quên mật khẩu thì chưa đăng nhập được.</td></tr>
-      <tr><td><code>POST /logout</code></td><td>Không cần đăng nhập để gọi, nhưng phải có <code>_csrf</code> của phiên; không có phiên thì không có gì để huỷ.</td></tr>
-    </tbody>
-  </table></div>
-  <p>Mọi thứ dưới <code>/admin</code> bị chặn bởi <strong>một</strong> dòng <code>app.use("/admin", requireLogin)</code> đặt ngay sau <code>loadUser</code> trong <code>src/app.js</code> → không route quản trị nào lọt, kể cả request gửi thẳng bằng curl không cookie.</p>
-  <p class="muted">Bằng chứng: <a href="evidence/curl/1-chua-dang-nhap-goi-crud.txt">curl/1</a> (9 request GET/POST/PATCH/DELETE đều <code>303</code>, dữ liệu không đổi) · ảnh <code>08-chua-dang-nhap-vao-quan-tri</code> · check-auth D (14 route GET + 9 request ghi).</p>
-
-  <h3>5.6 Reset token được lưu thế nào, và quan sát nào chứng minh session cũ bị hủy sau khi reset?</h3>
-  <p>Token 32 byte ngẫu nhiên (<code>crypto.randomBytes</code>) chỉ nằm trong link email; DB lưu <strong>SHA-256</strong> của nó, hạn 15 phút, <code>usedAt</code>. <code>GET /reset</code> chỉ hiện form (không ghi <code>usedAt</code>, gửi <code>Referrer-Policy: no-referrer</code>). <code>POST /reset</code> làm trong <strong>một transaction</strong>: đánh dấu token đã dùng bằng <code>updateMany</code> có điều kiện → đổi <code>passwordHash</code> → vô hiệu token khác → xoá mọi bản ghi <code>sessions</code> của user. Quan sát: đăng nhập ở tab 1, đặt lại mật khẩu ở tab 2, quay lại tab 1 → bị đưa về <code>/login</code>; bảng <code>sessions</code> còn 0 bản ghi của user.</p>
-  <p class="muted">Bằng chứng: <a href="evidence/db/5-quen-mat-khau.txt">db/5</a> (chỉ có SHA-256, <code>usedAt</code> rỗng sau GET) · <a href="evidence/db/6-sau-dat-lai.txt">db/6</a> (<code>usedAt</code> có giá trị, vân tay hash đổi, 0 phiên) · <a href="evidence/network/network-log.md">network-log</a> mục 10–11 · check-auth E “Sid cũ của tab 1 bị từ chối”.</p>
-</section>
-
-<section class="card" id="loi">
-  <h2>6. Lỗi do agent tạo ra (đề yêu cầu nộp ít nhất một)</h2>
-  <div class="callout"><strong>Lỗi chính — <code>LOG_SQL=1</code> làm lộ <code>sid</code>.</strong> Chế độ in SQL kèm tham số mang từ block 7 sang. Ở block 8, tham số của câu tra phiên chính là <code>sid</code>, dữ liệu phiên có CSRF token: đăng nhập rồi mở một trang quản trị, log in <code>sid</code> 7 lần. Ai đọc được log (kể cả ảnh chụp terminal nộp làm bằng chứng) chiếm được phiên. Sửa: câu SQL chạm bảng xác thực không in tham số. Sau khi sửa: cùng kịch bản, <code>sid</code> xuất hiện 0 lần.</div>
-  <p>Các lỗi khác chỉ lộ ra khi chạy trên Chrome thật (script dùng <code>fetch</code> không thấy): mọi form <code>403</code> khi mở bằng địa chỉ khác <code>APP_ORIGIN</code>; <code>POST /reset</code> luôn <code>403</code> vì Chrome gửi <code>Origin: null</code>; curl không cookie gọi CRUD nhận <code>403</code> thay vì <code>303 /login</code>; đếm ngược “Gửi lại mã” làm lộ email đã đăng ký. Cách tái hiện và bằng chứng từng lỗi: <a href="kichban.html#loi">kichban.html mục 5</a> và <code>BUILD_LOG.md</code>.</p>
+  <h2>Sáu câu hỏi trình bày</h2>
+  <div class="grid two">
+    <div class="box">
+      <h3>1. Cookie <code>sid</code> khác session thế nào?</h3>
+      <p>Cookie là chìa khoá, dữ liệu nằm ở bảng <code>sessions</code>. Xoá cookie không huỷ phiên; phải xoá bản ghi ở server.</p>
+      <p class="muted"><a href="evidence/curl/2-csrf-va-dang-xuat.txt">curl/2</a></p>
+    </div>
+    <div class="box">
+      <h3>2. Session lưu ở đâu?</h3>
+      <p>PostgreSQL. Chạy lại server, cookie cũ vẫn vào được <code>/admin/dishes</code>.</p>
+      <p class="muted"><a href="evidence/curl/3-khoi-dong-lai-server.txt">curl/3</a></p>
+    </div>
+    <div class="box">
+      <h3>3. CAPTCHA chặn được gì?</h3>
+      <p>Chặn script hàng loạt, không chặn người đoán tay hay dịch vụ giải thuê. Nên cần thêm bộ đếm ở DB và thời gian khoá.</p>
+      <p class="muted"><a href="evidence/curl/7-tam-khoa-dung-mat-khau.txt">curl/7</a></p>
+    </div>
+    <div class="box">
+      <h3>4. Pending bị chặn ở đâu?</h3>
+      <p>Trong <code>POST /login</code>, trước khi cấp phiên. Gửi lại mã không đặt lại số lần thử.</p>
+      <p class="muted"><a href="evidence/db/2-ma-sai-va-dang-nhap-pending.txt">db/2</a></p>
+    </div>
+    <div class="box">
+      <h3>5. Route nào công khai?</h3>
+      <p>Thực đơn, đăng ký, kích hoạt, đăng nhập, quên mật khẩu. Còn lại chặn bằng <code>app.use("/admin", requireLogin)</code>.</p>
+      <p class="muted"><a href="evidence/curl/1-chua-dang-nhap-goi-crud.txt">curl/1</a></p>
+    </div>
+    <div class="box">
+      <h3>6. Reset token lưu thế nào?</h3>
+      <p>DB chỉ giữ SHA-256, hạn 15 phút, dùng một lần. Đặt lại xong, phiên cũ bị xoá hết.</p>
+      <p class="muted"><a href="evidence/db/6-sau-dat-lai.txt">db/6</a></p>
+    </div>
+  </div>
+  <div class="callout"><strong>Lỗi của agent:</strong> <code>LOG_SQL=1</code> in <code>sid</code> ra log. Sửa: câu SQL chạm bảng xác thực không in tham số. Lỗi khác: <a href="kichban.html#loi">kichban.html</a>.</div>
 </section>
 
 <section class="card" id="cong-nghe">
-  <h2>7. Công nghệ, công cụ và lý do</h2>
+  <h2>Công nghệ</h2>
   <div class="table-wrap"><table>
-    <thead><tr><th>Thành phần</th><th>Phiên bản</th><th>Dùng để</th></tr></thead>
+    <thead><tr><th>Thành phần</th><th>Dùng để</th></tr></thead>
     <tbody>
-      <tr><td>Express</td><td>5.3.0</td><td>Server SSR; lỗi của handler async tự về error handler</td></tr>
-      <tr><td>EJS</td><td>7.0.1</td><td>Trang HTML; chỉ dùng <code>&lt;%= %&gt;</code> (tự escape) cho dữ liệu người dùng / DB</td></tr>
-      <tr><td>Prisma + <code>@prisma/adapter-pg</code></td><td>7.10.0</td><td>Truy vấn DB block 7 + 5 bảng mới; raw SQL chỉ qua tagged template</td></tr>
-      <tr><td><code>pg_trgm</code>, <code>unaccent</code></td><td>extension PostgreSQL</td><td>Tìm gần đúng; bỏ dấu tại database khi từ khoá không dấu</td></tr>
-      <tr><td>express-session</td><td>1.19.0</td><td>Cookie <code>sid</code> có chữ ký, regenerate / destroy; store tự viết trên Prisma</td></tr>
-      <tr><td>argon2</td><td>0.45.1</td><td>Băm mật khẩu Argon2id (hash giả khi email không có)</td></tr>
-      <tr><td>nodemailer</td><td>10.3.1</td><td>Gửi thư qua Gmail SMTP (App Password); transport <code>file</code> cho script</td></tr>
-      <tr><td>validator</td><td>13.15.35</td><td>Kiểm định dạng email</td></tr>
-      <tr><td>method-override</td><td>3.0.0</td><td>Form HTML gửi <code>PATCH</code> / <code>DELETE</code> qua <code>?_method=</code></td></tr>
-      <tr><td><code>node:crypto</code></td><td>Node</td><td>Mã 6 số (<code>randomInt</code>), token (<code>randomBytes</code>), HMAC / SHA-256, <code>timingSafeEqual</code></td></tr>
-      <tr><td>Google reCAPTCHA v2</td><td>dịch vụ</td><td>CAPTCHA, xác minh ở backend bằng <code>siteverify</code></td></tr>
-      <tr><td>Chrome headless + DevTools Protocol</td><td>công cụ</td><td>Thu ảnh, Network, cookie bằng trình duyệt thật (không thêm thư viện)</td></tr>
-      <tr><td>Figma</td><td>công cụ</td><td>Vẽ nháp giao diện đăng nhập / đăng ký trước khi code (nhóm duyệt hướng A)</td></tr>
+      <tr><td>Express 5, EJS</td><td>Server SSR, dựng trang HTML</td></tr>
+      <tr><td>Prisma 7, PostgreSQL (Supabase)</td><td>Dữ liệu; <code>pg_trgm</code>, <code>unaccent</code> cho tìm kiếm</td></tr>
+      <tr><td>express-session</td><td>Cookie <code>sid</code>, store tự viết trên Prisma</td></tr>
+      <tr><td>argon2, <code>node:crypto</code></td><td>Băm mật khẩu; sinh và băm mã, token</td></tr>
+      <tr><td>reCAPTCHA v2</td><td>CAPTCHA xác minh ở backend</td></tr>
+      <tr><td>nodemailer + Gmail SMTP</td><td>Gửi mã, link đặt lại</td></tr>
+      <tr><td>validator, method-override</td><td>Kiểm tra email; form gửi <code>PATCH</code>, <code>DELETE</code></td></tr>
+      <tr><td>Figma, Chrome headless</td><td>Vẽ giao diện; thu bằng chứng</td></tr>
     </tbody>
   </table></div>
   <h3>Cố ý không dùng</h3>
   <ul>
-    <li><strong>Passport.js, thư viện auth trọn gói:</strong> che mất các bước đề muốn sinh viên đọc được (đọc cookie, tra phiên, chặn request).</li>
-    <li><strong>JWT, API JSON, SPA, <code>fetch</code> phía trình duyệt:</strong> thuộc block 9; block 8 là SSR, tắt JavaScript vẫn dùng được (trừ widget CAPTCHA).</li>
-    <li><strong>Phân quyền theo role, MFA:</strong> block 9. Cột <code>role</code> đã có, server gán <code>viewer</code>, chưa dùng để chặn.</li>
-    <li><strong>Redis, MemoryStore:</strong> xem mục 4.</li>
-    <li><strong><code>svg-captcha</code>, <code>csurf</code>:</strong> xem mục 4.</li>
-    <li><strong>Thư viện UI / form:</strong> CSS thuần của block 7.</li>
-    <li><strong><code>Math.random</code></strong> cho mã / token; <strong>MD5 / SHA-256 trực tiếp</strong> cho mật khẩu; <strong><code>$queryRawUnsafe</code></strong>.</li>
+    <li>Passport.js: che mất các bước đề muốn đọc được</li>
+    <li>JWT, API JSON, SPA, phân quyền, MFA: thuộc block 9</li>
+    <li>Thư viện UI, form: dùng CSS thuần</li>
+    <li><code>Math.random</code>, MD5, <code>$queryRawUnsafe</code>: không an toàn</li>
   </ul>
 </section>
 
-<footer>Block 8 · viết ngày 03/11/2026 sau khi chức năng đã chạy, đối chiếu với mã nguồn trong <code>source-code/</code> và bằng chứng trong <code>evidence/</code></footer>
+<footer>Block 8 · cập nhật 06/11/2026 · chi tiết từng quyết định trong <code>BUILD_LOG.md</code></footer>
 </div>
 </body>
 </html>
