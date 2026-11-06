@@ -604,4 +604,6 @@ Nguồn: bản soát luồng ngày 06/11/2026. Người dùng chọn: hồ sơ +
 **Chưa làm / chưa chắc:**
 - `curl/16` và `evidence/devtools/`: cần người tick và chụp. `captcha-key-that.mjs` mới thử bằng token bịa và dữ liệu giả (file thử đã xoá), **chưa chạy với tick thật**.
 - Plan 12.4 (hồ sơ, tag, lọc) chưa có ảnh riêng; không thuộc bảng nghiệm thu của đề.
-- Sơ đồ luồng vẫn chờ nhóm duyệt.
+- Sơ đồ luồng: người dùng xác nhận "đã ok" ngày 06/11/2026, bỏ chữ nháp.
+
+**Đóng gói (06/11/2026):** `Week6/block8.zip` dựng bằng `git archive` (chỉ file đã commit, nên không thể có `.env`, `.env.test`, `node_modules/`, `generated/`, `.mail-outbox/`). Theo yêu cầu người dùng và giống `block7.zip`: không `.git`, `.gitignore`, `kichban.html`, `BUILD_LOG.md`; các tham chiếu tới hai file đó trong tài liệu được sửa riêng trong bản đóng gói. Không xoá `node_modules/` trên máy để còn demo. Lúc đóng gói **chưa có** `curl/16` và `evidence/devtools/`.

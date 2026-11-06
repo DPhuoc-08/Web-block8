@@ -70,4 +70,4 @@ Cả hai đã có trong BUILD_LOG bước 18 (tái hiện, nguyên nhân, cách 
 | `devtools/` | **Chưa có:** ảnh DevTools thật và kết quả CAPTCHA quá hạn, do `captcha-key-that.mjs` dẫn từng bước |
 | `db/` | Bản ghi `users`, `activation_challenges`, `password_resets`, `sessions`, `rate_limits` ở từng thời điểm |
 | `mail/` | Ba thư của luồng (kích hoạt, đặt lại, báo đã đổi mật khẩu) |
-| `diagrams/` | 4 sơ đồ luồng SVG (đăng ký có CAPTCHA + kích hoạt, đăng nhập chống brute force, đăng xuất, quên / đặt lại mật khẩu) vẽ từ code thật, mỗi ô ghi `file:dòng`; `node evidence/diagrams/ve-so-do.mjs` vẽ lại sau khi đổi code. **Bản nháp — chờ nhóm duyệt.** |
+| `diagrams/` | 4 sơ đồ luồng SVG (đăng ký có CAPTCHA + kích hoạt, đăng nhập chống brute force, đăng xuất, quên / đặt lại mật khẩu) vẽ từ code thật, mỗi ô ghi `file:dòng`; `node evidence/diagrams/ve-so-do.mjs` vẽ lại sau khi đổi code. Nhóm đã duyệt 06/11/2026. |
